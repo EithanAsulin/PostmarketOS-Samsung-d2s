@@ -31,7 +31,8 @@ This Is Based On The Official Downstream S10+ (beyond2lte) Files.
 
 > BOOT
 
-> USB (lsusb - Google Inc. Nexus 4 (fastboot)) [Not Actually In Fastboot And Displays As samsung d2s In Dock]
+> USB (lsusb > Google Inc. Nexus 4 (fastboot))
+> [Not Actually In Fastboot And Displays As samsung d2s In Dock]
 
 > DISPLAY
 
