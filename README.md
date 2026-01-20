@@ -1,10 +1,10 @@
 # Maintainer : Duck Inc. (Eithan Asulin) [https://github.com/EithanAsulin]
 
-# / --------------------- Terms And Conditions ----------------------------- /
+# / -------- Terms And Conditions ---------- /
 >					This Was Tested On
 >					The N975F Exynos 9825
 >					If Bricked I Am Not in Fault.
-# / --------------------- Terms And Conditions ----------------------------- /
+# / -------- Terms And Conditions ---------- /
 
 
 Status : Booting Detected By USB As Samsung d2s, Failing To Load Display Or SSH.
