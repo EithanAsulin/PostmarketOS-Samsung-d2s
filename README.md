@@ -3,7 +3,7 @@
 # / -------- Terms And Conditions ---------- /
 >					This Was Tested On
 >					The N975F Exynos 9825
->					If Bricked I Am Not in Fault.
+>					If Bricked I Am Not At Fault.
 # / -------- Terms And Conditions ---------- /
 
 # Installation
