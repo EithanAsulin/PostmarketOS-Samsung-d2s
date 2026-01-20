@@ -33,7 +33,7 @@ This Is Based On The Official Downstream S10+ (beyond2lte) Files.
 
 > USB (lsusb > Google Inc. Nexus 4 (fastboot))
 
-> [Not Actually In Fastboot And Displays As samsung d2s In Dock]
+>  ^^^ [Not Actually In Fastboot And Displays As samsung d2s In Dock] ^^^
 
 > DISPLAY
 
