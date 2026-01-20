@@ -1,9 +1,9 @@
-Maintainer : Duck Inc. (Eithan Asulin) [https://github.com/EithanAsulin]
+# Maintainer : Duck Inc. (Eithan Asulin) [https://github.com/EithanAsulin]
 
 / --------------------- Terms And Conditions ----------------------------- /
-			This Was Tested On
-			The N975F Exynos 9825
-			If Bricked I Am Not in Fault.
+					This Was Tested On
+					The N975F Exynos 9825
+					If Bricked I Am Not in Fault.
 / --------------------- Terms And Conditions ----------------------------- /
 
 
@@ -18,7 +18,7 @@ This Is Based On The Official Downstream S10+ (beyond2lte) Files.
 
 
 
-Working :
+# Working :
 
 > BOOT
 
@@ -30,7 +30,7 @@ Working :
 
 > KERNEL
 
-Not Working :
+# Not Working :
 
 > GUI
 
@@ -38,7 +38,7 @@ Not Working :
 
 > SSH
 
-Untested :
+# Untested :
 
 > Touch
 
