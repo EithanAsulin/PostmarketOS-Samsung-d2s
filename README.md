@@ -9,8 +9,11 @@
 # Installation
 
 > git clone https://github.com/EithanAsulin/PostmarketOS-Samsung-d2s.git
+
 > cd PostmarketOS-Samsung-d2s
+
 > chmod +x setup.sh
+
 > ./setup.sh
 
 Status : Booting Detected By USB As Samsung d2s, Failing To Load Display Or SSH.
