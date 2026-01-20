@@ -6,13 +6,19 @@
 >					If Bricked I Am Not in Fault.
 # / -------- Terms And Conditions ---------- /
 
+# Installation
+
+> git clone https://github.com/EithanAsulin/PostmarketOS-Samsung-d2s.git
+> cd PostmarketOS-Samsung-d2s
+> chmod +x setup.sh
+> ./setup.sh
 
 Status : Booting Detected By USB As Samsung d2s, Failing To Load Display Or SSH.
 
 Device Codename : d2s
 
 Please Run First!
-"chmod +x ./setup.sh"
+"chmod +x setup.sh"
 
 This Is Based On The Official Downstream S10+ (beyond2lte) Files.
 
