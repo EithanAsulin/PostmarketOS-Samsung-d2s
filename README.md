@@ -6,6 +6,9 @@
 >					If Bricked I Am Not At Fault.
 # / -------- Terms And Conditions ---------- /
 
+> If You Are Interested In Helping With Development DM This Discord User : duck_ae
+
+
 # Installation
 
 > git clone https://github.com/EithanAsulin/PostmarketOS-Samsung-d2s.git
