@@ -1,4 +1,4 @@
-# Maintainer : Duck Tools (Eithan Asulin) [https://github.com/EithanAsulin]
+# Maintainer : Eithan Asulin [https://github.com/EithanAsulin]
 
 # / -------- Terms And Conditions ---------- /
 >					This Was Tested On
