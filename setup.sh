@@ -31,7 +31,6 @@ pmbootstrap init
 
 
 echo "Starting Build!"
-pmbootstrap checksum linux-samsung-d2s
 pmbootstrap build linux-samsung-d2s --force
 pmbootstrap install
 
