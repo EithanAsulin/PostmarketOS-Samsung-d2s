@@ -11,22 +11,30 @@
 
 # Installation
 
-> git clone https://github.com/EithanAsulin/PostmarketOS-Samsung-d2s.git
+see https://wiki.postmarketos.org/wiki/Installation/Using_pmbootstrap
 
-> cd PostmarketOS-Samsung-d2s
+when running `pmbootstrap init`, select:
+Vendor: samsung
+Device: d2s
 
-> chmod +x setup.sh
+then:
+```
+pmbootstrap build linux-samsung-d2s --force
+pmbootstrap install
+```
 
-> ./setup.sh
+From This Point Follow This :
+---> Reboot To Download Mode"
+-------> Run > pmbootstrap flasher flash_kernel
+---> Immediately Go Back To Download Mode
+-------> Run > pmbootstrap flasher flash_rootfs
+
 
 Status : Booting Detected By USB As Samsung d2s, Failing To Load Display Or SSH.
 
 Device Codename : d2s
 
-Please Run First!
-"chmod +x setup.sh"
-
-This Is Based On The Official Downstream S10+ (beyond2lte) Files.
+This Is Based On The S10+ (beyond2lte) downstream port.
 
 
 
