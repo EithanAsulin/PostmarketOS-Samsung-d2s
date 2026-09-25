@@ -1,0 +1,90 @@
+maintainer="Barnabas Czeman <barnabas.czeman@postmarketos.org>"
+pkgname=soc-qcom-msm89x7
+pkgdesc="Common package for Qualcomm MSM89x7 devices"
+pkgver=11
+pkgrel=0
+url="https://postmarketos.org"
+license="BSD-3-Clause"
+arch="aarch64"
+options="!check !archcheck !tracedeps pmb:cross-native"
+depends="
+	$pkgname-gpu
+	$pkgname-modem
+	$pkgname-ucm
+	swclock-offset
+"
+install="$pkgname-modem-openrc.post-install $pkgname-modem-openrc.post-upgrade"
+subpackages="
+	$pkgname-gpu
+	$pkgname-modem
+	$pkgname-modem-openrc:modem_openrc
+	$pkgname-ucm
+	$pkgname-adreno-a3xx-quirks:a3xx_quirks
+"
+
+_ucm_commit="6078de44affd1023c1ba4f71ef1e21468e3282e9"
+source="
+	$pkgname-$_ucm_commit.tar.gz::https://github.com/msm89x7-mainline/alsa-ucm-conf/archive/$_ucm_commit.tar.gz
+	adreno-quirks.sh
+	a3xx-quirks.sh
+	51-qcom.conf
+	q6voiced.conf
+"
+
+package() {
+	mkdir -p $pkgdir
+	install -Dm644 "$srcdir"/51-qcom.conf \
+		-t "$pkgdir"/usr/share/wireplumber/wireplumber.conf.d
+	install -Dm644 "$srcdir"/a3xx-quirks.sh \
+		"$pkgdir"/etc/profile.d/a3xx-quirks.sh
+}
+
+ucm() {
+	provides="alsa-ucm-conf=0.$pkgver-r$pkgrel" # versioned provides need to be below default version
+
+	cd "$srcdir/alsa-ucm-conf-$_ucm_commit"
+	mkdir -p "$subpkgdir"/usr/share/alsa
+	cp -r ucm2 "$subpkgdir"/usr/share/alsa
+}
+
+gpu() {
+	pkgdesc="Various GPU workarounds for Adreno 308 and 505"
+	install_if="$pkgname=$pkgver-r$pkgrel mesa-dri-gallium"
+
+	install -Dm644 "$srcdir"/adreno-quirks.sh \
+		"$subpkgdir"/etc/profile.d/adreno-quirks.sh
+}
+
+modem() {
+	depends="
+		msm-modem-wwan-port
+		soc-qcom-modem
+	"
+	replaces="q6voiced" # installing custom config
+
+	install -Dm644 "$srcdir"/q6voiced.conf \
+		-t "$subpkgdir"/usr/share/q6voiced/
+}
+
+modem_openrc() {
+	install_if="$pkgname-modem=$pkgver-r$pkgrel openrc"
+	depends="
+		msm-modem-wwan-port-openrc
+		openrc
+		soc-qcom-modem-openrc
+	"
+	mkdir -p "$subpkgdir"
+}
+
+a3xx_quirks() {
+	pkgdesc="Various GPU workarounds for Adreno 308"
+	amove etc/profile.d/a3xx-quirks.sh
+}
+
+sha512sums="
+b3cc3ad65cf5d3fd956f4d24f36fc4324e4ee676a0cdda99f213f90c6a854b1eb9d3333402e05e1b861e404f31c72b4d5a219b6bcb6170bacedc938657e9a7c4  soc-qcom-msm89x7-6078de44affd1023c1ba4f71ef1e21468e3282e9.tar.gz
+1deebe2d0ecfd1022d3f068faf8412edd6c6cf309c0472788620778a04c274187d01204b0c39c6dd5fddd1d5beaa36f2ca693b7af0a8fb9d2c27ea1f6d696ef1  adreno-quirks.sh
+49095295472cf1786f155f86d5e80aef7242e9d001e65e5838b7ed2eb1a02a096819185a3cf408aa7c8de7edad2d745b775aee7a43b3b626bf912de3bf01f204  a3xx-quirks.sh
+28c14f47eaedec577d152001c51753537c98f267ac4a0acf78a304efebe5f6a1b4dc6d501497da9a0a925806a1d9c80b25e001cf9b1eb21efa22cd6a41ff753b  51-qcom.conf
+fe9871c325a38c0cadc9631870801ec15ab9f5b786ee854325b93eb3d23e7d8b1ac4f1075572ffcd225d8ec514dec09b986972ddff12a89260c0218af6de7887  q6voiced.conf
+"

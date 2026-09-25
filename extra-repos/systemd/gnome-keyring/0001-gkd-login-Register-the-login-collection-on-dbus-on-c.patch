@@ -1,0 +1,234 @@
+From c9c1bbc151d6adb61d18a6a93b3e08a7c5b641d4 Mon Sep 17 00:00:00 2001
+From: Alessandro Astone <alessandro.astone@canonical.com>
+Date: Fri, 3 Oct 2025 12:40:07 +0200
+Subject: [PATCH] gkd-login: Register the login collection on dbus on creation
+
+The 'login' keyring created on the first user log-in was not properly exposed
+on the dbus org.freedesktop.secrets service.
+
+It would be listed in the org.freedesktop.Secret.Service.Collections property
+as /org/freedesktop/secrets/collection/login, but no object was actually
+exported at that path.
+
+Link: https://gitlab.gnome.org/GNOME/gnome-keyring/-/merge_requests/99
+Closes: https://gitlab.gnome.org/GNOME/gnome-keyring/-/issues/137
+Closes: https://gitlab.gnome.org/GNOME/gnome-keyring/-/issues/151
+---
+ daemon/dbus/gkd-secret-service.c | 37 +++++++++++++++++++
+ daemon/login/gkd-login-context.c | 61 ++++++++++++++++++++++++++++++++
+ daemon/login/gkd-login-context.h | 17 +++++++++
+ daemon/login/gkd-login.c         | 10 +++++-
+ daemon/login/meson.build         |  1 +
+ 5 files changed, 125 insertions(+), 1 deletion(-)
+ create mode 100644 daemon/login/gkd-login-context.c
+ create mode 100644 daemon/login/gkd-login-context.h
+
+diff --git a/daemon/dbus/gkd-secret-service.c b/daemon/dbus/gkd-secret-service.c
+index 7a445815..0ebdf944 100644
+--- a/daemon/dbus/gkd-secret-service.c
++++ b/daemon/dbus/gkd-secret-service.c
+@@ -39,6 +39,8 @@
+ #include "gkd-internal-generated.h"
+ #include "gkd-secrets-generated.h"
+ 
++#include "daemon/login/gkd-login-context.h"
++
+ #include "egg/egg-error.h"
+ #include "egg/egg-unix-credentials.h"
+ 
+@@ -938,6 +940,33 @@ service_name_owner_changed (GDBusConnection *connection,
+ 		g_hash_table_remove (self->clients, object_name);
+ }
+ 
++static void
++on_login_keyring_created (GkdLoginContext *context,
++                          GckObject       *keyring,
++                          gpointer         user_data)
++{
++	GkdSecretService *self = GKD_SECRET_SERVICE (user_data);
++	gsize n_identifier;
++	char *identifier;
++	char *path;
++	GError *error = NULL;
++
++	g_debug ("intercepted new login keyring, registering on dbus");
++
++	identifier = gck_object_get_data (keyring, CKA_ID, NULL, &n_identifier, &error);
++	if (identifier == NULL) {
++		g_warning ("couldn't get login keyring identifier: %s", error->message);
++		g_clear_error (&error);
++		return;
++	}
++
++	path = gkd_secret_util_build_path (SECRET_COLLECTION_PREFIX, identifier, n_identifier);
++	gkd_secret_service_emit_collection_created (self, path);
++
++	g_free (path);
++	g_free (identifier);
++}
++
+ /* -----------------------------------------------------------------------------
+  * OBJECT
+  */
+@@ -974,6 +1003,7 @@ gkd_secret_service_constructor (GType type,
+ 	GError *error = NULL;
+ 	GckSlot *slot = NULL;
+ 	guint i;
++	GkdLoginContext *login_ctx;
+ 
+ 	g_return_val_if_fail (self, NULL);
+ 	g_return_val_if_fail (self->connection, NULL);
+@@ -1055,6 +1085,13 @@ gkd_secret_service_constructor (GType type,
+ 
+ 	gkd_secret_service_init_collections (self);
+ 
++	login_ctx = gkd_login_context_get_default ();
++	g_signal_connect_object (login_ctx,
++	                         "keyring-created",
++	                         G_CALLBACK (on_login_keyring_created),
++	                         self,
++	                         G_CONNECT_DEFAULT);
++
+ 	return G_OBJECT (self);
+ }
+ 
+diff --git a/daemon/login/gkd-login-context.c b/daemon/login/gkd-login-context.c
+new file mode 100644
+index 00000000..926a2e26
+--- /dev/null
++++ b/daemon/login/gkd-login-context.c
+@@ -0,0 +1,61 @@
++#include "config.h"
++#include "gkd-login-context.h"
++
++struct _GkdLoginContext {
++    GObject parent_instance;
++};
++
++enum {
++    KEYRING_CREATED,
++    LAST_SIGNAL
++};
++
++static guint signals[LAST_SIGNAL] = { 0 };
++
++G_DEFINE_TYPE (GkdLoginContext, gkd_login_context, G_TYPE_OBJECT)
++
++static void
++gkd_login_context_class_init (GkdLoginContextClass *klass)
++{
++    /* * keyring-created signal:
++     * Emitted when the login keyring is successfully created on disk/in the store.
++     * Passes the GckObject representing the keyring so subscribers can use it.
++     */
++    signals[KEYRING_CREATED] = g_signal_new ("keyring-created",
++                                             GKD_TYPE_LOGIN_CONTEXT,
++                                             G_SIGNAL_RUN_LAST,
++                                             0,
++                                             NULL, NULL,
++                                             g_cclosure_marshal_VOID__OBJECT,
++                                             G_TYPE_NONE,
++                                             1, GCK_TYPE_OBJECT);
++}
++
++static void
++gkd_login_context_init (GkdLoginContext *self)
++{
++}
++
++GkdLoginContext *
++gkd_login_context_get_default (void)
++{
++    static GkdLoginContext *default_login_context = NULL;
++
++    if (g_once_init_enter_pointer (&default_login_context)) {
++        GkdLoginContext *context = g_object_new (GKD_TYPE_LOGIN_CONTEXT, NULL);
++
++        g_once_init_leave_pointer (&default_login_context, context);
++    }
++
++    return default_login_context;
++}
++
++void
++gkd_login_context_emit_keyring_created (GkdLoginContext *self,
++                                        GckObject       *keyring)
++{
++    g_return_if_fail (GKD_IS_LOGIN_CONTEXT (self));
++    g_return_if_fail (GCK_IS_OBJECT (keyring));
++
++    g_signal_emit (self, signals[KEYRING_CREATED], 0, keyring);
++}
+diff --git a/daemon/login/gkd-login-context.h b/daemon/login/gkd-login-context.h
+new file mode 100644
+index 00000000..a4bee57f
+--- /dev/null
++++ b/daemon/login/gkd-login-context.h
+@@ -0,0 +1,17 @@
++#ifndef GKD_LOGIN_CONTEXT_H
++#define GKD_LOGIN_CONTEXT_H
++
++#include <glib-object.h>
++#include <gck/gck.h>
++
++#define GKD_TYPE_LOGIN_CONTEXT (gkd_login_context_get_type ())
++G_DECLARE_FINAL_TYPE (GkdLoginContext, gkd_login_context, GKD, LOGIN_CONTEXT, GObject)
++
++/* Singleton accessor */
++GkdLoginContext * gkd_login_context_get_default          (void);
++
++/* Trigger to be called by gkd-login.c when the keyring is ready */
++void              gkd_login_context_emit_keyring_created (GkdLoginContext *self,
++                                                          GckObject       *keyring);
++
++#endif /* GKD_LOGIN_CONTEXT_H */
+diff --git a/daemon/login/gkd-login.c b/daemon/login/gkd-login.c
+index 855f5c3a..9225fdb9 100644
+--- a/daemon/login/gkd-login.c
++++ b/daemon/login/gkd-login.c
+@@ -21,6 +21,7 @@
+ #include "config.h"
+ 
+ #include "gkd-login.h"
++#include "gkd-login-context.h"
+ 
+ #include "daemon/gkd-pkcs11.h"
+ 
+@@ -149,6 +150,8 @@ static GckObject*
+ create_login_keyring (GckSession *session, GckObject *cred, GError **error)
+ {
+ 	GckBuilder builder = GCK_BUILDER_INIT;
++	GckObject *collection;
++	GkdLoginContext *context;
+ 
+ 	g_return_val_if_fail (GCK_IS_SESSION (session), NULL);
+ 	g_return_val_if_fail (GCK_IS_OBJECT (cred), NULL);
+@@ -161,7 +164,12 @@ create_login_keyring (GckSession *session, GckObject *cred, GError **error)
+ 	/* TRANSLATORS: This is the display label for the login keyring */
+ 	gck_builder_add_string (&builder, CKA_LABEL, _("Login"));
+ 
+-	return gck_session_create_object (session, gck_builder_end (&builder), NULL, error);
++	context = gkd_login_context_get_default ();
++	collection = gck_session_create_object (session, gck_builder_end (&builder), NULL, error);
++	if (collection)
++		gkd_login_context_emit_keyring_created (context, collection);
++
++	return collection;
+ }
+ 
+ static GckObject*
+diff --git a/daemon/login/meson.build b/daemon/login/meson.build
+index e56b6505..63ceb717 100644
+--- a/daemon/login/meson.build
++++ b/daemon/login/meson.build
+@@ -2,6 +2,7 @@ libgkd_login_sources = files(
+   'gkd-login.c',
+   'gkd-login-interaction.c',
+   'gkd-login-password.c',
++  'gkd-login-context.c',
+ )
+ 
+ libgkd_login_deps = [
+-- 
+2.54.0
+

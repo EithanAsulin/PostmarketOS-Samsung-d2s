@@ -1,0 +1,418 @@
+diff --git a/pinenote-config/waybar/modules/eink.json b/pinenote-config/waybar/modules/eink.json
+index bea0bf2..0c66932 100644
+--- a/pinenote-config/waybar/modules/eink.json
++++ b/pinenote-config/waybar/modules/eink.json
+@@ -1,7 +1,6 @@
+ {
+     "custom/refresh_screen": {
+-        "format": "",
+-        "interval": "once",
++        "format": "\uF2F1",
+         "on-click": "busctl --user call org.pinenote.PineNoteCtl /org/pinenote/PineNoteCtl org.pinenote.Ebc1 GlobalRefresh",
+         "tooltip": false,
+     },
+@@ -9,9 +8,9 @@
+     "custom/win_hint#bitdepth": {
+         "format": "{icon}",
+         "format-icons": {
+-            "Y1": "󰎤",
+-            "Y2": "󰎧",
+-            "Y4": "󰎭",
++            "Y1": "\uDB80\uDFA4",
++            "Y2": "\uDB80\uDFA7",
++            "Y4": "\uDB80\uDFAD",
+ 
+         },
+         "return-type": "json",
+@@ -25,8 +24,8 @@
+         "format": "{icon}",
+         "return-type": "json",
+         "format-icons": {
+-            "D": "󱝊",
+-            "T": "󰬛",
++            "D": "\uDB85\uDF4A",
++            "T": "\uDB82\uDF1B",
+ 
+         },
+         "exec": "$WAYBAR_SCRIPT_DIR/monitor_hints.sh win convert",
+@@ -38,8 +37,8 @@
+     "custom/win_hint#redraw": {
+         "format": "{icon}",
+         "format-icons": {
+-            "R": "󰬙",
+-            "r": "󰰞",
++            "R": "\uDB82\uDF19",
++            "r": "\uDB83\uDC1E",
+         },
+         "return-type": "json",
+         "exec": "$WAYBAR_SCRIPT_DIR/monitor_hints.sh win redraw",
+@@ -51,9 +50,9 @@
+     "custom/hint#bitdepth": {
+         "format": "{icon}",
+         "format-icons": {
+-            "Y1": "󰎤",
+-            "Y2": "󰎧",
+-            "Y4": "󰎭",
++            "Y1": "\uDB80\uDFA4",
++            "Y2": "\uDB80\uDFA7",
++            "Y4": "\uDB80\uDFAD",
+         },
+         "return-type": "json",
+         "exec": "$WAYBAR_SCRIPT_DIR/monitor_hints.sh bus bitdepth",
+@@ -64,8 +63,8 @@
+     "custom/hint#convert": {
+         "format": "{icon}",
+         "format-icons": {
+-            "D": "󱝊", 
+-            "T": "󰬛",
++            "D": "\uDB85\uDF4A",
++            "T": "\uDB82\uDF1B",
+         },
+         "return-type": "json",
+         "exec": "$WAYBAR_SCRIPT_DIR/monitor_hints.sh bus convert",
+@@ -76,8 +75,8 @@
+     "custom/hint#redraw": {
+         "format": "{icon}",
+         "format-icons": {
+-            "R": "󰬙",
+-            "r": "󰰞",
++            "R": "\uDB82\uDF19",
++            "r": "\uDB83\uDC1E",
+         },
+         "return-type": "json",
+         "exec": "$WAYBAR_SCRIPT_DIR/monitor_hints.sh bus redraw",
+@@ -88,9 +87,9 @@
+     "custom/hint-round#bitdepth": {
+         "format": "{icon}",
+         "format-icons": {
+-            "Y1": "󰲠",
+-            "Y2": "󰲢",
+-            "Y4": "󰲦",
++            "Y1": "\uDB80\uDFA4",
++            "Y2": "\uDB80\uDFA7",
++            "Y4": "\uDB80\uDFAD",
+         },
+         "return-type": "json",
+         "exec": "$WAYBAR_SCRIPT_DIR/monitor_hints.sh bus bitdepth",
+@@ -102,8 +101,8 @@
+         "format": "{icon}",
+         "return-type": "json",
+         "format-icons": {
+-            "D": "󰂵",
+-            "T": "󰂷",
++            "D": "\uDB85\uDF4A",
++            "T": "\uDB82\uDF1B",
+         },
+         "exec": "$WAYBAR_SCRIPT_DIR/monitor_hints.sh bus convert",
+         "on-click": "$WAYBAR_SCRIPT_DIR/hint.sh convert cycle",
+@@ -113,8 +112,8 @@
+     "custom/hint-round#redraw": {
+         "format": "{icon}",
+         "format-icons": {
+-            "R": "󰰟",
+-            "r": "󰰠",
++            "R": "\uDB82\uDF19",
++            "r": "\uDB83\uDC1E",
+         },
+         "return-type": "json",
+         "exec": "$WAYBAR_SCRIPT_DIR/monitor_hints.sh bus redraw",
+@@ -125,9 +124,9 @@
+     "custom/eink_mode#driver": {
+       "format": "{icon}",
+       "format-icons": {
+-          "normal": "󰾆", // "󰐊",
+-          "fast": "󰓅", // "󰈑",
+-          "0wave": "󰏤",
++          "normal": "\uDB83\uDF86",
++          "fast": "\uDB81\uDCC5",
++          "0wave": "\uDB80\uDFE4",
+       },
+       "return-type": "json",
+       "exec": "$WAYBAR_SCRIPT_DIR/driver_mode.sh monitor driver",
+@@ -138,7 +137,7 @@
+     "custom/eink_mode#dither": {
+       "format": "{icon}",
+       "format-icons": {
+-          "bayer": "󰯯",
++          "bayer": "\uDB82\uDFEF",
+           "blue16": "<span font_size=\"25pt\">16</span>",
+           "blue32": "<span font_size=\"25pt\">32</span>",
+       },
+@@ -149,13 +148,13 @@
+     },
+ 
+     "custom/eink_debug": {
+-        "format": "󰓔",
++        "format": "\uDB81\uDCD4",
+         "on-click": "busctl --user call org.pinenote.PineNoteCtl /org/pinenote/PineNoteCtl org.pinenote.Ebc1 DumpFramebuffers s /tmp/rockchip_ebc/fbdumps",
+         "tooltip": false,
+     },
+ 
+     "custom/reload#eink": {
+-        "format": "",
++        "format": "\uEE27",
+         "on-click": "systemctl --user restart pinenote.service",
+         "tooltip": false,
+     }
+diff --git a/pinenote-config/waybar/modules/hardware.json b/pinenote-config/waybar/modules/hardware.json
+index 9a0d794..93e2b5e 100644
+--- a/pinenote-config/waybar/modules/hardware.json
++++ b/pinenote-config/waybar/modules/hardware.json
+@@ -8,15 +8,15 @@
+             "critical": 15
+         },
+         // Connected to AC
+-        "format": " {icon} {capacity}%", // Icon: bolt
++        "format": "\uF0E7 {icon} {capacity}%", // Icon: bolt
+         // Not connected to AC
+         "format-discharging": "{capacity}% {icon}",
+         "format-icons": [
+-            "", // Icon: battery-full
+-            "", // Icon: battery-three-quarters
+-            "", // Icon: battery-half
+-            "", // Icon: battery-quarter
+-            ""  // Icon: battery-empty
++			"\uF244", // Icon: battery-full
++            "\uF243", // Icon: battery-three-quarters
++            "\uF242", // Icon: battery-half
++            "\uF241", // Icon: battery-quarter
++            "\uF240"  // Icon: battery-empty
+         ],
+         "tooltip": true
+     },
+diff --git a/pinenote-config/waybar/modules/light.json b/pinenote-config/waybar/modules/light.json
+index cbc536c..0b1c3c4 100644
+--- a/pinenote-config/waybar/modules/light.json
++++ b/pinenote-config/waybar/modules/light.json
+@@ -18,39 +18,35 @@
+     },
+ 
+     "custom/light_icon_cool": {
+-        "format": "",
++        "format": "\uF185",
+         "tooltip": false,
+     },
+ 
+     "custom/light_up_cool": {
+-      "format": "",
+-      "interval": "once",
++      "format": "\uF185\uF062",
+       "on-click": "brightnessctl --device=backlight_cool set 10%+",
+       "tooltip": false,
+     },
+ 
+     "custom/light_down_cool": {
+-      "format": "",
+-      "interval": "once",
++      "format": "\uF063\uF185",
+       "on-click": "brightnessctl --device=backlight_cool set 10%-",
+       "tooltip": false,
+     },
+ 
+     "custom/light_icon_warm": {
+-        "format": "",
++        "format": "\uF186",
+         "tooltip": false,
+     },
+ 
+     "custom/light_up_warm": {
+-      "format": "",
+-      "interval": "once",
++      "format": "\uF186\uF062",
+       "on-click": "brightnessctl --device=backlight_warm set 10%+",
+       "tooltip": false,
+     },
+ 
+     "custom/light_down_warm": {
+-      "format": "",
+-      "interval": "once",
++      "format": "\uF063\uF186",
+       "on-click": "brightnessctl --device=backlight_warm set 10%-",
+       "tooltip": false,
+     },
+diff --git a/pinenote-config/waybar/modules/misc.json b/pinenote-config/waybar/modules/misc.json
+index 2586b97..7190b0c 100644
+--- a/pinenote-config/waybar/modules/misc.json
++++ b/pinenote-config/waybar/modules/misc.json
+@@ -1,16 +1,14 @@
+ {
+ 
+     "custom/smenu": {
+-      "format": "",
+-      "interval": "once",
++      "format": "\uF277",
+       "on-click": "swaymsg exec \\$menu",
+       "tooltip": false,
+     },
+ 
+     // On Screen Keyboard
+     "custom/oskb": {
+-      "format": "",
+-      "interval": "once",
++      "format": "\uF11C",
+       "on-click": "swaymsg exec \\$toggle_osk",
+       "tooltip": false,
+     },
+@@ -22,8 +20,8 @@
+     "idle_inhibitor": {
+       "format": "{icon}",
+       "format-icons": {
+-        "activated": "",
+-        "deactivated": ""
++        "activated": "\uF06E",
++        "deactivated": "\uF070"
+       },
+     },
+ 
+@@ -33,17 +31,17 @@
+     },
+ 
+     "custom/debugicon": {
+-        "format": "󰃤",
++        "format": "\uDB80\uDCE4",
+         "tooltip": false,
+     },
+ 
+     "custom/reload#icon": {
+-        "format": "󰑓",
++        "format": "\uDB81\uDC53",
+         "tooltype": false,
+     },
+ 
+     "custom/reload#waybar": {
+-        "format": "󱟛", //"󰑓",
++        "format": "\uDB85\uDFDB",
+         "on-click": "killall -USR2 waybar",
+         "tooltip": false,
+     }, 
+diff --git a/pinenote-config/waybar/modules/network.json b/pinenote-config/waybar/modules/network.json
+index 87b01b3..bae46b5 100644
+--- a/pinenote-config/waybar/modules/network.json
++++ b/pinenote-config/waybar/modules/network.json
+@@ -1,7 +1,7 @@
+ {
+     "bluetooth#icon": {
+-        "format": "󰂯",
+-        "format-off": "󰂲",
++        "format": "\uDB80\uDCAF",
++        "format-off": "\uDB80\uDCB2",
+         "tooltip": false,
+         "on-click": "$WAYBAR_SCRIPT_DIR/bluetooth_toggle.sh",
+     },
+@@ -17,11 +17,11 @@
+         "interface": "wlan*",
+         "format": "{icon}",
+         "format-icons": {
+-            "wifi": ["󰤟", "󰤢", "󰤥", "󰤨"],
++            "wifi": ["\uDB82\uDD1F", "\uDB82\uDD22", "\uDB82\uDD25", "\uDB82\uDD28"],
+         },
+-        "format-disconnected": "󰤯",
+-        "format-linked": "󰤫",
+-        "format-disabled": "󰤭",
++        "format-disconnected": "\uDB82\uDD2F",
++        "format-linked": "\uDB82\uDD2B",
++        "format-disabled": "\uDB82\uDD2D",
+         "tooltip": false,
+         "on-click": "rfkill toggle wifi",
+     },
+diff --git a/pinenote-config/waybar/modules/sound.json b/pinenote-config/waybar/modules/sound.json
+index f1a7196..90bb96c 100644
+--- a/pinenote-config/waybar/modules/sound.json
++++ b/pinenote-config/waybar/modules/sound.json
+@@ -1,12 +1,12 @@
+ {
+     "pulseaudio": {
+         "format": "{icon}",
+-        "format-muted": "󰖁",
++        "format-muted": "\uDB81\uDD81",
+         "format-icons": {
+             "default": [
+-                "󰕿", 
+-                "󰖀", 
+-                "󰕾"
++                "\uDB81\uDD7F", 
++                "\uDB81\uDD80", 
++                "\uDB81\uDD7E"
+             ],
+         },
+         "on-click": "pactl set-sink-mute @DEFAULT_SINK@ toggle",
+diff --git a/pinenote-config/waybar/modules/sway.json b/pinenote-config/waybar/modules/sway.json
+index d93d438..4f0029f 100644
+--- a/pinenote-config/waybar/modules/sway.json
++++ b/pinenote-config/waybar/modules/sway.json
+@@ -6,52 +6,45 @@
+ 
+     "custom/reload#sway": {
+         //"format": "<span font_family=\"Symbols Nerd Font\" size=\"32pt\"></span>",
+-        "format": "",
++        "format": "\uF35D",
+         "on-click": "swaymsg reload",
+         "tooltip": false,
+     }, 
+ 
+     "custom/mvws_prev": {
+-      "format": "",
+-      "interval": "once",
+-      "on-click": "sway_workspace move prev",
++      "format": "\uF100",
++      "on-click": "/usr/lib/pinenote/sway_workspace move prev",
+       "tooltip": false,
+     },
+     "custom/gows_prev": {
+-      "format": "",
+-      "interval": "once",
+-      "on-click": "sway_workspace goto prev",
++      "format": "\uF104",
++      "on-click": "/usr/lib/pinenote/sway_workspace goto prev",
+       "tooltip": false,
+     },
+     "custom/gows_next": {
+-      "format": "",
+-      "interval": "once",
+-      "on-click": "sway_workspace goto next",
++      "format": "\uF105",
++      "on-click": "/usr/lib/pinenote/sway_workspace goto next",
+       "tooltip": false,
+     },
+     "custom/mvws_next": {
+-      "format": "",
+-      "interval": "once",
+-      "on-click": "sway_workspace move next",
++      "format": "\uF101",
++      "on-click": "/usr/lib/pinenote/sway_workspace move next",
+       "tooltip": false,
+     },
+ 
+     "custom/splitv": {
+-      "format": "",
+-      "interval": "once",
++      "format": "\uEB57",
+       "on-click": "swaymsg splitv",
+       "tooltip": false,
+     },
+     "custom/splith": {
+-      "format": "",
+-      "interval": "once",
++      "format": "\uEB56",
+       "on-click": "swaymsg splith",
+       "tooltip": false,
+     },
+ 
+     "custom/kill": {
+-      "format": "",
+-      "interval": "once",
++      "format": "\uF00D",
+       "on-click": "swaymsg kill",
+       "tooltip": false,
+     },
+@@ -59,8 +52,8 @@
+     "custom/sway-rotate": {
+         "format": "{icon}",
+         "format-icons": {
+-            "rotate": "󰑵",
+-            "locked": "󰑸"
++            "rotate": "\uDB81\uDC75",
++            "locked": "\uDB81\uDC78"
+         },
+         "return-type": "json",
+         "exec": "$SWAY_ROTATE_SERVICE monitor",

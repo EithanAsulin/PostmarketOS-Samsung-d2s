@@ -1,0 +1,33 @@
+#!/bin/sh
+# This script replaces /etc/resolv.conf with a symlink to the systemd-resolved
+# stub config if certain conditions are met.
+
+# bail out early if it's already a symlink
+[ -L /etc/resolv.conf ] && exit 0
+
+# Only touch resolv.conf if resolved is enabled and its stub listener isn't
+# turned off.
+# This assumes that anyone running their own resolver will disable the unit (or
+# set DNSStubListener=no), in which case we leave their resolv.conf file alone.
+
+# In case the DNSStubListener option is set several times in differnt
+# config/drop-ins, the last one parsed wins.
+# So, this tries to get the last printed config for the DNSStubListener option.
+stub=$(systemd-analyze cat-config systemd/resolved.conf 2>/dev/null |
+	tr -d ' \t' |
+	grep -ioE '^DNSStubListener=[^#]*' |
+	tail -n1)
+if systemctl is-enabled systemd-resolved.service >/dev/null 2>&1 &&
+   ! echo "$stub" | grep -iqxE 'DNSStubListener=(no?|f(alse)?|0|off)'; then
+
+	# skip bind-mounted resolv.conf, because it was probably mounted by a chroot or
+	# container, otherwise replace whatever is there. Also skip if systemd isn't
+	# running, since resolved isn't either and we would just break dns if we
+	# replaced resolv.conf with a symlink to the stub (this only comes up when
+	# running the script by hand, the unit implies it's up.)
+	if ! mountpoint -q /etc/resolv.conf &&
+	   [ -d /run/systemd/system ]; then
+		ln -fs ../run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
+	fi
+fi
+

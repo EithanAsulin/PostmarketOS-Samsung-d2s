@@ -1,0 +1,15 @@
+#!/sbin/openrc-run
+
+descriptions="Create static device nodes in /dev gracefully"
+
+depend() {
+	before systemd-tmpfiles-setup-dev
+}
+
+start() {
+	if [ -x /usr/lib/tmpfiles.d ]; then
+		ebegin "Gracefully populating /dev from tmpfiles.d"
+		/usr/bin/systemd-tmpfiles --prefix=/dev --create --boot --graceful
+		eend $?
+	fi
+}

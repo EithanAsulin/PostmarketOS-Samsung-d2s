@@ -1,0 +1,41 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="chiffa <chiffathefoxx@gmail.com>"
+pkgname=device-samsung-exynos9820
+pkgdesc="Samsung Exynos 9820 Generic Device"
+pkgver=1
+pkgrel=0
+url="https://postmarketos.org"
+arch="aarch64"
+license="MIT"
+depends="
+	linux-postmarketos-exynos9820
+	postmarketos-base
+	reboot-mode
+	systemd-boot
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+"
+options="
+	!archcheck
+	!check
+"
+provides="
+	device-samsung-beyond1lte=$pkgver-r$pkgrel
+	device-samsung-beyond2lte=$pkgver-r$pkgrel
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+26a5734a312ea7653d721691b1044e985e2edf16559ec1ddaa4075da8eb838dd4c4fdef75e2c48e07ab11c5418504e7bd6224039725b192190e373dced90f2ff  deviceinfo
+997c829a5a4b187ebeda33c708caa5524561219f087697e5263171567a66c265739e8fe925dc612eb10920ec6d8facd936acd783d02e2e270446e8382904c341  kernel-cmdline.conf
+"

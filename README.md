@@ -1,72 +1,25 @@
-# Maintainer : Eithan Asulin [https://github.com/EithanAsulin]
+# postmarketOS aports repository
 
-# / -------- Terms And Conditions ---------- /
->					This Was Tested On
->					The N975F Exynos 9825
->					If Bricked I Am Not At Fault.
-# / -------- Terms And Conditions ---------- /
+This repository contains the APKBUILD files for postmarketOS-specific packages, along with the required patches and scripts, if any.
 
-> If You Are Interested In Helping With Development DM This Discord User : duck_ae
+There are many more packages defined in the [Alpine Linux aports](https://gitlab.alpinelinux.org/alpine/aports/) on which these packages depend.
 
+Helpful resources:
 
-# Installation
+* [Issues](https://gitlab.postmarketos.org/postmarketOS/pmaports/-/work_items)
+* [How to create a package](https://wiki.postmarketos.org/wiki/Create_a_package)
+* [APKBUILD reference](https://wiki.alpinelinux.org/wiki/APKBUILD_Reference)
+* [pmaports commit style](./COMMITSTYLE.md)
+* [Approval rules](docs/merge-requests/approval-rules.md)
+* [Alpine Linux aports](https://gitlab.alpinelinux.org/alpine/aports/)
+* [Alpine Linux package search](https://pkgs.alpinelinux.org/packages)
+* [postmarketOS package search](https://pkgs.postmarketos.org/packages)
 
-> git clone https://github.com/EithanAsulin/PostmarketOS-Samsung-d2s.git
+## Git Hooks
 
-> cd PostmarketOS-Samsung-d2s
+You can find some useful git hooks in the `.githooks` directory.
+To use them, run the following command after cloning this repository:
 
-> chmod +x setup.sh
-
-> ./setup.sh
-
-Status : Booting Detected By USB As Samsung d2s, Failing To Load Display Or SSH.
-
-Device Codename : d2s
-
-Please Run First!
-"chmod +x setup.sh"
-
-This Is Based On The Official Downstream S10+ (beyond2lte) Files.
-
-
-
-# Working :
-
-> BOOT
-
-> USB (lsusb > Google Inc. Nexus 4 (fastboot))
-
->  ^^^ [Not Actually In Fastboot And Displays As samsung d2s In Dock] ^^^
-
-> DISPLAY
-
-> TWRP
-
-> KERNEL
-
-# Not Working :
-
-> GUI
-
-> /system_root Partition Detection (Fixed Via Odin)
-
-> SSH
-
-# Untested :
-
-> Touch
-
-> Wifi
-
-> Bluetooths
-
-> Modem/SIM
-
-> Power Management
-
-> Gestures
-
-> Brightness Control
-
-> Wayland Support
- 
+```sh
+git config --local core.hooksPath .githooks
+```

@@ -1,0 +1,23 @@
+# Co-Maintainer: Alexey Minnekhanov <alexeymin@postmarketos.org>
+# Co-Maintainer: Achill Gilgenast <achill@achill.org>
+maintainer="Aelin <aelin@postmarketos.org>"
+pkgname=postmarketos-installkernel
+pkgver=2
+pkgrel=0
+pkgdesc="postmarketOS script for installing mainline kernels"
+url="https://gitlab.postmarketos.org/postmarketOS/pmaports/-/tree/main/main/postmarketos-installkernel"
+arch="noarch"
+license="GPL-2.0-only"
+source="installkernel-pmos"
+options="!check" # no test suite
+
+provides="installkernel=9999$pkgver-r$pkgver"
+
+package() {
+	install -Dm755 "$srcdir"/installkernel-pmos \
+		"$pkgdir"/usr/sbin/installkernel
+}
+
+sha512sums="
+ba3bdb2d27f7b866a49354fcc4b83ec85747a71265c6b585cb062fc1ff00e88faeba7b77f463d6699e81685c8927ee1d316d5934f374aeebfd4949007d8cb4d8  installkernel-pmos
+"

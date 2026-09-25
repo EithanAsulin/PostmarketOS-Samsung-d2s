@@ -1,0 +1,41 @@
+# Reference: <https://postmarketos.org/devicepkg>
+# Co-Maintainer: Danila Tikhonov <danila@jiaxyga.com>
+# Co-Maintainer: David Wronek <david@mainlining.org>
+# Co-Maintainer: Arian Kulmer <arian.kulmer@web.de>
+maintainer="Aelin <aelin@postmarketos.org>"
+pkgname=device-qcom-sm7150
+pkgdesc="Generic device package for Qualcomm SM7150 devices"
+pkgver=11
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf-qcom-sm7150
+	firmware-qcom-sm7150
+	hexagonrpcd
+	linux-postmarketos-qcom-sm7150
+	make-dynpart-mappings
+	postmarketos-base
+	soc-qcom
+	soc-qcom-modem
+	soc-qcom-qbootctl
+	systemd-boot
+	unl0kr-fbforcerefresh
+"
+makedepends="devicepkg-dev"
+
+source="deviceinfo"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+492b22ce3350e8b1452128234062f41a2e6a23e4f5fac2c56fbd43e354a1c6f3792f8bc760e59a2e89c51a83a87f2b4ef77bdf7c422e01d891a32854ec3f2d19  deviceinfo
+"

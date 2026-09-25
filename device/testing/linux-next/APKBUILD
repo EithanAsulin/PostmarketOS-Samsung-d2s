@@ -1,0 +1,129 @@
+# Co-Maintainer: Achill Gilgenast <achill@achill.org>
+maintainer="Aelin <aelin@postmarketos.org>"
+pkgname=linux-next
+pkgver=7.2_git20260810
+pkgrel=0
+_nextver="${pkgver#*_git}"
+pkgdesc="Linux next kernel"
+# armhf: pmbootstrap cannot dynamically choose a defconfig, so it ends up using multi_v7_defconfig which isn't correct
+# s390x: kconfigcheck is not ready for it yet
+arch="all !armhf !s390x"
+_flavor="next"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="
+	!check
+	!strip
+	!tracedeps
+	pmb:cross-native
+	pmb:generic-kernel
+	pmb:kconfigcheck-community
+	pmb:kconfigcheck-immutable
+	pmb:kconfigcheck-lockdown
+	pmb:kconfigcheck-rust
+	pmb:kconfigcheck-selinux
+	pmb:kconfigcheck-uefi
+	pmb:kconfigcheck-virt
+"
+makedepends="
+	bash
+	bison
+	clang
+	clang-libclang
+	diffutils
+	elfutils-dev
+	findutils
+	flex
+	kmod
+	linux-headers
+	lld
+	llvm
+	openssl-dev
+	pahole
+	perl
+	postmarketos-installkernel
+	python3
+	rust
+	rust-bindgen
+	rust-src
+	rustfmt
+	sed
+	zstd
+"
+
+# powerpc boot wrapper patches:
+# Necessary for compilation without cross GCC in PATH, cherry-picked from
+# Nathan's fork, he does not have time to upstream them right now but would be
+# happy if someone else did:
+# https://lore.kernel.org/linuxppc-dev/aXs8sgAcci9FKKpx@luna/
+source="
+	https://git.kernel.org/pub/scm/linux/kernel/git/next/linux-next.git/snapshot/linux-next-next-$_nextver.tar.gz
+
+	0001-WIP-arch-powerpc-boot-Support-LLVM-1-in-wrapper-scri.patch
+	0002-WIP-arch-powerpc-boot-Add-z-norelro.patch
+
+	config-next.aarch64
+	config-next.armv7
+	config-next.loongarch64
+	config-next.ppc64le
+	config-next.riscv64
+	config-next.x86
+	config-next.x86_64
+"
+builddir="$srcdir/linux-next-next-$_nextver"
+
+case "$CARCH" in
+	aarch64*) _carch="arm64" ;;
+	arm*) _carch="arm" ;;
+	loongarch*) _carch="loongarch" ;;
+	ppc*) _carch="powerpc" ;;
+	riscv*) _carch="riscv" ;;
+	s390x) _carch="s390" ;;
+	x86) _carch="i386" ;;
+	x86_64) _carch="x86_64" ;;
+esac
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$CARCH" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor"
+}
+
+package() {
+	local _install
+	case "$CARCH" in
+		arm*|aarch64|riscv*) _install="zinstall dtbs_install" ;;
+		*) _install="install" ;;
+	esac
+
+	make modules_install $_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_MOD_PATH="$pkgdir"/usr \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+
+	rm -f "$pkgdir"/usr/lib/modules/*/build "$pkgdir"/usr/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/"$_flavor"/kernel.release
+}
+
+sha512sums="
+5436babd459744bf49320337a3ac618b5bd0e21339e8169d34b27f87d8568e28bae45845d9d0f862bc91fe6cfc04a9cd6bf6a4b0d6db74091e39cfe0c9e91d46  linux-next-next-20260810.tar.gz
+1f11df2480e9f691573283597160b4c806e492cdca4825f3acb3afb70bde43abfab487bcde1f5553b431a702a0039479d041b0ce7859970e706b5a51d2ad8fb0  0001-WIP-arch-powerpc-boot-Support-LLVM-1-in-wrapper-scri.patch
+302c20c85559fc9b3b2420ed25be1bfbb76c87f2a470e4141c32e9542cf1f5c6b3b5a7847231a3eaa0f6bc0e5942d0c1599e807175dcf5e63469704c3d6adde3  0002-WIP-arch-powerpc-boot-Add-z-norelro.patch
+52b23c57b42b0432284252257d06919cf0cb3d7fade13e043ea44d453fafc24eeb033aa10203b500b0b3131532301ac8e003f49f797bccf2c3c236a61a177d2e  config-next.aarch64
+2ecca31ab99459ebe0d4680aa48d69bdafb5f0c08bcebc1c48a52c56003fc72368056361d848e381014eefc99495beba523ed1b2cafc7e4f5df0ca61359f4304  config-next.armv7
+88713ba369055340bc07318f1753e51b09e179dccc34309a85d8724c2559179d8d4af9e3ebffaf3c7e282fce2f4666211cc0a7b75b3aed98d2a38d7261d6f562  config-next.loongarch64
+eec518543f8a3ac6864db6d959024fb9607ce5789390bf02c85636ed39eb8e9224d5ce944bad86b01e951f95f1108b58468b55ad98fc35653bd8d8029ac98480  config-next.ppc64le
+7947fbde2923149f385ccd86adbb8e4ab708cd0acdfe7147bf2c8f247ae988b1ff6b36a30f937147cfcd9482fdb995214172d623fffb17b422b63318546d18d7  config-next.riscv64
+2c097500913821bb816e2eef5be6318074c859343088a76bc58433fd40f0e69424c6e5d15137618971c565fd78a7f8c410252263d4ef382d7da482d27a1203dd  config-next.x86
+397c90849a8bccacdb77ff10a7a08fb8be15e9287cae8fb22293150aee6a424abaf7488a3f0b058f9ea3a4b4a3b80f899ee3ccb61c439ff4a8a24b9f8b1336e5  config-next.x86_64
+"

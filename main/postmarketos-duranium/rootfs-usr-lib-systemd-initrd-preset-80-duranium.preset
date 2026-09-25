@@ -1,0 +1,7 @@
+enable initramfs-buffyboard.service
+enable initramfs-telnetd.service
+enable initramfs-unudhcpd.service
+enable initramfs-usb-gadget.service
+enable systemd-confext-sysroot.service
+enable systemd-sysext-sysroot.service
+enable unl0kr-agent.path

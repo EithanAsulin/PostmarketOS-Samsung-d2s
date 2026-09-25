@@ -1,0 +1,234 @@
+From f8bab551ce690303819360d5ed05ed441d12c450 Mon Sep 17 00:00:00 2001
+From: Nuke <retuhmadam2010@proton.me>
+Date: Thu, 13 Aug 2026 18:42:00 +0400
+Subject: [PATCH 10/11] usb: phy: twl6030: add extcon and external VBUS support
+
+---
+ drivers/usb/phy/phy-twl6030-usb.c | 140 +++++++++++++++++++++++++++++-
+ 1 file changed, 139 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/usb/phy/phy-twl6030-usb.c b/drivers/usb/phy/phy-twl6030-usb.c
+index 8c09db750..79113e174 100644
+--- a/drivers/usb/phy/phy-twl6030-usb.c
++++ b/drivers/usb/phy/phy-twl6030-usb.c
+@@ -9,6 +9,7 @@
+ 
+ #include <linux/module.h>
+ #include <linux/init.h>
++#include <linux/extcon.h>
+ #include <linux/interrupt.h>
+ #include <linux/platform_device.h>
+ #include <linux/io.h>
+@@ -84,6 +85,18 @@ struct twl6030_usb {
+ 
+ 	struct regulator		*usb3v3;
+ 
++	/* optional external VBUS supply for host mode */
++	struct regulator	*vbus_reg;
++	bool			vbus_reg_enabled;
++
++	/*
++	 * optional extcon-based ID detection, for boards where the
++	 * connector ID pin is not wired to the TWL6030 itself
++	 */
++	struct extcon_dev	*edev;
++	struct notifier_block	host_nb;
++	struct work_struct	host_work;
++
+ 	/* used to check initial cable status after probe */
+ 	struct delayed_work	get_status_work;
+ 
+@@ -213,6 +226,15 @@ static irqreturn_t twl6030_usb_irq(int irq, void *_twl)
+ 
+ 	vbus_state = twl6030_readb(twl, TWL_MODULE_MAIN_CHARGE,
+ 						CONTROLLER_STAT1);
++
++	/*
++	 * When host mode was entered through extcon, the ID pin is not
++	 * visible to the TWL6030 and VBUS is driven by ourselves: ignore
++	 * the resulting VBUS comparator events.
++	 */
++	if (twl->edev && twl->linkstat == MUSB_ID_GROUND)
++		return IRQ_HANDLED;
++
+ 	if (!(hw_state & STS_USB_ID)) {
+ 		if (vbus_state & VBUS_DET) {
+ 			ret = regulator_enable(twl->usb3v3);
+@@ -275,6 +297,62 @@ static irqreturn_t twl6030_usbotg_irq(int irq, void *_twl)
+ 	return IRQ_HANDLED;
+ }
+ 
++static void twl6030_host_work(struct work_struct *work)
++{
++	struct twl6030_usb *twl = container_of(work, struct twl6030_usb,
++					       host_work);
++	enum musb_vbus_id_status status;
++	bool host;
++	int ret;
++
++	host = extcon_get_state(twl->edev, EXTCON_USB_HOST) > 0;
++
++	if (host) {
++		if (twl->linkstat == MUSB_ID_GROUND)
++			return;
++
++		ret = regulator_enable(twl->usb3v3);
++		if (ret)
++			dev_err(twl->dev, "Failed to enable usb3v3\n");
++
++		twl->asleep = 1;
++		status = MUSB_ID_GROUND;
++	} else {
++		if (twl->linkstat != MUSB_ID_GROUND)
++			return;
++
++		status = MUSB_VBUS_OFF;
++	}
++
++	twl->linkstat = status;
++	ret = musb_mailbox(status);
++	if (ret)
++		twl->linkstat = MUSB_UNKNOWN;
++
++	if (!host) {
++		if (twl->asleep) {
++			regulator_disable(twl->usb3v3);
++			twl->asleep = 0;
++		}
++		/* pick up a charger cable that replaced the OTG adapter */
++		schedule_delayed_work(&twl->get_status_work,
++				      msecs_to_jiffies(50));
++	}
++
++	sysfs_notify(&twl->dev->kobj, NULL, "vbus");
++}
++
++static int twl6030_host_notifier(struct notifier_block *nb,
++				 unsigned long event, void *ptr)
++{
++	struct twl6030_usb *twl = container_of(nb, struct twl6030_usb,
++					       host_nb);
++
++	schedule_work(&twl->host_work);
++
++	return NOTIFY_DONE;
++}
++
+ static void twl6030_status_work(struct work_struct *work)
+ {
+ 	struct twl6030_usb *twl = container_of(work, struct twl6030_usb,
+@@ -282,6 +360,8 @@ static void twl6030_status_work(struct work_struct *work)
+ 
+ 	twl6030_usb_irq(twl->irq2, twl);
+ 	twl6030_usbotg_irq(twl->irq1, twl);
++	if (twl->edev)
++		schedule_work(&twl->host_work);
+ }
+ 
+ static int twl6030_enable_irq(struct twl6030_usb *twl)
+@@ -302,6 +382,27 @@ static void otg_set_vbus_work(struct work_struct *data)
+ {
+ 	struct twl6030_usb *twl = container_of(data, struct twl6030_usb,
+ 								set_vbus_work);
++	int ret;
++
++	/*
++	 * Boards where VBUS is not supplied by the TWL6030 itself provide
++	 * an external regulator (e.g. a GPIO-controlled booster).
++	 */
++	if (twl->vbus_reg) {
++		if (twl->vbus_enable && !twl->vbus_reg_enabled) {
++			ret = regulator_enable(twl->vbus_reg);
++			if (ret)
++				dev_err(twl->dev,
++					"Failed to enable VBUS supply: %d\n",
++					ret);
++			else
++				twl->vbus_reg_enabled = true;
++		} else if (!twl->vbus_enable && twl->vbus_reg_enabled) {
++			regulator_disable(twl->vbus_reg);
++			twl->vbus_reg_enabled = false;
++		}
++		return;
++	}
+ 
+ 	/*
+ 	 * Start driving VBUS. Set OPA_MODE bit in CHARGERUSB_CTRL1
+@@ -355,6 +456,23 @@ static int twl6030_usb_probe(struct platform_device *pdev)
+ 	twl->comparator.set_vbus	= twl6030_set_vbus;
+ 	twl->comparator.start_srp	= twl6030_start_srp;
+ 
++	twl->vbus_reg = devm_regulator_get_optional(dev, "vbus");
++	if (IS_ERR(twl->vbus_reg)) {
++		ret = PTR_ERR(twl->vbus_reg);
++		if (ret == -ENODEV)
++			twl->vbus_reg = NULL;
++		else
++			return dev_err_probe(dev, ret,
++					     "failed to get vbus regulator\n");
++	}
++
++	if (of_property_present(np, "extcon")) {
++		twl->edev = extcon_get_edev_by_phandle(dev, 0);
++		if (IS_ERR(twl->edev))
++			return dev_err_probe(dev, PTR_ERR(twl->edev),
++					     "failed to get extcon device\n");
++	}
++
+ 	ret = omap_usb2_set_comparator(&twl->comparator);
+ 	if (ret == -ENODEV) {
+ 		dev_info(&pdev->dev, "phy not ready, deferring probe");
+@@ -373,15 +491,26 @@ static int twl6030_usb_probe(struct platform_device *pdev)
+ 	platform_set_drvdata(pdev, twl);
+ 
+ 	INIT_WORK(&twl->set_vbus_work, otg_set_vbus_work);
++	INIT_WORK(&twl->host_work, twl6030_host_work);
+ 	INIT_DELAYED_WORK(&twl->get_status_work, twl6030_status_work);
+ 
++	if (twl->edev) {
++		twl->host_nb.notifier_call = twl6030_host_notifier;
++		status = extcon_register_notifier(twl->edev, EXTCON_USB_HOST,
++						  &twl->host_nb);
++		if (status < 0) {
++			dev_err(dev, "failed to register extcon notifier\n");
++			goto err_put_regulator;
++		}
++	}
++
+ 	status = request_threaded_irq(twl->irq1, NULL, twl6030_usbotg_irq,
+ 			IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING | IRQF_ONESHOT,
+ 			"twl6030_usb", twl);
+ 	if (status < 0) {
+ 		dev_err(&pdev->dev, "can't get IRQ %d, err %d\n",
+ 			twl->irq1, status);
+-		goto err_put_regulator;
++		goto err_unregister_notifier;
+ 	}
+ 
+ 	status = request_threaded_irq(twl->irq2, NULL, twl6030_usb_irq,
+@@ -402,6 +531,10 @@ static int twl6030_usb_probe(struct platform_device *pdev)
+ 
+ err_free_irq1:
+ 	free_irq(twl->irq1, twl);
++err_unregister_notifier:
++	if (twl->edev)
++		extcon_unregister_notifier(twl->edev, EXTCON_USB_HOST,
++					   &twl->host_nb);
+ err_put_regulator:
+ 	regulator_put(twl->usb3v3);
+ 
+@@ -419,6 +552,11 @@ static void twl6030_usb_remove(struct platform_device *pdev)
+ 			REG_INT_MSK_STS_C);
+ 	free_irq(twl->irq1, twl);
+ 	free_irq(twl->irq2, twl);
++	if (twl->edev) {
++		extcon_unregister_notifier(twl->edev, EXTCON_USB_HOST,
++					   &twl->host_nb);
++		cancel_work_sync(&twl->host_work);
++	}
+ 	regulator_put(twl->usb3v3);
+ 	cancel_work_sync(&twl->set_vbus_work);
+ }
+-- 
+2.55.0
+

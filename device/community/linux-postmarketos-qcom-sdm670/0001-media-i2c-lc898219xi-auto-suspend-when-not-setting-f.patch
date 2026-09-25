@@ -1,0 +1,56 @@
+From 8c28d5b7264a124b82e4441ea1f888fa58321747 Mon Sep 17 00:00:00 2001
+From: Richard Acayan <mailingradian@gmail.com>
+Date: Wed, 22 Jul 2026 20:31:34 -0400
+Subject: [PATCH] media: i2c: lc898219xi: auto-suspend when not setting focus
+
+The focus actuator consumes a lot of power and should use runtime PM
+when not being used. Pipewire usually has the media pipeline open even
+when not in use, so camera devices need to suspend while the pipeline is
+open. The best available solution currently is to turn the actuator on
+when setting the focus and let it turn off after.
+
+This may sometimes reset the focus after 1 second when autosuspend kicks
+in, but it's better than disabling the driver completely which can
+impact the usability of the entire camera pipeline.
+
+Signed-off-by: Richard Acayan <mailingradian@gmail.com>
+---
+ drivers/media/i2c/lc898219xi.c | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/media/i2c/lc898219xi.c b/drivers/media/i2c/lc898219xi.c
+index 1516524c63cb..6caee91d8948 100644
+--- a/drivers/media/i2c/lc898219xi.c
++++ b/drivers/media/i2c/lc898219xi.c
+@@ -142,9 +142,13 @@ static int lc898219xi_set_ctrl(struct v4l2_ctrl *ctrl)
+ 	struct lc898219xi *lc898219xi = container_of(ctrl->handler,
+ 						     struct lc898219xi, ctrls);
+ 
++	pm_runtime_resume_and_get(lc898219xi->sd.dev);
++
+ 	if (ctrl->id == V4L2_CID_FOCUS_ABSOLUTE)
+ 		return lc898219xi_set_dac(lc898219xi, ctrl->val);
+ 
++	pm_runtime_put_autosuspend(lc898219xi->sd.dev);
++
+ 	return 0;
+ }
+ 
+@@ -157,13 +161,11 @@ static int lc898219xi_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
+ 	struct lc898219xi *lc898219xi = sd_to_lc898219xi(sd);
+ 	__v4l2_ctrl_handler_setup(&lc898219xi->ctrls);
+ 
+-	return pm_runtime_resume_and_get(sd->dev);
++	return 0;
+ }
+ 
+ static int lc898219xi_close(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
+ {
+-	pm_runtime_put_autosuspend(sd->dev);
+-
+ 	return 0;
+ }
+ 
+-- 
+2.55.0
+

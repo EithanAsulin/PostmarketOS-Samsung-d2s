@@ -1,0 +1,8 @@
+#!/bin/sh
+
+# explicit recompilation of the hwdb only needed under openrc, since systemd
+# packaging ships a system-wide trigger based on files in /usr/lib/udev
+if ! command -v systemd-hwdb; then
+	udevadm hwdb --update
+fi
+exit 0

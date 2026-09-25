@@ -1,0 +1,30 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Pavel Zakopaylo <zakopaylo2@gmail.com>"
+pkgname=device-xunlong-orangepi-zero3
+pkgdesc="Xunlong Orange Pi Zero 3"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-postmarketos-allwinner
+	postmarketos-base
+	u-boot-sunxi
+"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+3ca77fbb790652e980936a4594a74a167cb33d6eea877041c6e3d749a02d51d7e584dde7d9bd70a7b59f29e9253fce346453712d9a74e08ceda7b2a38eb8b951  deviceinfo
+5269b54efc5ad66dd504fbef54820c88fbbb60301c9504332881b7f40c87b182d7a271be17d7bd8e226eb6638c10acd020135d60f7dd09e511d2296a24e6a320  kernel-cmdline.conf
+"

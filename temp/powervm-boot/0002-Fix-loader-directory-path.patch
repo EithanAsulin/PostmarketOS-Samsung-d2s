@@ -1,0 +1,56 @@
+diff --git a/src/fs.rs b/src/fs.rs
+index e5290ea..af190be 100644
+--- a/src/fs.rs
++++ b/src/fs.rs
+@@ -4,7 +4,7 @@ use alloc::vec::Vec;
+ use crate::disk::{PROMDisk, Partition};
+ 
+ pub trait BootFilesystem {
+-    /// List BLS entries from loaders/entries/*.conf.
++    /// List BLS entries from loader/entries/*.conf.
+     /// Returns (filename_stem, file_content) pairs.
+     fn list_bls_entries(&self) -> Result<Vec<(String, String)>, &'static str>;
+ 
+@@ -17,8 +17,8 @@ type FatPartition = hadris_fat::FatFs<Partition<PROMDisk>>;
+ impl BootFilesystem for FatPartition {
+     fn list_bls_entries(&self) -> Result<Vec<(String, String)>, &'static str> {
+         let entries_dir = self
+-            .open_dir_path("loaders/entries")
+-            .map_err(|_| "failed to open loaders/entries")?;
++            .open_dir_path("loader/entries")
++            .map_err(|_| "failed to open loader/entries")?;
+ 
+         let mut result = Vec::new();
+         for entry in entries_dir.entries() {
+@@ -75,7 +75,7 @@ impl BootFilesystem for IsoPartition {
+     fn list_bls_entries(&self) -> Result<Vec<(String, String)>, &'static str> {
+         let root = self.root_dir();
+ 
+-        let loaders_dir_ref = {
++        let loader_dir_ref = {
+             let mut found = None;
+             for entry in root.iter(self).entries() {
+                 let entry = match entry {
+@@ -86,18 +86,18 @@ impl BootFilesystem for IsoPartition {
+                     continue;
+                 }
+                 let name = entry.display_name();
+-                if name.eq_ignore_ascii_case("loaders") {
++                if name.eq_ignore_ascii_case("loader") {
+                     found = Some(entry.as_dir_ref(self).map_err(|_| "as_dir_ref failed")?);
+                     break;
+                 }
+             }
+-            found.ok_or("loaders directory not found")?
++            found.ok_or("loader directory not found")?
+         };
+ 
+         let entries_dir_ref = {
+-            let loaders_dir = self.open_dir(loaders_dir_ref);
++            let loader_dir = self.open_dir(loader_dir_ref);
+             let mut found = None;
+-            for entry in loaders_dir.entries() {
++            for entry in loader_dir.entries() {
+                 let entry = match entry {
+                     Ok(e) => e,
+                     Err(_) => continue,

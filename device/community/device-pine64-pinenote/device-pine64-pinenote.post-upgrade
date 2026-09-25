@@ -1,0 +1,8 @@
+#!/bin/sh
+
+# create empty waveform firmware so that initial mkinitfs doesn't fail
+if [ ! -d /usr/lib/firmware/rockchip ]; then
+	mkdir -p /usr/lib/firmware/rockchip
+fi
+touch /usr/lib/firmware/rockchip/ebc.wbf
+touch /usr/lib/firmware/rockchip/custom_wf.bin

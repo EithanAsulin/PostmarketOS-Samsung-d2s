@@ -1,0 +1,95 @@
+# Archived: unmaintained
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-realme-x3
+pkgdesc="Realme X3"
+pkgver=6
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	postmarketos-base
+	mkbootimg
+	linux-realme-x3
+	mesa-vulkan-freedreno
+	swclock-offset
+"
+makedepends="devicepkg-dev"
+source="
+	alsa-ucm-conf/HiFi.conf
+	alsa-ucm-conf/x3.conf
+	deviceinfo
+	kernel-cmdline.conf
+	30-gpu-firmware.files
+	51-qcom-sm8150.lua
+	modules-initfs
+"
+
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-nonfree-firmware-openrc:nonfree_firmware_openrc
+	$pkgname-alsa_ucm_conf
+	$pkgname-wireplumber
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="Firmware for GPU, Touchscreen, Audio, Bluetooth, WiFi, etc."
+	depends="
+		firmware-realme-x3
+		msm-modem
+		tqftpserv
+		bootmac
+		alsa-utils
+		"
+
+	install -Dm644 "$srcdir/30-gpu-firmware.files" \
+		 "$subpkgdir/usr/share/mkinitfs/files/30-gpu-firmware.files"
+}
+
+nonfree_firmware_openrc() {
+	install_if="$pkgname-nonfree-firmware=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install"
+	depends="
+		openrc
+		tqftpserv-openrc
+	"
+
+	mkdir -p "$subpkgdir"
+}
+
+alsa_ucm_conf() {
+	install -Dm644 "$srcdir/HiFi.conf" \
+		"$subpkgdir/usr/share/alsa/ucm2/Realme/x3/HiFi.conf"
+
+	install -Dm644 "$srcdir/x3.conf" \
+		"$subpkgdir/usr/share/alsa/ucm2/Realme/x3/x3.conf"
+
+	mkdir -p "$subpkgdir/usr/share/alsa/ucm2/conf.d/sdm845"
+	ln -s ../../Realme/x3/x3.conf \
+		"$subpkgdir/usr/share/alsa/ucm2/conf.d/sdm845/Realme X3.conf"
+}
+
+wireplumber() {
+	install -Dm644 "$srcdir/51-qcom-sm8150.lua" \
+		-t "$subpkgdir/usr/share/wireplumber/main.lua.d"
+}
+
+sha512sums="
+da5509da4b7f0dbf5e2c95375b334a750cef620f8ea77c17c8dde611134bdf474b4e10723f6d656b42843a727e395d352dd0578f1317fcbdf623f4533273fb49  HiFi.conf
+28d8dadac648f007d6e554684200bb1c0fb699a472e8459802691bbbadd67458626969d3d418ae145b94bedb3e83d73e8403206c0b4b509a6d3c541b6b733a7a  x3.conf
+968a79cec6d5d0ad54d30c99cb63aab42c3d53b08682826d6beb81e17ab77b2ae85bf4ebef2c4fadb510d1ea18e9b4d60fe02889329806ffe252e7571723fbda  deviceinfo
+a230e30a05453491d41ba4a6a4c504e3dbe7b630402ac2b837aa5d977c2d38c73c93fb198e8aff892a12005de8d2355593fe2fae8e3e9412418efb1d32250022  kernel-cmdline.conf
+103c2e2f773cf5c400ff7b8cecd761a23c94be2f78397a10aea255f1d7f28dac6755c6e13c95c539b169bb6d45066ab773b0147a38056fe20c48e61711fc95e4  30-gpu-firmware.files
+a2b2088b7bce7c4e2b946d0c13af70ea664e318eecafb2af85804d45dbbc2fca0cdbadbc9095af5f15a504fa5e86a4222d0444349976daee81b785e1a2cec674  51-qcom-sm8150.lua
+baf3e2c76f3a15e4d61deacfa997bc332614d0b2be2c0285c81188c0aafa9449fa29de39d3bd50580c59c8ef73937c0753522c0db1ecfe741099c66c39293891  modules-initfs
+"

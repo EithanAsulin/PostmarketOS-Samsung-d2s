@@ -1,0 +1,63 @@
+From 8d80a591d67e75c0ec10320fdc127ab40e72dc8a Mon Sep 17 00:00:00 2001
+From: Samuel Dionne-Riel <samuel@dionne-riel.com>
+Date: Thu, 9 Jul 2020 02:50:29 -0400
+Subject: [PATCH 5/8] cli: Clear ctrl+c before running a command
+
+This fixes an issue where:
+
+With an environment like so:
+
+    bootmenu_0=Default U-Boot boot=run distro_bootcmd; $menucmd -1
+
+  * Running bootmenu
+  * Running the option
+  * Cancelling using CTRL-C
+
+Would show the menu as expected, but running *any* command
+post-cancellation would spuriously exit in unexplainable ways.
+---
+ common/cli.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/common/cli.c b/common/cli.c
+index 4694a35cd0e..75b0a2c0a40 100644
+--- a/common/cli.c
++++ b/common/cli.c
+@@ -57,6 +57,9 @@ int run_command(const char *cmd, int flag)
+ 
+ 		if (flag & CMD_FLAG_ENV)
+ 			hush_flags |= FLAG_CONT_ON_NEWLINE;
++
++		clear_ctrlc();		/* forget any previous Control C */
++
+ 		return parse_string_outer(cmd, hush_flags);
+ 	}
+ 	/*
+@@ -93,6 +96,8 @@ int run_command_repeatable(const char *cmd, int flag)
+ 	int ret;
+ 
+ 	if (use_hush_old()) {
++		clear_ctrlc();		/* forget any previous Control C */
++
+ 		ret = parse_string_outer(cmd,
+ 					 FLAG_PARSE_SEMICOLON
+ 					 | FLAG_EXIT_FROM_LOOP);
+@@ -146,6 +151,8 @@ int run_command_list(const char *cmd, int len, int flag)
+ 	}
+ #ifdef CONFIG_HUSH_PARSER
+ 	if (use_hush_old()) {
++		clear_ctrlc();		/* forget any previous Control C */
++
+ 		rcode = parse_string_outer(buff, FLAG_PARSE_SEMICOLON);
+ 	} else {
+ 		rcode = parse_string_outer_modern(buff, FLAG_PARSE_SEMICOLON);
+@@ -339,4 +346,4 @@ void cli_init(void)
+ 
+ 	if (CONFIG_IS_ENABLED(VIDEO_ANSI))
+ 		printf(ANSI_CURSOR_SHOW "\n");
+-}
++}
+\ No newline at end of file
+-- 
+2.54.0
+

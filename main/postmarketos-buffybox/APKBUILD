@@ -1,0 +1,115 @@
+maintainer="Aster Boese <asterboese@mailbox.org>"
+pkgname=postmarketos-buffybox
+pkgver=1
+pkgrel=0
+pkgdesc="postmarketOS-specific files for buffybox programs"
+url="https://postmarketos.org"
+arch="noarch"
+license="GPL-3.0-or-later"
+subpackages="
+	$pkgname-f0rmz
+	$pkgname-f0rmz-fbforcerefresh:f0rmz_fbforcerefresh
+	$pkgname-iskey
+	$pkgname-unl0kr
+	$pkgname-unl0kr-fbforcerefresh:unl0kr_fbforcerefresh
+	"
+source="
+	10-fb-force-refresh.conf
+	f0rmz.conf
+	f0rmz.files
+	unlock.sh
+	unl0kr.conf
+	unl0kr.files
+	"
+# check: no tests
+options="!check"
+
+package() {
+	touch f0rmz iskey unl0kr
+	install -Dm644 f0rmz iskey unl0kr \
+		-t "$pkgdir"/usr/share/mkinitfs-triggers
+
+	install -Dm644 "$srcdir"/f0rmz.conf \
+		-t "$pkgdir"/usr/share/f0rmz
+
+	install -Dm644 "$srcdir"/f0rmz.files \
+		"$pkgdir"/usr/share/mkinitfs/files-extra/30-f0rmz.files
+
+	install -Dm644 "$srcdir"/unl0kr.conf \
+		-t "$pkgdir"/usr/share/unl0kr/
+
+	install -Dm644 "$srcdir"/10-fb-force-refresh.conf \
+		-t "$pkgdir"/usr/share/f0rmz/f0rmz.conf.d/
+
+	install -Dm644 "$srcdir"/10-fb-force-refresh.conf \
+		-t "$pkgdir"/usr/share/unl0kr/unl0kr.conf.d/
+
+	install -Dm755 "$srcdir"/unl0kr.files \
+		"$pkgdir"/usr/share/mkinitfs/files-extra/30-unl0kr.files
+
+	install -Dm755 "$srcdir"/unlock.sh \
+		"$pkgdir"/usr/bin/fde-unlock
+}
+
+f0rmz() {
+	pkgdesc="$pkgdesc (f0rmz)"
+	install_if="f0rmz postmarketos-base"
+	depends=
+	replaces="f0rmz"
+
+	amove usr/share/f0rmz/f0rmz.conf
+	amove usr/share/mkinitfs-triggers/f0rmz
+	amove usr/share/mkinitfs/files-extra/30-f0rmz.files
+}
+
+f0rmz_fbforcerefresh() {
+	pkgdesc="force refresh quirk config (f0rmz)"
+	depends="f0rmz"
+	provides="f0rmz-fbforcerefresh=9999.$pkgver-r$pkgrel"
+	replaces="f0rmz-fbforcerefresh"
+
+	amove usr/share/f0rmz/f0rmz.conf.d/
+}
+
+iskey() {
+	pkgdesc="$pkgdesc (iskey)"
+	install_if="iskey postmarketos-base"
+	depends=
+	replaces="iskey"
+
+	amove usr/share/mkinitfs-triggers/iskey
+}
+
+unl0kr() {
+	pkgdesc="$pkgdesc (unl0kr)"
+	depends="unl0kr"
+	install_if="unl0kr postmarketos-base"
+	provides="
+		postmarketos-fde-unlocker=$pkgver-r$pkgrel
+		osk-sdl=$pkgver-r$pkgrel
+		"
+	replaces="unl0kr"
+
+	amove usr/bin/fde-unlock
+	amove usr/share/mkinitfs-triggers/unl0kr
+	amove usr/share/mkinitfs/files-extra/30-unl0kr.files
+	amove usr/share/unl0kr/unl0kr.conf
+}
+
+unl0kr_fbforcerefresh() {
+	pkgdesc="force refresh quirk config (unl0kr)"
+	depends="unl0kr"
+	provides="unl0kr-fbforcerefresh=9999.$pkgver-r$pkgrel"
+	replaces="unl0kr-fbforcerefresh"
+
+	amove usr/share/unl0kr/unl0kr.conf.d/
+}
+
+sha512sums="
+f700af3145b79d1ef9edfb22982899b25cabfb212f9620dcbd3a2e6f44b5ad591e0a66056c6fcd66c3fde89a2b5f551e8a8fe2e65cf0e2a48adec57c027d7825  10-fb-force-refresh.conf
+7155c2f95dcf3716c0f392cf5717e96f1414c383a1f7c2ed30a1f8518dfe0b17c3c0e0e93f6476a342504aa855404099e2f5444eeb099023491c9a9a26fa3d90  f0rmz.conf
+a7974c1ef4ba7050ab0e1d05d9a2ca15ef8bf1a638f21df6a5eb004003a8a33e34ecb2808e8b5125bc980d98b2c26f6ad66ee93b2ff2d3ee20045d8458b7cfcf  f0rmz.files
+5386f434cd4f1fb9e0d561a8689e5e85d6a8b3c562823122c082d4932d2fb0ad4edcd635f14f0c61e5c8b5e53648c9937b042409c21683007700faea8894c750  unlock.sh
+7155c2f95dcf3716c0f392cf5717e96f1414c383a1f7c2ed30a1f8518dfe0b17c3c0e0e93f6476a342504aa855404099e2f5444eeb099023491c9a9a26fa3d90  unl0kr.conf
+685e28f7a5a05205c2c9f26f7d8b0b729a3738e342e590e5332485e2ac75161340c132125436503c5a776326fc657589c3ee074b9a3df60dd0813076732b704a  unl0kr.files
+"

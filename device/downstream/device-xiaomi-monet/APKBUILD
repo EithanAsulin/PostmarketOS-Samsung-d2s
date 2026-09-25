@@ -1,0 +1,35 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Augustas Stankevicius <augustas.stankevicius@gmail.com>"
+pkgname=device-xiaomi-monet
+pkgdesc="Xiaomi Mi 10 Lite 5G"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-xiaomi-monet
+	mkbootimg
+	msm-firmware-loader
+	postmarketos-base
+	soc-qcom
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+d84698d74517e26e579156310e18114d615f4e9b7f08540e045300efb323ce68e0addb12369bd5b6ff9552bacb38aa167e03cab5adaa18dc4c35d58687fb9740  deviceinfo
+0efce37855d0df820944556bb083b57eb0df900442ee63120a4bcdcbe4be63abb07ea068002c7bbba5158b0ffd64c7875966e4f2ed4df71c810f5bd1493b9c30  kernel-cmdline.conf
+"

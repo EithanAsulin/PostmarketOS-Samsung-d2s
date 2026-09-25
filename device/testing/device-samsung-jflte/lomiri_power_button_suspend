@@ -1,0 +1,93 @@
+#!/bin/sh
+
+### rpowerd doesn't support mainline linux very well
+### if it detects PM_SUSPEND kernel flag (/sys/power/autosleep)
+### it tries to do some Android-style sleep which is wrong on mainline Linux
+### This is a quirk script until I make a PR for rpowerd to better support mainline Linux
+
+display_service=com.lomiri.SystemCompositor.Display
+display_path=/com/lomiri/SystemCompositor/Display
+display_interface=com.lomiri.SystemCompositor.Display
+restart_repowerd=0
+wake_press_deadline=0
+ignore_release=0
+
+[ "$(id -u)" -eq 0 ] || {
+	echo "Run as root" >&2
+	exit 1
+}
+
+for command in evtest dbus-send rc-service; do
+	command -v "$command" >/dev/null 2>&1 || {
+		echo "Missing command: $command" >&2
+		exit 1
+	}
+done
+
+find_power_event() {
+	for name_file in /sys/class/input/event*/device/name; do
+		read -r name < "$name_file"
+		[ "$name" = pmic8xxx_pwrkey ] || continue
+		event_name=${name_file#/sys/class/input/}
+		event_name=${event_name%%/*}
+		echo "/dev/input/$event_name"
+		return
+	done
+	return 1
+}
+
+display() {
+	dbus-send --system --type=method_call \
+		--dest="$display_service" "$display_path" \
+		"$display_interface.$1" string:all
+}
+
+cleanup() {
+	printf off > /sys/power/autosleep
+	[ "$restart_repowerd" -eq 1 ] && rc-service repowerd start
+}
+
+trap cleanup EXIT INT TERM
+
+if rc-service repowerd status >/dev/null 2>&1; then
+	restart_repowerd=1
+	rc-service repowerd stop
+fi
+
+printf off > /sys/power/autosleep
+display TurnOn
+
+power_event=$(find_power_event) || {
+	echo "Could not find pmic8xxx_pwrkey input device" >&2
+	exit 1
+}
+
+echo "Monitoring $power_event"
+evtest "$power_event" |
+while read -r line; do
+	case "$line" in
+		*"type 1 (EV_KEY), code 116 (KEY_POWER), value 1"*)
+			now=$(date +%s)
+			if [ "$now" -le "$wake_press_deadline" ]; then
+				ignore_release=1
+			else
+				ignore_release=0
+			fi
+			;;
+		*"type 1 (EV_KEY), code 116 (KEY_POWER), value 0"*)
+			if [ "$ignore_release" -eq 1 ]; then
+				ignore_release=0
+				wake_press_deadline=0
+				continue
+			fi
+
+			display TurnOff
+			sleep 1
+			printf mem > /sys/power/state
+			display TurnOn
+
+			# Ignore only a wake-key press read immediately after resume.
+			wake_press_deadline=$(($(date +%s) + 1))
+			;;
+	esac
+done

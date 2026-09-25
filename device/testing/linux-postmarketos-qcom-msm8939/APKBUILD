@@ -1,0 +1,72 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/msm8939_defconfig
+maintainer="Stefan Hansson <newbyte@postmarketos.org>"
+_flavor="postmarketos-qcom-msm8939"
+pkgname=linux-$_flavor
+pkgver=5.15_git20220114
+pkgrel=4
+pkgdesc="Mainline kernel fork for Qualcomm MSM8939 devices"
+arch="aarch64"
+_carch="arm64"
+url="https://gitlab.com/msm8939-mainline/linux"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-nftables
+	"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	findutils
+	flex
+	openssl-dev
+	perl
+	postmarketos-installkernel
+	"
+provides="linux-huawei-kiwi=$pkgver-r$pkgrel" # for backwards compatibility
+replaces="linux-huawei-kiwi"
+
+_repository="linux"
+_tag="5.15-v1"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_tag.tar.gz::$url/-/archive/$_tag/linux-$_tag.tar.gz
+	0001-USB-gadget-detect-too-big-endpoint-0-requests.patch
+	0002-USB-gadget-zero-allocate-endpoint-0-buffers.patch
+	$_config
+"
+builddir="$srcdir/$_repository-$_tag"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$CARCH" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+	make zinstall modules_install dtbs_install \
+		ARCH="$_carch" \
+		INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_MOD_PATH="$pkgdir"/usr \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs \
+		V=1
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+sha512sums="
+9bd3481d6c9ecc213e9fa37b88366130b8b74b2eaa8625294031ee883232e5e20b3b47053dad8642eeb8fb1bad79cb70232ba6be46476fb2b81ee1576890b5a8  linux-postmarketos-qcom-msm8939-5.15-v1.tar.gz
+07819b7fbbff495aeb43816afe4121491a15cadda9d107ceabf089d17c71dc25b2ad049d85904859a798288192587747d43a7d0273282f6d7387ceb7a1265418  0001-USB-gadget-detect-too-big-endpoint-0-requests.patch
+4fa5e6b6c6f8cb54438fe5cd90b686e8ee4dfb632a4578d0166818bd370c76524dbeaf206e2be1edf3cb084ca896e09770775791c350d12aec57bd4838f1e814  0002-USB-gadget-zero-allocate-endpoint-0-buffers.patch
+9ee8133743394f48a91d2871c67816d5f2968dc4b8b3a4d238a5d56e86afa74151b23b02fdf88845eb33da913c97db4da1d547f30d835ae5556e54af14d58cf3  config-postmarketos-qcom-msm8939.aarch64
+"

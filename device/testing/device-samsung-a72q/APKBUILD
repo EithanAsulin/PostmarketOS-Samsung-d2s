@@ -1,0 +1,65 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Erikas Bitovtas <xerikasxx@gmail.com>"
+pkgname=device-samsung-a72q
+pkgver=1
+pkgrel=1
+pkgdesc="Samsung Galaxy A72"
+url="https://postmarketos.org"
+arch="aarch64"
+license="MIT"
+depends="
+	alsa-ucm-conf-qcom-sm7125
+	android-tools-mkbootimg
+	firmware-samsung-a72q
+	hexagonrpcd>=0.3.2-r3
+	linux-postmarketos-qcom-sm7125
+	make-dynpart-mappings
+	postmarketos-base
+	swclock-offset
+	systemd-boot
+"
+makedepends="devicepkg-dev"
+install="
+	$pkgname-openrc.post-install
+	$pkgname-openrc.post-upgrade
+"
+subpackages="
+	$pkgname-openrc
+	$pkgname-udev
+"
+source="
+	81-libssc-samsung-a72q.rules
+	deviceinfo
+	hexagonrpcd-adsp-sensorspd.conf
+	kernel-cmdline.conf
+	modules-initfs
+"
+options="!archcheck !check"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -Dm644 "$srcdir"/81-libssc-samsung-a72q.rules \
+		-t "$pkgdir"/usr/lib/udev/rules.d/
+	install -Dm644 "$srcdir"/hexagonrpcd-adsp-sensorspd.conf \
+		-t "$pkgdir"/usr/share/hexagonrpcd/
+}
+
+openrc() {
+	default_openrc
+	depends="hexagonrpcd-openrc"
+
+	mkdir -p "$subpkgdir"
+}
+
+sha512sums="
+2c16ba75e0077b2b1eaefa4c73b287475505a1aeb291ec29316d41cc094277320f9d2aaabfd91eb1dc0f488ab2d61a94faef16e7afe0f1e226779113761b9a37  81-libssc-samsung-a72q.rules
+c583885c0ba88cc8395440d0d15feb7febabd0cb87f2bd08e0a728b561df42e7d7d4dd888a95eb466d420df02c348376a8a55eda4ad3a7704660765a50a7107b  deviceinfo
+766c6ac638feb85dbac7eb9987d650ee9c8046114399a21de25e8f6776df8c5121c63586725708f1cd857b9ca464f87e76a0457d756c7a88b7c1710bbab20af9  hexagonrpcd-adsp-sensorspd.conf
+97e88eaa9b8e7989a20d2572479fe5d1fe0284de862da11c91b1f347099d5704673837db01a6b0c289fee0a2d7236f64fba31fd6001475f957c23203e34fd6fb  kernel-cmdline.conf
+c056217e34e0411ae7a780fb5e0a3a7721afdd6c0bf2c926768dd07695690f47fb145ac076d8ca0db4647d82494ddd0668af730eeb57e9846ab5e53bee8f1123  modules-initfs
+"

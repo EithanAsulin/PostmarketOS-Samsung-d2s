@@ -1,0 +1,11 @@
+#!/usr/sbin/nft -f
+
+table inet filter {
+	chain input {
+
+		# drop all incoming connections on wwan
+		iifname "wwan*" drop comment "drop all connections on wwan"
+		iifname "qmapmux*" drop comment "drop all connections on qmapmux"
+
+	}
+}

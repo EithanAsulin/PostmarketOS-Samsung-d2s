@@ -1,0 +1,26 @@
+# Co-Maintainer: Joel Selvaraj <foss@joelselvaraj.com>
+maintainer="Casey Connolly <kcxt@postmarketos.org>"
+pkgname=alsa-ucm-conf-sdm845
+pkgver=3
+pkgrel=0
+pkgdesc="ALSA UCM configuration for Qualcomm SDM845 devices"
+url="https://gitlab.com/sdm845-mainline/alsa-ucm-conf"
+arch="aarch64"
+license="BSD-3-Clause"
+provides="alsa-ucm-conf=0.$pkgver-r$pkgrel" # versioned provides need to be below default version
+replaces="soc-qcom-sdm845-ucm"
+_commit="1b8d290e5aa2ca16b7f2fa8d74910ad19ef88b3a"
+source="$pkgname-$_commit.tar.gz::https://gitlab.com/sdm845-mainline/alsa-ucm-conf/-/archive/$_commit/alsa-ucm-conf-$_commit.tar.gz"
+options="!check"
+builddir="$srcdir/$pkgname-$_commit"
+
+package() {
+	# install audio config files
+	mkdir -p "$pkgdir"/usr/share/alsa
+	cp -r "$srcdir/alsa-ucm-conf-$_commit"/ucm2 \
+		"$pkgdir"/usr/share/alsa/
+}
+
+sha512sums="
+6efa31efc346bdd2c6b07b56ee9b70374745fc4cb8b1585a5125d4674a67cb88ee32f8ae61cad33f2ba4cb54d884d48450fc7e6bcddef8aab7837ff089dad26d  alsa-ucm-conf-sdm845-1b8d290e5aa2ca16b7f2fa8d74910ad19ef88b3a.tar.gz
+"

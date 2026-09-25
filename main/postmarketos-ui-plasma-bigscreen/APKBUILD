@@ -1,0 +1,66 @@
+# Reference: https://postmarketos.org/uipkg
+maintainer="Bart Ribbers <bribbers@disroot.org>"
+pkgname=postmarketos-ui-plasma-bigscreen
+pkgver=3
+pkgrel=0
+_commit_configs="a8bd93e279c222be6058ef46b065c11e88aa8400"
+pkgdesc="(Wayland) 10-feet variant of Plasma, made for big screen TVs"
+url="https://plasma-bigscreen.org"
+# armhf blocked by qt6-qtdeclarative -> plasma-bigscreen
+# x86, armv7, riscv64 and s390x blocked by qt6-qtwebengine -> plasma-bigscreen
+arch="all !armhf !armv7 !x86 !riscv64 !s390x"
+license="GPL-3.0-or-later"
+depends="
+	plasma-bigscreen
+	postmarketos-base-ui-plasma
+	postmarketos-base-ui-tinydm
+	tinydm
+	"
+_pmb_recommends="
+	aura-browser
+	breeze-icons
+	jellyfin-desktop
+	nymphcast
+	plank-player
+	"
+install="
+	$pkgname.post-install
+	$pkgname.post-upgrade
+	"
+replaces="jellyfin-desktop"
+source="$pkgname-$_commit_configs.tar.gz::https://invent.kde.org/plasma-bigscreen/bigscreen-image-settings/-/archive/$_commit_configs/bigscreen-image-settings-$_commit_configs.tar.gz
+	nymphcast.desktop
+	org.jellyfin.JellyfinDesktop.desktop
+	"
+options="!check pmb:default-systemd pmb:support-systemd" # No tests for a meta package
+
+[ "$CARCH" != "loongarch64" ] && subpackages="$subpackages $pkgname-extras" # kodi
+
+package() {
+	install -Dm644 -t "$pkgdir"/etc/xdg/autostart \
+		"$srcdir"/nymphcast.desktop
+
+	# defaults to fullscreen TV mode
+	install -Dm644 -t "$pkgdir"/usr/share/applications/ \
+		"$srcdir"/org.jellyfin.JellyfinDesktop.desktop
+
+	install -dm755 "$pkgdir"/etc/skel
+	mv "$srcdir"/bigscreen-image-settings-"$_commit_configs"/etc/xdg/* "$pkgdir"/etc/xdg
+	mv "$srcdir"/bigscreen-image-settings-"$_commit_configs"/etc/skel/.config "$pkgdir"/etc/skel/
+}
+
+extras() {
+	pkgdesc="Meta package for additional Plasma bigscreen apps"
+	install_if="$pkgname=$pkgver-r$pkgrel postmarketos-duranium"
+	_pmb_recommends="
+		kodi
+		"
+
+	mkdir -p "$subpkgdir"
+}
+
+sha512sums="
+a3b877e15f06078c4ac6017d2b6ce57902d23d40c0fbbc8e7ad0af8f5b9ddc802e8e353ee4f48a07315dd2d1fd1b34ed3bfc4235649ba27729cbfd67dad3675a  postmarketos-ui-plasma-bigscreen-a8bd93e279c222be6058ef46b065c11e88aa8400.tar.gz
+04b0dc1385072b5e9004068594c110678ed9efd6254fd98dee302524e0edf139f936de849d80253301552f9927409a8b0cf5ad32cdb9f7861ef0e72787610d3c  nymphcast.desktop
+bdd8aa38fba62f152f2dd31e1c5170be8c15807334069dd074ef4285a21499ed79969cd4c4a14f42f2e7ff6fc069291110b0d59b6f2b8cd59231fd9367ca5940  org.jellyfin.JellyfinDesktop.desktop
+"

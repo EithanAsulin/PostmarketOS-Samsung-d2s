@@ -1,0 +1,24 @@
+From 38c0b96c7b8b636f245faac5bfae7859a2e0a81d Mon Sep 17 00:00:00 2001
+From: Aelin <aelin@postmarketos.org>
+Date: Sun, 24 May 2026 03:00:52 +0200
+Subject: [PATCH] Don't use bundled cross toolchain
+
+---
+ Makefile | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/Makefile b/Makefile
+index 735496c9..0880e9d5 100755
+--- a/Makefile
++++ b/Makefile
+@@ -255,7 +255,6 @@ SUBARCH := $(shell uname -m | sed -e s/i.86/x86/ -e s/x86_64/x86/ \
+ # Default value for CROSS_COMPILE is not to prefix executables
+ # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
+ ARCH            ?= arm64
+-CROSS_COMPILE	?= $(srctree)/toolchain/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin/aarch64-linux-android-
+ # Architecture as present in compile.h
+ UTS_MACHINE 	:= $(ARCH)
+ SRCARCH 	:= $(ARCH)
+-- 
+2.54.0
+

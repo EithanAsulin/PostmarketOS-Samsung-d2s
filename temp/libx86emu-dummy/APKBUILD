@@ -1,0 +1,19 @@
+# Temp: Workaround for pmbootstrap not supporting conditional dependencies
+maintainer="Aster Boese <asterboese@mailbox.org>"
+pkgname=libx86emu-dummy
+pkgver=1
+pkgrel=0
+pkgdesc="Dummy package for libx86emu for arches that it doesn't support"
+url="https://postmarketos.org"
+# This is only needed for arches where the package doesn't exist
+arch="all !x86 !x86_64"
+license="MIT"
+# Has to be versioned or else apk-tools will error stating that virtual
+# packages with only one provider should be directly depended upon
+provides="libx86emu=$pkgver-r$pkgrel libx86emu-dev=$pkgver-r$pkgrel"
+# check: no tests
+options="!check"
+
+package() {
+	mkdir -p "$pkgdir"
+}

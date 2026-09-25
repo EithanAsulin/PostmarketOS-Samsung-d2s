@@ -1,0 +1,62 @@
+# Forked from Alpine to remove patch expecting udevadm in sbin. Drop after bin-merge
+maintainer="Aster Boese <asterboese@mailbox.org>"
+pkgname=hwinfo
+_pkgver=25.4
+pkgver=9999.$_pkgver
+pkgrel=0
+pkgdesc="Hardware information tool"
+url="https://github.com/openSUSE/hwinfo"
+arch="all"
+license="GPL-2.0-or-later"
+makedepends="flex perl linux-headers util-linux-dev libx86emu-dev"
+subpackages="$pkgname-dev $pkgname-doc $pkgname-libs"
+source="$pkgname-$_pkgver.tar.gz::https://github.com/openSUSE/hwinfo/archive/$_pkgver.tar.gz
+	respect-flags.patch
+	"
+options="!check !pmb:crossdirect"  # no tests provided
+builddir="$srcdir/$pkgname-$_pkgver"
+
+export HWINFO_VERSION=$_pkgver
+
+build() {
+	# HACK: print the "check_hd" program log, so pmbootstrap doesn't kill
+	# the build after printing no output for 15 minutes. As mentioned below
+	# this takes forever, and it is worse when running through QEMU.
+	tail -F src/ids/hd.log &
+	local tail_pid=$!
+
+	# Build full and tiny static libraries.
+	#make tinystatic  # FIXME: fails
+	# this takes forever but it's not stuck
+	make -j1 static
+	cp src/libhd*.a .
+	make clean
+
+	# Build full shared library.
+	make -j1 shared LIBDIR=/usr/lib
+
+	# Avoid "umount: can't unmount …/chroot_native/dev: Resource busy"
+	kill $tail_pid
+}
+
+package() {
+	make install \
+		LIBDIR=/usr/lib \
+		DESTDIR="$pkgdir"
+
+	rmdir "$pkgdir"/sbin "$pkgdir"/usr/lib || true
+
+	install -m 644 -t "$pkgdir"/usr/lib/ libhd.a
+	#install -m 644 -t "$pkgdir"/usr/lib/ libhd_tiny.a  # FIXME: disabled above
+
+	mkdir -p "$pkgdir"/usr/share/man/man1
+	cp doc/*.1 "$pkgdir"/usr/share/man/man1/
+
+	mkdir -p "$pkgdir"/usr/share/man/man8
+	cp doc/*.8 "$pkgdir"/usr/share/man/man8/
+}
+
+sha512sums="
+0d850a076ad23f8ae35144b3552e16c86ff3ae7d0c0b56f9aa535f1163c6d1ecec5cdd72004f8b65c0f8772f8330c96c4ca26ac38576b1065a61abb83b227722  hwinfo-25.4.tar.gz
+2016f76bdfd65fb9b8f331ed82d6e5a1a85ab003615fe6815c3b41127398ae25fedd83abada9930dcbc9409fda69cf701ebdc5f12874e518784e194fcf4a0ff8  respect-flags.patch
+"

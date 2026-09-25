@@ -1,0 +1,38 @@
+# Reference: https://postmarketos.org/uipkg
+# Co-Maintainer: Ferass El Hafidi <funderscore@postmarketos.org>
+maintainer="Alexey Minnekhanov <alexeymin@minlexx.ru>"
+pkgname=postmarketos-ui-fbkeyboard
+pkgver=9
+pkgrel=0
+pkgdesc="Plain framebuffer console with touchscreen keyboard support"
+url="https://github.com/bakonyiferenc/fbkeyboard"
+arch="all"
+license="GPL-3.0-or-later"
+depends="
+	fbkeyboard
+	postmarketos-base-ui
+	postmarketos-base-ui-audio
+	postmarketos-base-ui-networkmanager
+	"
+install="$pkgname-openrc.post-install $pkgname-openrc.pre-deinstall $pkgname-openrc.post-upgrade"
+subpackages="$pkgname-openrc $pkgname-systemd"
+source="fbkeyboard.init fbkeyboard.service"
+options="!check pmb:default-openrc pmb:support-openrc pmb:support-systemd" # No tests
+
+package() {
+	install -Dm755 "$srcdir"/fbkeyboard.init "$pkgdir"/etc/init.d/fbkeyboard
+	install -Dm644 "$srcdir"/fbkeyboard.service "$pkgdir"/usr/lib/systemd/system/fbkeyboard.service
+}
+
+openrc() {
+	default_openrc
+	depends="
+		openrc
+		networkmanager-openrc
+		"
+}
+
+sha512sums="
+bed2c48abfac7cc9bc16fb16cd3ae3a7048121d2867b961458f0d3a9520e16598c8115a7b00808bded64904956aea445fa31a3106c52bab87cfba3420be309b8  fbkeyboard.init
+04559160fde8a93db72c2fc88890f61cb16732cdf5c31a380ea310d6c5a4c8d0b711c62f78e46f9871528187049618a116eff2c3a4a5555297349a3a5ec0985b  fbkeyboard.service
+"

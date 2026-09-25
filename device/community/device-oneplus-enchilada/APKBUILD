@@ -1,0 +1,82 @@
+# Reference: <https://postmarketos.org/devicepkg>
+# Co-Maintainer: DrRac27 <drrac27@riseup.net>
+maintainer="Casey Connolly <kcxt@postmarketos.org>"
+pkgname=device-oneplus-enchilada
+pkgdesc="OnePlus 6"
+pkgver=30
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf-sdm845
+	firmware-oneplus-sdm845>=9
+	firmware-oneplus-sdm845-sensors
+	hexagonrpcd>=0.3.2-r3
+	linux-postmarketos-qcom-sdm845
+	mkbootimg
+	postmarketos-base
+	soc-qcom
+	soc-qcom-modem
+	soc-qcom-qbootctl
+	systemd-boot
+	unl0kr-fbforcerefresh
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	hexagonrpcd.confd
+	modules-initfs
+	q6voiced.conf
+	80-device-oneplus-enchilada.preset
+"
+install="
+	$pkgname-openrc.post-install
+	$pkgname-openrc.post-upgrade
+	"
+subpackages="
+	$pkgname-pmtest
+	$pkgname-openrc
+	$pkgname-systemd
+"
+replaces="device-oneplus-enchilada-nonfree-firmware"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -Dm644 "$srcdir"/q6voiced.conf \
+		-t "$pkgdir"/usr/share/q6voiced/
+	install -Dm644 "$srcdir"/hexagonrpcd.confd \
+		"$pkgdir"/usr/share/hexagonrpcd/hexagonrpcd-sdsp.conf
+	install -Dm644 -t "$pkgdir"/usr/lib/systemd/system-preset \
+		"$srcdir"/80-device-oneplus-enchilada.preset
+}
+
+openrc() {
+	default_openrc
+	depends="hexagonrpcd-openrc"
+
+	mkdir -p "$subpkgdir"
+}
+
+pmtest() {
+	depends="postmarketos-test-bootrr qrtr firmware-oneplus-sdm845 postmarketos-test-unl0kr"
+	install_if="$pkgname=$pkgver-r$pkgrel postmarketos-mkinitfs-hook-ci"
+
+	mkdir -p "$subpkgdir"
+}
+
+sha512sums="
+73088bcff276b1e2f03efc3776be4c7d9a367ef898031686b88e5a853f8910373eb9f77b8e035d58149947929e908e745f255fbd24d02bed7bdc816afd703d2b  deviceinfo
+f16e550f623522be29027954c69a956eb6543f2f608a4c6b37c1a3983403a3edaa24e70aa42dbe88e76216991aba867b48c7341c9b8a81f675902d6223937b51  kernel-cmdline.conf
+c8d3026e9f803ea823e35f83dab66fa8545e99af9655576476c194567113084d78200feab46f84983a2dad608ca55c0a4a66e36406c6d64023c0aec59307d146  hexagonrpcd.confd
+1bc047142cfaec31238a0bd594f7a0a412c5a82f55f413ef728f49bf467e2c4f2901593ade55f384ec100db27a7011665ed511b6cf40e64607a610548a9859fc  modules-initfs
+fe9871c325a38c0cadc9631870801ec15ab9f5b786ee854325b93eb3d23e7d8b1ac4f1075572ffcd225d8ec514dec09b986972ddff12a89260c0218af6de7887  q6voiced.conf
+a72de3293bc59e0afa0114d74030e4e725959f7619879ab616b0164595d57033affc3d1d4ccc9d8bc191b177a4c1593c1ad0a19fe7e452c3e0c9c847135c1102  80-device-oneplus-enchilada.preset
+"

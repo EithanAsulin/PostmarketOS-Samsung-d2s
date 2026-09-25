@@ -1,0 +1,83 @@
+maintainer="Aster Boese <asterboese@mailbox.org>"
+pkgname=linux-postmarketos-mediatek-mt6763
+pkgver=6.8_git20260808
+pkgrel=0
+_commit="e9af4b4e53e9aaed49da45b8b6cc0a39d5bac91c"
+pkgdesc="Mainline Kernel fork for MT6763-based devices"
+arch="aarch64"
+url="https://gitlab.com/mtk-mainline/mt6763/linux"
+license="GPL-2.0-only"
+makedepends="
+	android-tools-mkdtboimg
+	bison
+	clang
+	elfutils-dev
+	findutils
+	flex
+	linux-headers
+	lld
+	llvm
+	openssl-dev
+	pahole
+	perl
+	postmarketos-installkernel
+	python3
+	zstd
+	"
+source="
+	https://codeberg.org/JustSoup321/linux-mediatek-mt6763/archive/$_commit.tar.gz
+	config-${pkgname#linux-}.$arch
+	"
+options="
+	!check
+	!strip
+	!tracedeps
+	pmb:cross-native
+	"
+builddir="$srcdir/linux-mediatek-mt6763"
+
+_carch="arm64"
+
+# Used internally by pmbootstrap. Don't touch.
+# TODO: Remove once minimum default pmbootstrap version supports
+# kernel packages without '_flavor' and '_config'.
+_config="$config-${pkgname#linux-}.$arch"
+_flavor="${pkgname#linux-}"
+
+prepare() {
+	default_prepare
+	cp "$srcdir"/config-"${pkgname#linux-}"."$arch" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1))"-"${pkgname#linux-}"
+	mkdtboimg create "$builddir"/dtbo.img \
+		"$builddir"/arch/arm64/boot/dts/mediatek/mt6763v-gigaset-gs290-minimal-dtbo.dtb
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+
+	make dtbs_install modules_install zinstall \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs \
+		INSTALL_MOD_PATH="$pkgdir"/usr \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_PATH="$pkgdir"/boot
+
+	rm -f "$pkgdir"/usr/lib/modules/*/build "$pkgdir"/usr/lib/modules/*/source
+
+	install -Dm644 "$builddir"/include/config/kernel.release \
+		-t "$pkgdir"/usr/share/kernel/"${pkgname#linux-}"/
+
+	install -Dm644 "$builddir"/dtbo.img \
+		-t "$pkgdir"/boot/
+}
+
+sha512sums="
+3c13b3882daf8e9d48257ef44184048cd27ad06e4f1336bd216fa73b6eb5a9334642784b14e179059ee10aa49d89b2b7248c7f69d013dfde92f1a38ce5985579  e9af4b4e53e9aaed49da45b8b6cc0a39d5bac91c.tar.gz
+b5db13c7e9804b29a34bbff2bcfc534751b30b500a5c3b95f5bddfe42de2a48fb3d05b5ddcd68159845d828447b44125acb136476596ec8c3e982536a5834ae0  config-postmarketos-mediatek-mt6763.aarch64
+"

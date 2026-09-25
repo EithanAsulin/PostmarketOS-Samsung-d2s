@@ -1,0 +1,32 @@
+# Archived: unmaintained
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-semc-smultron
+pkgdesc="Xperia mini"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="postmarketos-base linux-semc-smultron mkbootimg msm-fb-refresher"
+makedepends="devicepkg-dev"
+source="deviceinfo fb.modes directfbrc"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	install -Dm644 "$srcdir"/fb.modes \
+		"$pkgdir"/etc/fb.modes
+	install -Dm644 "$srcdir"/directfbrc \
+		"$pkgdir"/etc/directfbrc
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+0dc146f3c27d3e4d48c7b56be9232e96bd4987afaa08ac2d6117944cfd0e7460af4477f1b88b0ee165cfee368418fb3b2826c51371a5f135fe41d303799da20d  deviceinfo
+246889c74e09d2aeeaea62313f101727f07f9972fb15252cbf1d2e3c07aa850a85a25cc291407d8e560edb49e8bfbdb04eb09c412ed4c366f0b4bbcfbdcbcbb9  fb.modes
+3db3ec596e159be926ea2b5b2496c18e9bc7be24a64a232a56c89a0c9ee710aa2efb2b6fa9fc08efa34759e8242e6c629d08a4ce688ec8aa125830717c191515  directfbrc
+"

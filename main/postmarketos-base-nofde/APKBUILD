@@ -1,0 +1,18 @@
+# This package is necessary for bootstrapping the repository, do not merge it
+# back into postmarketos-base!
+# * postmarketos-initramfs depends on postmarketos-base-nofde
+# * postmarketos-base depends on postmarketos-initramfs
+#   (via provides: postmarketos-ramdisk)
+maintainer="Oliver Smith <ollieparanoid@postmarketos.org>"
+pkgname=postmarketos-base-nofde
+pkgver=62
+pkgrel=0
+pkgdesc="Dummy unlocker package for systems without FDE"
+url="https://postmarketos.org"
+arch="noarch"
+license="GPL-3.0-or-later"
+provides="postmarketos-fde-unlocker=0.0.0-r0"
+
+package() {
+	mkdir -p "$pkgdir"
+}

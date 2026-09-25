@@ -1,0 +1,36 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Mattijs Korpershoek <mattijs.korpershoek@gmail.com>"
+pkgname=device-khadas-vim3
+pkgdesc="Khadas VIM3 Amlogic A311D"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-firmware-meson
+	linux-postmarketos-amlogic
+	postmarketos-base
+	soc-amlogic-aarch64
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+	"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+bbcbd6f55b1f8df2c9d0aacb1c979201caead9cb30c32bb0d9627fbbe3ea00c926f399f4aa7f91767ec372c323d11ba1d335473a03358a447afbde2863f41be5  deviceinfo
+8b6a07d15079b3884c65fcebfbc9b2e3fba822e5eb65d8c85198869edc357c3bdd456ec54f579a04de2a5bced62f32b7e251e61f571bb41a1768fb2dea9e3c9d  kernel-cmdline.conf
+52948c2884a6f6384e12b7a598f70878526d0d3293c214425170145231144ec7de805c038641741a4a5d75b50e554f6a3fa3769784a674217ed032f9b6a233c8  modules-initfs
+"

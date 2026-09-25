@@ -1,0 +1,33 @@
+# Archived: Downstream port, only for testing. Use mainline port (samsung-j7xelte)!
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-samsung-j7xelte-downstream
+pkgdesc="Samsung Galaxy J7 (2016)"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="postmarketos-base postmarketos-base-downstream linux-samsung-j7xelte mkbootimg msm-fb-refresher"
+makedepends="devicepkg-dev"
+source="deviceinfo"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="Wifi firmware"
+	depends="firmware-samsung-j7xelte"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+bb9bb0b3c9e2791d30529a94a77807468663d66fedf88a23c713a7fbaec9e12ece808c7482ed8d05049cefc2acd6eb6373d4c2931a297207b82aee01ebb82917  deviceinfo
+"

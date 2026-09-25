@@ -1,0 +1,59 @@
+# Archived: Maintainers either absent or didn't have hardware
+
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-samsung-a3
+pkgdesc="Samsung Galaxy A3 (2015)"
+pkgver=19
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	firmware-qcom-adreno-a300
+	firmware-samsung-a3-wcnss-nv
+	linux-postmarketos-qcom-msm8916
+	mkbootimg
+	msm-firmware-loader
+	postmarketos-base
+	soc-qcom-msm8916
+	soc-qcom-msm8916-rproc
+	soc-samsung-msm8916-modem-workaround
+"
+makedepends="devicepkg-dev"
+provides="
+	device-samsung-a3lte=$pkgver-r$pkgrel
+	device-samsung-a3ulte=$pkgver-r$pkgrel
+"
+replaces="
+	$pkgname-kernel-mainline
+	$pkgname-kernel-mainline-modem
+	device-samsung-a3lte
+	device-samsung-a3lte-kernel-mainline
+	device-samsung-a3lte-kernel-modem
+	device-samsung-a3lte-nonfree-firmware
+	device-samsung-a3ulte
+	device-samsung-a3ulte-kernel-mainline
+	device-samsung-a3ulte-kernel-modem
+	device-samsung-a3ulte-nonfree-firmware
+"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+2d03ab0acfbae029fe9354ae843f7494471e4ec4f98a0de388dfa4273b4f973623efa6574405b59858b691f7a13a11c8d3c10178731396081d2b28215ddfe815  deviceinfo
+37e1e5f8839b624ab3eb850a24ed4daeb61a651257a1fb593f49cb869323e5d1b339c831a18eb26a9d7bd0a618ea9eb2bb9bf3882133af5f2606a878e6d39c67  kernel-cmdline.conf
+3754688b2a61c204f37944d700b6fc273f68a01e25d444a3c3f2dd2531d8538650a2e571657e18e7a96a2db96b19f2f738d6f465bde477efd66ab31a78edfb91  modules-initfs
+"

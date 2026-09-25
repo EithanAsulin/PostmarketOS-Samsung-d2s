@@ -1,0 +1,93 @@
+# Kernel config based on: arch/arm64/configs/defconfig
+maintainer="Neil Armstrong <neil.armstrong@linaro.org>"
+pkgname=linux-ayaneo-pocket-s2
+pkgver=7.2_git20260831
+pkgrel=0
+pkgdesc="Ayaneo Pocket S2 kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="${pkgname#linux-}"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip
+	!check
+	!tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-community
+	pmb:kconfigcheck-uefi
+	"
+makedepends="
+	bash
+	bc
+	bison
+	clang
+	clang-libclang
+	devicepkg-dev
+	elfutils-dev
+	findutils
+	flex
+	git
+	linux-headers
+	lld
+	llvm
+	openssl-dev
+	pahole
+	perl
+	postmarketos-installkernel
+	python3
+	rust
+	rust-bindgen
+	rust-src
+	rustfmt
+	zstd
+"
+
+# Source
+_url="https://gitlab.com/superna9999/"
+_repository="linux"
+_commit="13e13258cd20d0dee73d97a6538adf3c4b60b2ef"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::$_url/$_repository/-/archive/$_commit/$_repository-$_commit.tar.gz
+	linux7.0-resolve_btfids-preserve-tag-and-parameter-names-when.patch
+	misc.config
+	$_config
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$arch" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+
+	install -Dm644 "$builddir/arch/$_carch/boot/vmlinuz.efi" \
+		"$pkgdir/boot/linux.efi"
+
+	make LLVM=1 zinstall modules_install dtbs_install \
+		ARCH="$_carch" \
+		INSTALL_PATH="$pkgdir"/boot/ \
+		INSTALL_MOD_PATH="$pkgdir"/usr \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+
+	rm -f "$pkgdir"/usr/lib/modules/*/build "$pkgdir"/usr/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+0fa3244cb4acdfcc289466ac88bbbe2eae36e853d022b4409b5613f5e68cdf22928ae044b21ff46959aa96870df4ec596a56e27c4060fd406d65c3537cc4d8e3  linux-ayaneo-pocket-s2-13e13258cd20d0dee73d97a6538adf3c4b60b2ef.tar.gz
+4e705e038a91466a86fc5317b0028c2220aa1e7a4807e5d86db2f9ac815a927c59666a8f21ed50c4632147d3ce183d8042378a76f95341dbcd3db1047faf39e3  linux7.0-resolve_btfids-preserve-tag-and-parameter-names-when.patch
+f7712cb52ab2abae02deb3f90d0bdba83bcdf1af9b5f4fdb97963d729d1a0161301ecb3b5948dcd7a7f182c14e52d3863ec48f22a00276008d3bb0615d29ba68  misc.config
+8903dff83b2c82d278d96c6e154ab8e0e3f1ccc671992ccbf6169e4c6ec8ae4ff5d20ee6ba1ef526ef7c322a0b5cd77a1f8fa2f0353ce2b1786bce32d017e4b8  config-ayaneo-pocket-s2.aarch64
+"

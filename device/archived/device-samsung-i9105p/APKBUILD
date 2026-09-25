@@ -1,0 +1,49 @@
+# Archived: unmaintained
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-samsung-i9105p
+pkgdesc="Samsung Galaxy S2 Plus"
+pkgver=6
+pkgrel=1
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	firmware-samsung-i9105p
+	linux-samsung-i9105p
+	mkbootimg
+	msm-fb-refresher
+	postmarketos-base
+	postmarketos-base-downstream
+"
+
+subpackages="$pkgname-x11"
+
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	modules-load.conf
+	10-vc-fb.conf
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+x11() {
+	pkgdesc="Xorg config for vc_fb"
+	install_if="$pkgname=$pkgver-r$pkgrel xorg-server"
+	install -Dm644 "$srcdir"/10-vc-fb.conf \
+		"$subpkgdir"/etc/X11/xorg.conf.d/10-vc-fb.conf
+}
+
+sha512sums="
+caee5231c5c11cfaba54128d4f496a6790dab32bea03f1bcf8f5261e4dacf1d775da2d52607278abc756df5c370d61c3f24f7fc924249380dffc25c92dcfcd1f  deviceinfo
+af036fe35011db078379dbb2e8c16c86546f0a4fcb3d1bcee3502bb1ea5b38f3ec5a9fa8cd1ca8ed8b89592a7f572d6072781289845303e0bf85fc2de4ead9fb  modules-load.conf
+432aba13d599aef07c68055a7629c380243e4a84b65bd2a9e869de1b0563500096bfe7eb68782960ce673aa36a15204846528a74deb25d2e7812caa53d9f46b8  10-vc-fb.conf
+"

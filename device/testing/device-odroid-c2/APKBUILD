@@ -1,0 +1,37 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Ferass El Hafidi <funderscore@postmarketos.org>"
+pkgname=device-odroid-c2
+pkgdesc="ODROID C2"
+pkgver=1
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-firmware-meson
+	linux-postmarketos-amlogic
+	postmarketos-base
+	soc-amlogic-aarch64
+	u-boot-amlogic-odroid-c2
+	"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+	"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+c8c723f90e7a1773a44e1ac7bf8b57316b35c7d5c1622170e8de4f782977ec9626c4b544ef23421b0a12316a4d2112c2eb35bc899714aea9eb6b09c0f09bc104  deviceinfo
+2e8f11c08d60160d56e49e3a9ba718d3171f70e91d35a7e6a916953e808d93851f67af114502e19068ed44ce81e93e16c73f58ac9df0011d546f44b67199f345  kernel-cmdline.conf
+52948c2884a6f6384e12b7a598f70878526d0d3293c214425170145231144ec7de805c038641741a4a5d75b50e554f6a3fa3769784a674217ed032f9b6a233c8  modules-initfs
+"

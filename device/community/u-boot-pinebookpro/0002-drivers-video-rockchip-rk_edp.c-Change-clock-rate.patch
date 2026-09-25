@@ -1,0 +1,32 @@
+From 6f53cd84db63766408953cd5ff7aa7f0b1f8e290 Mon Sep 17 00:00:00 2001
+From: Arnaud Patard <arnaud.patard@rtp-net.org>
+Date: Fri, 11 Sep 2020 16:26:12 -0400
+Subject: [PATCH 2/8] drivers/video/rockchip/rk_edp.c: Change clock rate
+
+The current code is setting the clock rate to 192000000, but
+due to the current device-tree configuration and linux code,
+it should rather be 100000000.
+
+Signed-off-by: Arnaud Patard <arnaud.patard@rtp-net.org>
+
+Origin: http://people.hupstream.com/~rtp/pbp/20200911/rk_vop_clk_rate.patch
+---
+ drivers/video/rockchip/rk_edp.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/video/rockchip/rk_edp.c b/drivers/video/rockchip/rk_edp.c
+index 0ba68dbce3d..fcac6f0a6bd 100644
+--- a/drivers/video/rockchip/rk_edp.c
++++ b/drivers/video/rockchip/rk_edp.c
+@@ -1100,7 +1100,7 @@ static int rk_edp_probe(struct udevice *dev)
+ 	}
+ 	ret = clk_get_by_index(uc_plat->src_dev, 0, &clk);
+ 	if (ret >= 0)
+-		ret = clk_set_rate(&clk, 192000000);
++		ret = clk_set_rate(&clk, 100000000);
+ 	if (ret < 0) {
+ 		debug("%s: Failed to set clock in source device '%s': ret=%d\n",
+ 		      __func__, uc_plat->src_dev->name, ret);
+-- 
+2.54.0
+

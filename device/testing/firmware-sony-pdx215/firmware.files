@@ -1,0 +1,10 @@
+./usr/lib/firmware/qcom/sm8350/Sony/sagami/adsp.mbn
+./usr/lib/firmware/qcom/sm8350/Sony/sagami/cdsp.mbn
+./usr/lib/firmware/qcom/sm8350/Sony/sagami/slpi.mbn
+./usr/lib/firmware/qcom/sm8350/Sony/sagami/ipa_fws.mbn
+./usr/lib/firmware/qcom/sm8350/Sony/sagami/adspr.jsn
+./usr/lib/firmware/qcom/sm8350/Sony/sagami/adspua.jsn
+./usr/lib/firmware/qcom/sm8350/Sony/sagami/cdspr.jsn
+./usr/lib/firmware/qcom/sm8350/Sony/sagami/slpius.jsn
+./usr/lib/firmware/qcom/sm8350/Sony/sagami/slpir.jsn
+./usr/lib/firmware/qcom/sm8350/Sony/sagami/a660_zap.mbn

@@ -1,0 +1,87 @@
+# Kernel config based on: arch/arm/configs/kobo_defconfig
+maintainer="Andreas Kemnade <andreas@kemnade.info>"
+pkgname=linux-postmarketos-imx-ereader
+pkgver=7.1.10
+pkgrel=0
+pkgdesc="i.MX E-Book reader kernel fork, close to mainline"
+replaces="linux-kobo-clara-mainline"
+provides="linux-kobo-clara-mainline=$pkgver-r$pkgrel"
+arch="armv7"
+_carch="arm"
+_flavor="postmarketos-imx-ereader"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native pmb:kconfigcheck-nftables"
+makedepends="
+	bash
+	bc
+	bison
+	clang
+	devicepkg-dev
+	elfutils-dev
+	findutils
+	flex
+	linux-headers
+	lzop
+	llvm
+	lld
+	openssl-dev
+	pahole
+	perl
+	postmarketos-installkernel
+	python3
+	zstd
+"
+
+# Source
+_repository="linux"
+_commit="8c68d420f2a30cfdd6673d971e8ae325e9835fe6"
+_rtl8189fs_repository="rtl8189ES_linux"
+_rtl8189fs_commit="a5ad16ed1d64fe1facce95bbcc2360c8c846a681"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/akemnade/$_repository/archive/$_commit.tar.gz
+	$_rtl8189fs_repository-$_rtl8189fs_commit.tar.gz::https://github.com/jwrdegoede/$_rtl8189fs_repository/archive/$_rtl8189fs_commit.tar.gz
+	$_config
+	0001-another-CFI-fix.ppatch
+"
+builddir="$srcdir/$_repository-$_commit"
+_rtl8189fs_dir="$srcdir/$_rtl8189fs_repository-$_rtl8189fs_commit"
+
+prepare() {
+	default_prepare
+	cp -v "$srcdir"/$_config .config
+	patch -d "$_rtl8189fs_dir" -p1 <"$srcdir"/0001-another-CFI-fix.ppatch
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$(( pkgrel + 1 ))-postmarketOS"
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$(( pkgrel + 1 ))-postmarketOS" \
+		CONFIG_RTW_SDIO_PM_KEEP_POWER=n \
+		CONFIG_RTW_DEBUG=n \
+		-C "$_rtl8189fs_dir" KSRC="$builddir"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+	make zinstall modules_install dtbs_install \
+		LLVM=1 \
+		O="$_outdir" ARCH="$_carch" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_MOD_PATH="$pkgdir/usr" \
+		INSTALL_DTBS_PATH="$pkgdir/boot/dtbs"
+	install -Dm644 "$_rtl8189fs_dir"/8189fs.ko -t "$pkgdir/usr/lib/modules/$(make -s O="$_outdir" ARCH="$_carch" kernelrelease)/kernel/drivers/net/wireless"
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir/usr/share/kernel/$_flavor/kernel.release"
+}
+
+sha512sums="
+6f4e24bf20b8e0aba06282793e89bc660bbe4d4712a3591709bfeebce0dda3b2d86909fcbb95bd1b84654fed3dad99ba9b85392141dfd737cb4cde923ac2ef61  linux-postmarketos-imx-ereader-8c68d420f2a30cfdd6673d971e8ae325e9835fe6.tar.gz
+59d4a9c39007de58817a71a42f4f72f5e03a2d87467a6e0e6dc55e215555466e9bbd5cf17e0621475f0aecc97040cdc6e23d9af391608e4555e8fe0b9001a85d  rtl8189ES_linux-a5ad16ed1d64fe1facce95bbcc2360c8c846a681.tar.gz
+323a213116c92882764d91c1acd70239ce5850a61f6bf20522dec7f8a82f6d91272fe3b03d5da0392fd53a7fc8539457c69122d5da1704ad46286a7f3345a7a8  config-postmarketos-imx-ereader.armv7
+170ae9311268988ae7ecd5ad592f239cf4d30412fa3249befd756b41ba1ca98e815408edbc1f959b51f18da7665219ff6d7563044650c6ba15d133f2dfa92f8c  0001-another-CFI-fix.ppatch
+"

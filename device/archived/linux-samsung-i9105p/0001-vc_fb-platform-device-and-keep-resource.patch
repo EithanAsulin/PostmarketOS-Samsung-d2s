@@ -1,0 +1,246 @@
+diff --git a/drivers/char/broadcom/vc_fb/vmcs_fb.c b/drivers/char/broadcom/vc_fb/vmcs_fb.c
+index 02d7ea08eed5..111111111111 100644
+--- a/drivers/char/broadcom/vc_fb/vmcs_fb.c
++++ b/drivers/char/broadcom/vc_fb/vmcs_fb.c
+@@ -64,6 +64,7 @@
+ #include <linux/seq_file.h>
+ #include <linux/list.h>
+ #include <linux/platform_device.h>
++#include <linux/io.h>
+ #include <linux/fb.h>
+ #include <linux/mm.h>
+ #include <linux/delay.h>
+@@ -99,9 +100,9 @@
+ #define DEFAULT_ALPHA            (255)
+ #define DEFAULT_ALPHA_PER_PIXEL  (0)
+ #define DEFAULT_BITS_PER_PIXEL   (32)
+-#define DEFAULT_KEEP_RESOURCE    (0)
++#define DEFAULT_KEEP_RESOURCE    (1)
+ #define DEFAULT_SCALE            (1)
+-#define DEFAULT_Z_ORDER          (-50)
++#define DEFAULT_Z_ORDER          (1)
+ #define DEFAULT_ADJUST           (0)
+ #define PROC_WRITE_BUF_SIZE      128
+ 
+@@ -117,6 +118,7 @@
+ 	uint32_t user_cnt;	/* Number of active users of this screen */
+ 	struct mutex user_cnt_mutex;	/* Mutex to protect user count */
+ 	struct fb_info fb_info;	/* Kernel framebuffer info */
++	struct platform_device *pdev;	
+ 	uint32_t res_handle;	/* Videocore resource handle */
+ 	uint32_t cmap[16];	/* Color map */
+ 
+@@ -167,6 +169,14 @@
+ 
+ static struct FB_STATE_T *fb_state;
+ static int fb_inited;
++static int vc_fb_pdrv_registered;
++
++static struct platform_driver vc_fb_platform_driver = {
++	.driver = {
++		.name = "vc_fb",
++		.owner = THIS_MODULE,
++	},
++};
+ 
+ /* Constant strings for the proc entries */
+ static const char *fb_cfg_dir_name[VC_FB_SCRN_MAX] = {
+@@ -1281,8 +1291,9 @@
+ 		}
+ 	}
+ 
+-	if ((var->xres > fb_info->var.xres) ||
+-		(var->yres > fb_info->var.yres)) {
++	if (fb_info->var.xres && fb_info->var.yres &&
++	    ((var->xres > fb_info->var.xres) ||
++	     (var->yres > fb_info->var.yres))) {
+ 		LOG_INFO
+ 		    ("%s: request resolution %ux%u is larger than"
+ 		     " supported %ux%u",
+@@ -1516,6 +1527,31 @@
+ 	return ret;
+ }
+ 
++static int vc_fb_mmap(struct fb_info *info, struct vm_area_struct *vma)
++{
++	unsigned long start = info->fix.smem_start;
++	unsigned long off = vma->vm_pgoff << PAGE_SHIFT;
++	unsigned long len;
++	int ret;
++
++	if (!start || !info->fix.smem_len)
++		return -EINVAL;
++
++	len = PAGE_ALIGN((start & ~PAGE_MASK) + info->fix.smem_len);
++	if (off >= len)
++		return -EINVAL;
++	if ((vma->vm_end - vma->vm_start + off) > len)
++		return -EINVAL;
++
++	vma->vm_flags |= VM_IO | VM_RESERVED;
++	vma->vm_page_prot = pgprot_writecombine(vma->vm_page_prot);
++	ret = io_remap_pfn_range(vma, vma->vm_start,
++				 (start >> PAGE_SHIFT) + vma->vm_pgoff,
++				 vma->vm_end - vma->vm_start,
++				 vma->vm_page_prot);
++	return ret ? -EAGAIN : 0;
++}
++
+ static struct fb_ops vc_fb_ops = {
+ 	.owner = THIS_MODULE,
+ 	.fb_open = vc_fb_open,
+@@ -1528,6 +1564,7 @@
+ 	.fb_copyarea = cfb_copyarea,
+ 	.fb_imageblit = cfb_imageblit,
+ 	.fb_read = vc_fb_read,
++	.fb_mmap = vc_fb_mmap,
+ };
+ 
+ static int vc_fb_create_per_scrn_proc_entries(struct SCRN_INFO_T *scrn_info)
+@@ -1802,13 +1839,39 @@
+ 	scrn_info->fb_info.var.rotate = 0;
+ 	scrn_info->fb_info.var.vmode = FB_VMODE_NONINTERLACED;
+ 
++	/* Defaults must be set before the first open (and before we pin). */
++	scrn_info->alpha = DEFAULT_ALPHA;
++	scrn_info->alpha_per_pixel = DEFAULT_ALPHA_PER_PIXEL;
++	scrn_info->keep_resource = DEFAULT_KEEP_RESOURCE;
++	scrn_info->scale = DEFAULT_SCALE;
++	scrn_info->z_order = DEFAULT_Z_ORDER;
++	scrn_info->adjust = DEFAULT_ADJUST;
++
++	/*
++	 * Give the fb a platform parent. Xorg 1.16+ dropped the old "fb"
++	 * bus; xf86-video-fbdev can only claim PCI or platform devices.
++	 * After this, sysfs looks like:
++	 *   /sys/devices/platform/vc_fb.<n>
++	 *   /sys/class/graphics/fbN/device -> .../platform/vc_fb.<n>
++	 * xorg.conf BusID "platform:vc_fb.0"
++	 */
++	scrn_info->pdev = platform_device_register_simple("vc_fb",
++							  (int)scrn, NULL, 0);
++	if (IS_ERR(scrn_info->pdev)) {
++		LOG_ERR("%s: platform_device_register_simple failed (%ld)",
++			__func__, PTR_ERR(scrn_info->pdev));
++		scrn_info->pdev = NULL;
++	} else {
++		scrn_info->fb_info.device = &scrn_info->pdev->dev;
++	}
++
+ 	/* Register framebuffer with the kernel */
+ 	ret = register_framebuffer(&scrn_info->fb_info);
+ 	if (ret != 0) {
+ 		LOG_ERR("%s: register_framebuffer failed (ret=%d)", __func__,
+ 			ret);
+ 
+-		goto err_free_mem;
++		goto err_unreg_pdev;
+ 	}
+ 	/* Create the per screen (framebuffer device) proc entries */
+ 	ret = vc_fb_create_per_scrn_proc_entries(scrn_info);
+@@ -1818,15 +1881,26 @@
+ 
+ 		goto err_unregister_framebuffer;
+ 	}
+-	/* Set the default values for the framebuffer creation
+-	 * modifiable parameters
++
++	/*
++	 * Pin the VC resource now so Xorg's probe open/close cannot
++	 * iounmap + vc_vchi_fb_free the buffer (keep_resource=1).
++	 * Screen 1 (HDMI) often has no panel; failure is non-fatal.
+ 	 */
+-	scrn_info->alpha = DEFAULT_ALPHA;
+-	scrn_info->alpha_per_pixel = DEFAULT_ALPHA_PER_PIXEL;
+-	scrn_info->keep_resource = DEFAULT_KEEP_RESOURCE;
+-	scrn_info->scale = DEFAULT_SCALE;
+-	scrn_info->z_order = DEFAULT_Z_ORDER;
+-	scrn_info->adjust = DEFAULT_ADJUST;
++	ret = vc_fb_open(&scrn_info->fb_info, 0);
++	if (ret != 0) {
++		LOG_ERR("%s: screen %u: initial alloc failed (ret=%d)",
++			__func__, scrn, ret);
++		ret = 0;
++	} else {
++		vc_fb_release(&scrn_info->fb_info, 0);
++		LOG_INFO("%s: screen %u pinned %ux%u smem=0x%lx len=%u",
++			 __func__, scrn,
++			 scrn_info->fb_info.var.xres,
++			 scrn_info->fb_info.var.yres,
++			 (unsigned long)scrn_info->fb_info.fix.smem_start,
++			 scrn_info->fb_info.fix.smem_len);
++	}
+ 
+ 	/* Everything is good to go! */
+ 	fb_state->scrn_info[scrn] = scrn_info;
+@@ -1836,6 +1910,10 @@
+ err_unregister_framebuffer:
+ 	unregister_framebuffer(&scrn_info->fb_info);
+ 
++err_unreg_pdev:
++	if (scrn_info->pdev)
++		platform_device_unregister(scrn_info->pdev);
++
+ err_free_mem:
+ 	kfree(scrn_info);
+ 
+@@ -1861,9 +1939,20 @@
+ 	/* Remove per screen (framebuffer device) proc entries */
+ 	vc_fb_remove_per_scrn_proc_entries(scrn_info);
+ 
++	/* Drop the pinned VC resource before tearing down the fb. */
++	if (scrn_info->res_handle) {
++		scrn_info->keep_resource = 0;
++		if (scrn_info->user_cnt == 0)
++			scrn_info->user_cnt = 1;
++		vc_fb_release(&scrn_info->fb_info, 0);
++	}
++
+ 	/* Unregister framebuffer device with the system */
+ 	unregister_framebuffer(&scrn_info->fb_info);
+ 
++	if (scrn_info->pdev)
++		platform_device_unregister(scrn_info->pdev);
++
+ 	/* Free the memory used for the screen info */
+ 	kfree(scrn_info);
+ 	fb_state->scrn_info[scrn] = NULL;
+@@ -1928,6 +2017,14 @@
+ 		ret = -EPERM;
+ 		goto err_stop_fb_service;
+ 	}
++	ret = platform_driver_register(&vc_fb_platform_driver);
++	if (ret != 0) {
++		LOG_ERR("%s: platform_driver_register failed (ret=%d)",
++			__func__, ret);
++	} else {
++		vc_fb_pdrv_registered = 1;
++	}
++
+ 	/* Create a framebuffer device for each screen */
+ 	for (i = 0; i < VC_FB_SCRN_MAX; i++) {
+ 		ret = vc_fb_create_framebuffer(i);
+@@ -1962,6 +2059,11 @@
+ 	for (i = 0; i < VC_FB_SCRN_MAX; i++)
+ 		vc_fb_remove_framebuffer(i);
+ 
++	if (vc_fb_pdrv_registered) {
++		platform_driver_unregister(&vc_fb_platform_driver);
++		vc_fb_pdrv_registered = 0;
++	}
++
+ 	remove_proc_entry("vc-fb", NULL);
+ 
+ err_stop_fb_service:
+@@ -1993,6 +2095,11 @@
+ 		for (i = 0; i < VC_FB_SCRN_MAX; i++)
+ 			vc_fb_remove_framebuffer(i);
+ 
++		if (vc_fb_pdrv_registered) {
++			platform_driver_unregister(&vc_fb_platform_driver);
++			vc_fb_pdrv_registered = 0;
++		}
++
+ 		/* Remove the proc directory entry */
+ 		remove_proc_entry("vc-fb", NULL);
+ 

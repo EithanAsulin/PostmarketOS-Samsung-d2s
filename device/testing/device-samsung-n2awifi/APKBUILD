@@ -1,0 +1,37 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Hendrik Noack <hendrik.noack@protonmail.com>"
+pkgname=device-samsung-n2awifi
+pkgdesc="Samsung Galaxy Tab Pro 10.1 WiFi"
+pkgver=12
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	firmware-samsung-n2awifi
+	linux-firmware-brcm
+	linux-firmware-s5p-mfc
+	linux-postmarketos-exynos5
+	postmarketos-base
+	u-boot-exynos5420
+	systemd-boot
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+3683946a0b05676fe239fc95e06637e323fca2ac356144476fd3af6c964512a58d51fc5ab05d5b9bcae2421153e87045ec5bbe4eea9169d32d3c6318164fe56c  deviceinfo
+35d2cfb5c43d4b51e3684d94e0f8de0bcc46d4c441071c46986902198a88e11d067dbc87dbfce2f849a36b1e33d0130a05e89e629de9f6ebb4991cb9270dd150  modules-initfs
+"

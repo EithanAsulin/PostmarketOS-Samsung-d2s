@@ -1,0 +1,93 @@
+diff --git a/pinenote-config/waybar/style.css.orig b/pinenote-config/waybar/style.css
+index fd80153..5eb5581 100644
+--- a/pinenote-config/waybar/style.css.orig
++++ b/pinenote-config/waybar/style.css
+@@ -15,7 +15,7 @@ label.module {
+ }
+ 
+ #waybar.top {
+-    font-size: 35px;
++    font-size: 20px;
+ }
+ 
+ window#waybar {
+@@ -39,7 +39,7 @@ window#waybar {
+ }
+ 
+ #waybar.bar-right {
+-    font-size: 50px;
++    font-size: 25px;
+     font-weight: bold;
+     border: 0px;
+     background-color: transparent;
+@@ -60,7 +60,7 @@ window#waybar.right {
+ }
+ 
+ #waybar.bar-right #custom-pad.w {
+-    min-width: 50px;
++    min-width: 25px;
+     margin: 0px 6px;
+     margin-bottom: 16px;
+     font-size: 0px;
+@@ -122,7 +122,7 @@ window#waybar.right {
+ 
+ #waybar.bar-right label.module {
+     color: black;
+-    min-width: 50px;
++    min-width: 25px;
+     margin: 0 1px;
+     font-family: "Symbols Nerd Font Mono";
+ }
+@@ -133,7 +133,7 @@ window#waybar.right {
+     border-radius: 25px;
+     min-height: 184px;
+     min-width: 0px;
+-    font-size: 25px;
++    font-size: 15px;
+     margin: 8px 8px;
+     margin-bottom: 0px;
+     padding: 10px 0px;
+diff --git a/./pinenote-config/sway/config.orig b/./pinenote-config/sway/config
+index 3f539f0..c8a6612 100644
+--- a/./pinenote-config/sway/config.orig
++++ b/./pinenote-config/sway/config
+@@ -35,7 +35,7 @@ font pango:Noto Sans 20
+ 
+ ### Output configuration
+ output * bg #FFFFFF solid_color
+-output * scale 1
++output * scale 1.5
+ 
+ gaps inner 5
+ gaps outer 0
+diff --git a/./pinenote-config/waybar/modules/eink.json.orig b/./pinenote-config/waybar/modules/eink.json
+index 0c66932..1cb2b33 100644
+--- a/./pinenote-config/waybar/modules/eink.json.orig
++++ b/./pinenote-config/waybar/modules/eink.json
+@@ -138,8 +138,8 @@
+       "format": "{icon}",
+       "format-icons": {
+           "bayer": "\uDB82\uDFEF",
+-          "blue16": "<span font_size=\"25pt\">16</span>",
+-          "blue32": "<span font_size=\"25pt\">32</span>",
++          "blue16": "<span font_size=\"15pt\">16</span>",
++          "blue32": "<span font_size=\"15pt\">32</span>",
+       },
+       "return-type": "json",
+       "exec": "$WAYBAR_SCRIPT_DIR/driver_mode.sh monitor dither",
+diff --git a/./pinenote-config/waybar/modules/hardware.json.orig b/./pinenote-config/waybar/modules/hardware.json
+index 93e2b5e..0a3829e 100644
+--- a/./pinenote-config/waybar/modules/hardware.json.orig
++++ b/./pinenote-config/waybar/modules/hardware.json
+@@ -8,9 +8,9 @@
+             "critical": 15
+         },
+         // Connected to AC
+-        "format": "\uF0E7 {icon} {capacity}%", // Icon: bolt
++        "format": "{icon}   {capacity}% \uF0E7", // Icon: bolt
+         // Not connected to AC
+-        "format-discharging": "{capacity}% {icon}",
++        "format-discharging": "{icon}   {capacity}% ",
+         "format-icons": [
+ 			"\uF244", // Icon: battery-full
+             "\uF243", // Icon: battery-three-quarters

@@ -1,0 +1,24 @@
+#
+# This file is parsed by pam_env module
+#
+# Syntax: simple "KEY=VAL" pairs on separate lines
+#
+
+# Allow non-login shells to use /etc/profile.
+# From https://pubs.opengroup.org/onlinepubs/9699919799/utilities/sh.html
+#
+# This variable, when and only when an interactive shell is invoked, shall
+# be subjected to parameter expansion (see Parameter Expansion) by the shell,
+# and the resulting value shall be used as a pathname of a file containing
+# shell commands to execute in the current environment.
+#
+# In the Busybox code, ash only runs through /etc/profile when executed by
+# login(1). This has historically been missed when modifying /etc/profile on
+# postmarketOS and Alpine, leading to changes that rely upon /etc/profile,
+# /etc/profile.d/, and $HOME/.profile not being applied consistently from the
+# user's perspective. Alpine also installs many convenience scripts into the
+# profile directory for usage with ash, which should be available to users. As
+# such, using /etc/profile on non-login shells makes the shell experience more
+# consistent and reflects the previous (but wrong) understanding of how profile
+# changes would affect UX.
+ENV=/etc/profile

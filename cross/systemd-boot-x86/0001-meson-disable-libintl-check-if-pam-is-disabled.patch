@@ -1,0 +1,37 @@
+From abcc28985f5ab3b50c3ed85abee5e7f8bbd0889e Mon Sep 17 00:00:00 2001
+From: Oliver Smith <ollieparanoid@postmarketos.org>
+Date: Sun, 21 Dec 2025 17:04:26 +0100
+Subject: [PATCH] meson: disable libintl/libucontext check if pam is disabled
+
+Disable the libintl and libucontext checks when building without the pam
+feature, so e.g. systemd-boot can be (cross) compiled without having the
+foreign arch libintl and libucontext installed on a musl platform.
+---
+ meson.build | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/meson.build b/meson.build
+index ff11c0c10c..0a667420aa 100644
+--- a/meson.build
++++ b/meson.build
+@@ -1011,7 +1011,7 @@ libm = cc.find_library('m')
+ # Header presence check only — dgettext itself is resolved via dlopen_libintl() at runtime, so we never
+ # link against libintl. On glibc dgettext lives in libc; on musl gettext-dev provides libintl.h alongside
+ # libintl.so.8 which we dlopen() if present.
+-if not cc.has_header('libintl.h')
++if get_option('pam').enabled() and not cc.has_header('libintl.h')
+         error('libintl.h not found (install gettext / gettext-dev)')
+ endif
+
+@@ -1041,7 +1041,7 @@ conf.set10('HAVE_LIBCRYPT', have)
+
+ # musl declares the ucontext.h functions but does not implement them; the fiber bootstrap in
+ # src/libsystemd/sd-future/fiber.c relies on them, so on musl we have to link to libucontext.
+-if get_option('libc') == 'musl'
++if get_option('pam').enabled() and get_option('libc') == 'musl'
+         libucontext = dependency('libucontext')
+ else
+         libucontext = []
+--
+2.54.0
+

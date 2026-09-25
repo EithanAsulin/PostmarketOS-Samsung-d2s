@@ -1,0 +1,9 @@
+fusb302
+gpio_keys
+hid-generic
+leds-gpio
+panel-edp
+phy-rockchip-pcie
+phy-rockchip-inno-usb2
+panfrost
+rockchipdrm

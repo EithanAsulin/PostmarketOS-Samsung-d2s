@@ -1,0 +1,36 @@
+diff --git a/bin/launch_lisgd.sh b/bin/launch_lisgd.sh
+index e70a507..f99de1d 100755
+--- a/bin/launch_lisgd.sh
++++ b/bin/launch_lisgd.sh
+@@ -5,10 +5,10 @@ lisgd -d /dev/input/by-path/platform-fe5e0000.i2c-event \
+     -g "1,RL,R,S,P,swaymsg bar hidden_state show bar-ctrl" \
+     -g "1,LR,R,S,P,swaymsg bar hidden_state hide bar-ctrl" \
+     -g "4,DU,*,*,R,xournalpp &" \
+-    -g "3,DU,*,*,R,toggle_onscreen_keyboard.py &" \
++    -g "3,DU,*,*,R,/usr/lib/pinenote/toggle_onscreen_keyboard.py &" \
+     -g "3,UD,*,*,R,busctl --user call org.pinenote.PineNoteCtl /org/pinenote/PineNoteCtl org.pinenote.Ebc1 GlobalRefresh &" \
+     -g "3,LR,*,*,R,sway_workspace goto prev &" \
+     -g "3,RL,*,*,R,sway_workspace goto next &" \
+     -g "4,LR,*,*,R,sway_workspace move prev &" \
+     -g "4,RL,*,*,R,sway_workspace move next &" \
+-    -g "4,UD,*,*,R,toggle_menu.sh &" &
++    -g "4,UD,*,*,R,/usr/lib/pinenote/toggle_menu.sh &" &
+diff --git a/pinenote-config/sway/scripts/launch_lisgd.sh.orig b/pinenote-config/sway/scripts/launch_lisgd.sh
+index 93ef5ee..9cae2c8 100755
+--- a/pinenote-config/sway/scripts/launch_lisgd.sh.orig
++++ b/pinenote-config/sway/scripts/launch_lisgd.sh
+@@ -5,10 +5,10 @@ lisgd -d /dev/input/by-path/platform-fe5e0000.i2c-event \
+     -g "1,RL,R,S,P,swaymsg bar hidden_state show bar-ctrl" \
+     -g "1,LR,R,S,P,swaymsg bar hidden_state hide bar-ctrl" \
+     -g "3,DU,*,S,P,swaymsg exec \\\$toggle_osk" \
+-    -g "3,LR,*,*,R,sway_workspace goto prev &" \
+-    -g "3,RL,*,*,R,sway_workspace goto next &" \
+-    -g "4,LR,*,*,R,sway_workspace move prev &" \
+-    -g "4,RL,*,*,R,sway_workspace move next &" \
++    -g "3,LR,*,*,R,/usr/lib/pinenote/sway_workspace goto prev &" \
++    -g "3,RL,*,*,R,/usr/lib/pinenote/sway_workspace goto next &" \
++    -g "4,LR,*,*,R,/usr/lib/pinenote/sway_workspace move prev &" \
++    -g "4,RL,*,*,R,/usr/lib/pinenote/sway_workspace move next &" \
+     &
+     #-g "4,DU,*,*,R,xournalpp &" \
+     #-g "3,UD,*,*,R,refresh_screen &" \

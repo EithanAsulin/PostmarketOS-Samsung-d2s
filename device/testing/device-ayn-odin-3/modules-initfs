@@ -1,0 +1,10 @@
+backlight
+drm
+drm_client_lib
+drm_display_helper
+drm_kms_helper
+msm
+panel-chipone-icna35xx
+gpi
+i2c-qcom-geni
+edt-ft5x06

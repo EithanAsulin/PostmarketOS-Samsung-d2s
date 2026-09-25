@@ -1,0 +1,16 @@
+diff --git a/arch/arm64/mm/proc.S b/arch/arm64/mm/proc.S
+index b6245c71bd07..67eb17a743ad 100644
+--- a/arch/arm64/mm/proc.S
++++ b/arch/arm64/mm/proc.S
+@@ -152,9 +152,9 @@ ENTRY(__cpu_setup)
+ 	tlbi	vmalle1				// Invalidate local TLB
+ 	dsb	nsh
+ 
+-	mov	x0, #3 << 20
++	mov	x0, #(3 << 20)
+ 	msr	cpacr_el1, x0			// Enable FP/ASIMD
+-	mov	x0, #1 << 12			// Reset mdscr_el1 and disable
++	mov	x0, #(1 << 12)			// Reset mdscr_el1 and disable
+ 	msr	mdscr_el1, x0			// access to the DCC from EL0
+ 	isb					// Unmask debug exceptions now,
+ 	enable_dbg				// since this is per-cpu

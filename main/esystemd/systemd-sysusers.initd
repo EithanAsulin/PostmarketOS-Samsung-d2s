@@ -1,0 +1,15 @@
+#!/sbin/openrc-run
+
+depend() {
+	need localmount
+	before hostname
+	before systemd-tmpfiles-setup-dev
+}
+
+start() {
+	if [ -x /usr/lib/sysusers.d ]; then
+		ebegin "Creating system users from sysusers.d"
+		/usr/bin/systemd-sysusers
+		eend $?
+	fi
+}

@@ -1,0 +1,24 @@
+maintainer="Anton Bambura <jenneron@protonmail.com>"
+pkgname=alsa-ucm-conf-ayn
+pkgver=1.2.15.3_git20260415
+_commit="52b6ae98b7cd01e35ab6d193f953394dcefe5c0e"
+pkgrel=0
+pkgdesc="ALSA UCM configuration for AYN Odin 2 and 3 devices"
+url="https://gitlab.com/sdm845-mainline/alsa-ucm-conf"
+arch="aarch64"
+license="BSD-3-Clause"
+provides="alsa-ucm-conf=0.${pkgver%_*}" # versioned provides need to be below default version
+provider_priority=1
+source="$pkgname-$_commit.tar.gz::https://github.com/AYNTechnologies/alsa-ucm-conf/archive/$_commit.tar.gz"
+options="!check"
+builddir="$srcdir/$pkgname-$_commit"
+
+package() {
+	mkdir -p "$pkgdir"/usr/share/alsa
+	cp -r "$srcdir/alsa-ucm-conf-$_commit"/ucm2 \
+		"$pkgdir"/usr/share/alsa/
+}
+
+sha512sums="
+a055338023f86cfe6410e330ebc3551dfeaa2857ccbd4aa6d3afa8e8d5555fb6d7db1be4040b5d254edd3e4147c54060fb452b987d158ae8b68339d8f5e79a8d  alsa-ucm-conf-ayn-52b6ae98b7cd01e35ab6d193f953394dcefe5c0e.tar.gz
+"

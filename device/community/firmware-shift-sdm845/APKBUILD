@@ -1,0 +1,69 @@
+maintainer="Alexander Martinz <amartinz@shiftphones.com>"
+pkgname=firmware-shift-sdm845
+pkgver=20260428
+pkgrel=4
+_commit="a3ff3738b8ba541561d790b84f6ee82b28ed5d43"
+pkgdesc="Firmware for SHIFT sdm845 devices"
+url="https://gitlab.com/sdm845-mainline/firmware-shift-sdm845"
+arch="aarch64"
+depends="
+	linux-firmware-ath10k
+	linux-firmware-qcom
+	"
+license="proprietary"
+subpackages="
+	$pkgname-pmtest
+	$pkgname-sensors:firmware_sensors
+	"
+# Textrels appear in DSP libraries which we cannot avoid
+options="!archcheck !check !strip !tracedeps pmb:cross-native textrels"
+source="$pkgname-$_commit.tar.gz::https://gitlab.com/sdm845-mainline/firmware-shift-sdm845/-/archive/$_commit/firmware-shift-sdm845-$_commit.tar.gz
+	30-shift-sdm845-firmware-ci.files
+	firmware.files
+	firmware-initramfs.files
+	sensors.files
+	"
+builddir="$srcdir/$pkgname-$_commit"
+
+package() {
+	while IFS="" read -r _i || [ -n "$_i" ]; do
+		local _u="${_i/usr\/lib/lib}"
+		[ ! -d $(dirname $_i) ] && mkdir -p $(dirname "$pkgdir"/$_i)
+		install -Dm644 "$builddir""$_u" "$pkgdir/$_i"
+	done < "$srcdir/firmware.files"
+
+	install -Dm644 "$srcdir"/firmware-initramfs.files \
+		"$pkgdir"/usr/share/mkinitfs/files/"$pkgname".files
+
+	# Install symlinks for using upstream firmware
+	ln -s ../../mba.mbn.zst "$pkgdir"/usr/lib/firmware/qcom/sdm845/SHIFT/axolotl/mba.mbn.zst
+	ln -s ../../../../ath10k/WCN3990/hw1.0/wlanmdsp.mbn.zst "$pkgdir"/usr/lib/firmware/qcom/sdm845/SHIFT/axolotl/wlanmdsp.mbn.zst
+}
+
+pmtest() {
+	install_if="$pkgname=$pkgver-r$pkgrel postmarketos-mkinitfs-hook-ci"
+
+	install -Dm644 "$srcdir/30-shift-sdm845-firmware-ci.files" \
+		"$subpkgdir/usr/share/mkinitfs/files/30-shift-sdm845-firmware-ci.files"
+}
+
+firmware_sensors() {
+	pkgdesc="Firmware files of the sensor registry"
+	depends="$pkgname=$pkgver-r$pkgrel"
+	mkdir "$subpkgdir"
+
+	cd "$builddir"
+	while IFS="" read -r _i || [ -n "$_i" ]; do
+		local _u="${_i/usr\/lib/\/lib}"
+		[ ! -d $(dirname $_i) ] && mkdir -p $(dirname "$subpkgdir"/$_i)
+		install -Dm644 .$_u "$subpkgdir/$_i"
+	done < "$srcdir/sensors.files"
+}
+
+sha512sums="
+a2df649f0395f63cba08ff2d6c737855b056776ab0dd73a8fc5f24ae86513e80d4d97a3e7378813836cb0b5ec12d60b9e28dd22a3e9be1c382e0993ae83af01c  firmware-shift-sdm845-a3ff3738b8ba541561d790b84f6ee82b28ed5d43.tar.gz
+8b9058b07bc9cab0bb21ddf2c358fdaf8dc3063df6118f2e0c6c1f2da86e4ab250a95039cab2f9185976c2fd450ed92633f18f71bec61980f801028e814c0e73  30-shift-sdm845-firmware-ci.files
+4d541f6ee4261e37dbc7b0dd0a00c3d3e856d6fc6701eab174bd01c4aaed379bf1a65ba46f6db933fa315104a296c5660aaba213bde4e82523299fd4ee0dc18c  firmware.files
+f487c1b867062c7e1cbfae337fcc218bdf81713c8f6b896bc9ad65ca30cc68e59ba8a801540a59062b152a583dc75bf69c5177cbd6cd43267a7783e908f8787d  firmware-initramfs.files
+d46270ee01e1f0140d9b89aa9a84af1f1a05e2576284694d678ad8182ab52c8cfb152559c38e3150189cafb2e4614f55fef945aafeaee47f5b9a66a18cfbcb92  sensors.files
+"

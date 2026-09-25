@@ -1,0 +1,60 @@
+# Archived: Maintainer had no pmOS GitLab account
+
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-xiaomi-gemini
+pkgdesc="Xiaomi Mi 5"
+pkgver=6
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	firmware-xiaomi-gemini
+	linux-firmware-ath10k
+	linux-firmware-qca
+	linux-firmware-qcom
+	linux-postmarketos-qcom-msm8996
+	mkbootimg
+	msm-modem
+	postmarketos-base
+	soc-qcom-msm8996
+	soc-qcom-msm8996-ucm
+	"
+makedepends="devicepkg-dev"
+subpackages="$pkgname-phosh"
+
+source="
+	deviceinfo
+	modules-initfs
+	pointercal
+	phoc.ini
+	"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -D -m644 "$srcdir"/pointercal \
+		"$pkgdir"/etc/pointercal
+}
+
+phosh() {
+	install_if="$pkgname=$pkgver-r$pkgrel postmarketos-ui-phosh"
+	replaces="phosh"
+
+	install -Dm644 "$srcdir"/phoc.ini \
+		"$subpkgdir"/usr/share/phosh/phoc.ini
+}
+
+
+sha512sums="
+dd948c8e1780b0adc4023fbe09e69d6cabf06db1047e4bf09dc4c0dd88b237a7ce03bd19c4a39fa5b2a31a522eb27d63d6f7697577c3bc6c7833d911ac2805f2  deviceinfo
+4f420e410ed05d617659e8ec1d86b9d3b1514caabe1836cde06d6950f4d92e2b96ad9df7d91061019513aa23971d24a3c394e36abd4f3fbc4a9db5420037c2c4  modules-initfs
+dfae5737f007e57ccd1d0c44001a46c5db754ef65c9bd0519ffafda0e5d6d50c4cca3fb4745da84581f790f984f8d98abe47c5598b708e1c9720ff4c83b7e6b4  pointercal
+38409d4ce48db4624539dbfd695d3c6e1596a29fd7c3004a41368b28cba646495d05360420ad728f82c63d6ddeeca71d09944df06ebaca120aedd9cc2b436eb3  phoc.ini
+"

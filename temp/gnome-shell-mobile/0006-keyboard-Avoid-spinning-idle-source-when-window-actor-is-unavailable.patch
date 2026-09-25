@@ -1,0 +1,37 @@
+commit 5fd671ad3ccbcd3cd65f0e8ec1e1d1692d31bba7
+Author: Cédric Bellegarde <cedric.bellegarde@adishatz.org>
+Date:   Thu Jun 11 16:13:12 2026 +0200
+
+    keyboard: Avoid spinning idle source when window actor is unavailable
+    
+    FocusTracker defers handling of newly created windows through an
+    idle source and checks whether the corresponding Meta.WindowActor is
+    available.
+    
+    The callback currently returns SOURCE_CONTINUE when
+    get_compositor_private() returns null. Since this is an idle source,
+    returning SOURCE_CONTINUE causes it to be re-scheduled on every main
+    loop iteration until the actor becomes available. In practice this can
+    result in a busy loop, with the main loop repeatedly polling without
+    blocking and consuming significant CPU time.
+    
+    A Meta.WindowActor is normally available when the window-created signal
+    is emitted, so there is no reason to keep retrying from an idle
+    handler. Treat a missing actor as a terminal condition and remove the
+    source instead.
+    
+    Fix #70
+
+diff --git a/js/ui/keyboard.js b/js/ui/keyboard.js
+index 8e551b48f..16f28b3f9 100644
+--- a/js/ui/keyboard.js
++++ b/js/ui/keyboard.js
+@@ -839,7 +839,7 @@ class FocusTracker extends Signals.EventEmitter {
+                 GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+                     const windowActor = window.get_compositor_private();
+                     if (!windowActor)
+-                        return GLib.SOURCE_CONTINUE;
++                        return GLib.SOURCE_REMOVE;
+ 
+                     // We assume skip_taskbar windows are popovers
+                     if (window.skip_taskbar) {

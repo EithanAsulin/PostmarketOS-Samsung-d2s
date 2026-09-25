@@ -1,0 +1,32 @@
+maintainer="Ferass El Hafidi <funderscore@postmarketos.org>"
+pkgname=amlogic-fiptool
+pkgver=2015.01
+pkgrel=1
+pkgdesc="Amlogic FIP utility for S905, extracted from downstream U-Boot sources"
+url="https://postmarketos.org"
+arch="all"
+license="BSD-3-Clause"
+makedepends="$depends_dev
+	bsd-compat-headers
+	swig
+"
+source="u-boot-odroidc2-v2015.01.tar.gz::https://github.com/hardkernel/u-boot/archive/refs/heads/odroidc2-v2015.01.tar.gz
+	remove-wall.patch
+	"
+options="!check"
+builddir="$srcdir/u-boot-odroidc2-v2015.01"
+
+build() {
+	make fip_create
+}
+
+package() {
+	mkdir -p "$pkgdir"/usr/bin
+	install -Dm755 -t "$pkgdir"/usr/bin \
+		"$builddir"/tools/fip_create/fip_create
+}
+
+sha512sums="
+dd6e16b83be9e3dc19f78168b1662c0c6c982ee1c3d643a7ce1d8c1fc559d1003d2197c852e5cb005217b660bf3b2dfa906ca42cfa9ba921804bca921dd0c9c9  u-boot-odroidc2-v2015.01.tar.gz
+455839edb4aa1664d45f343d22684c59f576e9752200bbe42fe0689a45e0b63704a81079fbe06058f127d253e846cf4fc4986b5485426b234147c7c7054d4975  remove-wall.patch
+"

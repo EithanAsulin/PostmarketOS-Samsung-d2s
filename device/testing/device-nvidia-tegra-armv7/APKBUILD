@@ -1,0 +1,41 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Robert Eckelmann <longnoserob@postmarketos.org>"
+pkgname=device-nvidia-tegra-armv7
+pkgdesc="NVIDIA Tegra ARMv7"
+pkgver=6
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf
+	firmware-nvidia-tegra-armv7
+	linux-postmarketos-grate
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf modules-initfs"
+subpackages="
+	$pkgname-x11
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+x11() {
+	install_if="$pkgname=$pkgver-r$pkgrel xorg-server"
+	depends="xf86-video-opentegra libvdpau-tegra"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+e7af5f167f919651407625ac24c938a3ecb93d82f2c4e4a1a33749fb755b87acc70e139496332bcc89cf35da9633d99e7ff07d874a7c802c963d386c9b7fc801  deviceinfo
+cb96e11b95875e3cc2faae805cd31901c1caac1c707685b27c1c3e459487c596f003ee05b18a939b5699e9ee0c449fa86a3d5bdaa9eab77fad0676fcc94bc192  kernel-cmdline.conf
+8ea2030fb0c1ae181778b86dc36ed71a904dd51e1fb08114c2a124a693fc7b464cfbb14efa8422db716fb9a647afa367df094abcc14f1ccc51af8b9063de8847  modules-initfs
+"

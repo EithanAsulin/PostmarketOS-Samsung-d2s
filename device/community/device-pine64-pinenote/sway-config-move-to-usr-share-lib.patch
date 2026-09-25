@@ -1,0 +1,44 @@
+diff --git a/bin/sway_hrdl b/bin/sway_hrdl
+index 1ae8a04..eca894d 100755
+--- a/bin/sway_hrdl
++++ b/bin/sway_hrdl
+@@ -1,3 +1,3 @@
+ #!/bin/sh
+ 
+-sway --config /etc/sway_hrdl/sway/config
++sway --config /usr/share/pinenote/sway/config
+diff --git a/pinenote-config/sway/config b/pinenote-config/sway/config
+index e70d564..3f539f0 100644
+--- a/pinenote-config/sway/config
++++ b/pinenote-config/sway/config
+@@ -5,7 +5,7 @@
+ # Read `man 5 sway` for a complete reference.
+ 
+ # set this to the config's absolute path. This variable doesn't support shell expansion
+-set $pn_config_root "/home/phantomas/.config/sway-theme"
++set $pn_config_root "/usr/share/pinenote"
+ include "$pn_config_root/sway/pinenote.config"
+ 
+ #set $pn_config_root "/usr/local/share/pinenote-theme"
+diff --git a/pinenote-config/sway/pinenote.config b/pinenote-config/sway/pinenote.config
+index a80d414..609949d 100644
+--- a/pinenote-config/sway/pinenote.config
++++ b/pinenote-config/sway/pinenote.config
+@@ -28,7 +28,7 @@
+ # set $pn_config_root "/usr/share/pinenote-config"
+ 
+ # Sway's scripts directory
+-set $pn_script_dir "$pn_config_root/sway/scripts"
++set $pn_script_dir "/usr/lib/pinenote"
+ 
+ # Waybar config directory
+ #
+@@ -38,7 +38,7 @@ set $pn_waybar_config_dir "$pn_config_root/waybar"
+ # Waybar utility scripts
+ #
+ # This variable should contain the path to the directory containing waybar's scripts.
+-set $pn_waybar_script_dir "$pn_waybar_config_dir/scripts"
++set $pn_waybar_script_dir "$pn_script_dir"
+ 
+ ###############
+ # Tools setup #

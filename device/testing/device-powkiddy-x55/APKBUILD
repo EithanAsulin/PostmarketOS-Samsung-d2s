@@ -1,0 +1,42 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Vitaliy Ognev <vitaliy.ognev@gmail.com>"
+pkgname=device-powkiddy-x55
+pkgdesc="Powkiddy X55"
+pkgver=7
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-firmware-rtl_bt
+	linux-firmware-rtw88
+	linux-powkiddy-x55
+	postmarketos-base
+	u-boot-powkiddy-x55
+"
+makedepends="devicepkg-dev"
+source="
+	80-device-powkiddy-x55.preset
+	deviceinfo
+	kernel-cmdline.conf
+"
+_pmb_recommends="powkiddy-x55-mapper"
+subpackages="$pkgname-systemd"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -Dm644 "$srcdir"/80-device-powkiddy-x55.preset \
+		-t "$pkgdir"/usr/lib/systemd/system-preset/
+}
+
+sha512sums="
+33d2daf691ec5a90555722ebcd02279b3d871376ad5c523a518aacefa5a5905a57232f91032c692f65be614327c5701f20cfd916a689fe23b1e5eb1dfd82bdfc  80-device-powkiddy-x55.preset
+983d032059e8464da83a60814cdcdb3c23b6e31ac1bdc7ff7a8994532d55bbf6158cd4594404e686c8a6e421ace95178285bf6d6279289484030ed2335088823  deviceinfo
+ce96e936003e90c659d3e54f31d674f953bc8858b06bed88eaff988a36101dcedd3ce41f2d5a2dc8257bce5e37893457289838fd875fc3a41e0c83b2998ea510  kernel-cmdline.conf
+"

@@ -1,0 +1,68 @@
+From 0003866828edccc37cb433e28e24c8f93c8eae19 Mon Sep 17 00:00:00 2001
+From: Ondrej Jirman <megi@xff.cz>
+Date: Mon, 20 Jul 2026 22:42:25 +0200
+Subject: [PATCH 72/90] usb: dwc3: Register the role even when no cable is
+ connected
+
+Gating the role init on the connection state went too far. Entering a
+role is what registers the gadget or the host, and for the gadget that
+means registering the UDC. With nothing plugged in at boot the UDC was
+never registered at all, so userspace could not bind a gadget driver to
+it, and by the time a cable showed up and the UDC appeared there was
+nothing left pending to bind.
+
+Only skip the role init for a connection change within a role that is
+already entered. That still keeps the gadget from being brought up on
+top of a powered off USB3 PHY, which is what the gating was for.
+
+Fixup for "usb: dwc3: Power cycle USB3 PHY on role/connection change".
+
+Signed-off-by: Ondrej Jirman <megi@xff.cz>
+---
+ drivers/usb/dwc3/core.c | 15 +++++++++++----
+ 1 file changed, 11 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/usb/dwc3/core.c b/drivers/usb/dwc3/core.c
+index 383c741eee96..88ae18073eb8 100644
+--- a/drivers/usb/dwc3/core.c
++++ b/drivers/usb/dwc3/core.c
+@@ -170,6 +170,7 @@ static void __dwc3_set_mode(struct work_struct *work)
+ 	u32 reg;
+ 	u32 desired_dr_role;
+ 	bool desired_dr_connected;
++	bool role_changed;
+ 	int i;
+ 
+ 	mutex_lock(&dwc->mutex);
+@@ -193,6 +194,8 @@ static void __dwc3_set_mode(struct work_struct *work)
+ 	if (desired_dr_role == DWC3_GCTL_PRTCAP_OTG && dwc->edev)
+ 		goto out;
+ 
++	role_changed = desired_dr_role != dwc->current_dr_role;
++
+ 	/*
+ 	 * Nothing was brought up for a role entered while no cable was
+ 	 * connected, so there is nothing to tear down either.
+@@ -289,11 +292,15 @@ static void __dwc3_set_mode(struct work_struct *work)
+ 	spin_unlock_irqrestore(&dwc->lock, flags);
+ 
+ 	/*
+-	 * With no cable connected the USB3 PHY is powered off, so there is
+-	 * nothing to bring up on top of it. Leave the controller idle until a
+-	 * cable shows up.
++	 * Entering a role registers the gadget or the host, which has to happen
++	 * even with no cable connected so that userspace can bind a gadget
++	 * driver to the UDC before anything is plugged in.
++	 *
++	 * A connection change within the same role is different: the USB3 PHY
++	 * has just been powered off, so there is nothing to bring up on top of
++	 * it, and the role is already entered anyway.
+ 	 */
+-	switch (desired_dr_connected ? desired_dr_role : 0) {
++	switch (desired_dr_connected || role_changed ? desired_dr_role : 0) {
+ 	case DWC3_GCTL_PRTCAP_HOST:
+ 		ret = dwc3_host_init(dwc);
+ 		if (ret) {
+-- 
+2.55.0
+

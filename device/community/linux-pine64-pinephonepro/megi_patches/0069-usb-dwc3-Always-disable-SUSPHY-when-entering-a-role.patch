@@ -1,0 +1,46 @@
+From 35ef66660a34a7f2e566f1ada9d03e7536a72607 Mon Sep 17 00:00:00 2001
+From: Ondrej Jirman <megi@xff.cz>
+Date: Mon, 20 Jul 2026 22:09:48 +0200
+Subject: [PATCH 69/90] usb: dwc3: Always disable SUSPHY when entering a role
+
+__dwc3_set_mode() leaves the old role, which enables SUSPHY, and then
+re-initializes the new one, which requires SUSPHY to be disabled. The
+only thing disabling it again is dwc3_set_prtcap(), and only when the
+value already in GCTL.PrtCapDir differs from the one being set.
+
+That is not the same question as whether a role transition took place.
+At probe, current_dr_role is 0 while GCTL.PrtCapDir may already hold the
+role being switched to, so the transition runs with SUSPHY left enabled.
+
+Disable it in __dwc3_set_mode() directly, so entering a role does not
+depend on what the register happened to hold.
+
+Signed-off-by: Ondrej Jirman <megi@xff.cz>
+---
+ drivers/usb/dwc3/core.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/usb/dwc3/core.c b/drivers/usb/dwc3/core.c
+index 3d669323b40d..cf12ab17ccb4 100644
+--- a/drivers/usb/dwc3/core.c
++++ b/drivers/usb/dwc3/core.c
+@@ -235,7 +235,15 @@ static void __dwc3_set_mode(struct work_struct *work)
+ 
+ 	spin_lock_irqsave(&dwc->lock, flags);
+ 
+-	dwc3_set_prtcap(dwc, desired_dr_role, false);
++	/*
++	 * Leaving the old role enabled SUSPHY, and re-initializing the new one
++	 * requires it to be disabled. dwc3_set_prtcap() only does that when the
++	 * value already in GCTL.PrtCapDir differs from the one being set, which
++	 * is not the same question, so do it here and tell dwc3_set_prtcap() to
++	 * keep its hands off.
++	 */
++	dwc3_enable_susphy(dwc, false);
++	dwc3_set_prtcap(dwc, desired_dr_role, true);
+ 
+ 	spin_unlock_irqrestore(&dwc->lock, flags);
+ 
+-- 
+2.55.0
+

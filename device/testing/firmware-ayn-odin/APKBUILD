@@ -1,0 +1,23 @@
+maintainer="Stefan Hansson <newbyte@postmarketos.org>"
+pkgname=firmware-ayn-odin
+pkgver=4
+pkgrel=0
+pkgdesc="Firmware for AYN Odin"
+url="https://gitlab.com/jenneron/firmware-ayn-odin"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps textrels pmb:cross-native"
+
+_repo="firmware-ayn-odin"
+_commit="92fb887a6ad21a76eb07ea049fe4b71a35388724"
+source="$pkgname-$_commit.tar.gz::$url/-/archive/$_commit/$_repo-$_commit.tar.gz"
+
+builddir="$srcdir/$_repo-$_commit"
+
+package() {
+	make DESTDIR="$pkgdir" install
+}
+
+sha512sums="
+db34b2ae22d5d8aba01124154bfb072ef11b572fc8c3434162b5cafd77250cd67a373d4a5b1892100e855276c9ad6167409667b735d3a88f155d14e6b5560cc4  firmware-ayn-odin-92fb887a6ad21a76eb07ea049fe4b71a35388724.tar.gz
+"

@@ -1,0 +1,36 @@
+From 8c97d8ab5e92e355c7f6aa6d0271556115c3648f Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?C=C3=A9dric=20Bellegarde?= <cedric.bellegarde@adishatz.org>
+Date: Fri, 6 Mar 2026 08:36:19 +0100
+Subject: [PATCH] windowPreview: Only try to close closable windows
+
+When swiping to close an application, _deleteAll() iterates over all
+windows associated with the app and calls delete() on each. This
+crashes if the app has a transient popup window (e.g. a dropdown menu)
+still open handler, resulting in a null function pointer dereference inside
+meta_window_delete() (delete.c:119).
+
+Fix this by guarding the delete() call with can_close(), skipping any
+window that Mutter has determined cannot be explicitly closed. These
+windows (popups, dropdown menus) will be destroyed naturally as part of
+the Wayland surface teardown when their parent toplevel is deleted.
+---
+ js/ui/windowPreview.js | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/js/ui/windowPreview.js b/js/ui/windowPreview.js
+index cd43ceab0..9dae8e1df 100644
+--- a/js/ui/windowPreview.js
++++ b/js/ui/windowPreview.js
+@@ -478,7 +478,8 @@ export const WindowPreview = GObject.registerClass({
+ 
+         // Delete all windows, starting from the bottom-most (most-modal) one
+         for (const window of windows.reverse())
+-            window.delete(global.get_current_time());
++            if (window.can_close())
++                window.delete(global.get_current_time());
+ 
+         this._closeRequested = true;
+     }
+-- 
+GitLab
+

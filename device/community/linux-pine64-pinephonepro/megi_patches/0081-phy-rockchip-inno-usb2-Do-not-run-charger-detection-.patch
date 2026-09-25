@@ -1,0 +1,113 @@
+From eb64fd87d66b565b4448a0527c257edbf392fdd5 Mon Sep 17 00:00:00 2001
+From: Ondrej Jirman <megi@xff.cz>
+Date: Tue, 21 Jul 2026 07:35:49 +0200
+Subject: [PATCH 81/90] phy: rockchip-inno-usb2: Do not run charger detection
+ as a host
+
+VBUS comes up before anything says which way round the port is: the
+Type-C port manager turns it on at SRC_ATTACHED, the PHY's bvalid
+interrupt fires, and the OTG state machine starts BC1.2 while the role
+is still unknown. By the time dwc3 calls phy_set_mode(PHY_MODE_USB_HOST)
+detection is already several stages in.
+
+That used to be harmless because chg_det.opmode was never written, so
+detection did not really park the transceiver. Now that it does, the
+consequences show up on the bus:
+
+  16.578  OTGSM b_idle vbus=1 host=0   detection starts
+  16.583  mode[0xe454]=0x1d7           transceiver parked, FS, pull-downs
+  16.994  U2PHY set_mode: host=1       role finally known
+  17.177  usb 8-1: new full-speed USB device number 2
+  17.377  dcd timed out -> DCP         no charger, we are sourcing VBUS
+
+A high speed device enumerated at full speed, because its chirp happened
+while the transceiver was parked. Then the bogus DCP outlived the
+connection: OTG_STATE_A_HOST never cleared it, so the next time a real
+host was plugged in the state machine still saw DCP and powered the USB2
+PHY off, leaving the gadget dead.
+
+Cancel detection when the role changes, undoing whichever stage it had
+reached, and clear the result when leaving host mode. There is still a
+window between VBUS and the role being known, but nothing acts on
+detection until it finishes, and it no longer finishes.
+
+Signed-off-by: Ondrej Jirman <megi@xff.cz>
+---
+ drivers/phy/rockchip/phy-rockchip-inno-usb2.c | 40 +++++++++++++++++++
+ 1 file changed, 40 insertions(+)
+
+diff --git a/drivers/phy/rockchip/phy-rockchip-inno-usb2.c b/drivers/phy/rockchip/phy-rockchip-inno-usb2.c
+index bbb119f34a88..96d0042027a4 100644
+--- a/drivers/phy/rockchip/phy-rockchip-inno-usb2.c
++++ b/drivers/phy/rockchip/phy-rockchip-inno-usb2.c
+@@ -693,6 +693,9 @@ static bool rockchip_usb2phy_host_mode(struct rockchip_usb2phy *rphy,
+ 	return extcon_get_state(rphy->edev, EXTCON_USB_HOST) > 0;
+ }
+ 
++static void rockchip_chg_detect_cancel(struct rockchip_usb2phy *rphy,
++				      struct rockchip_usb2phy_port *rport);
++
+ static int rockchip_usb2phy_set_mode(struct phy *phy, enum phy_mode mode,
+ 				     int submode)
+ {
+@@ -720,6 +723,14 @@ static int rockchip_usb2phy_set_mode(struct phy *phy, enum phy_mode mode,
+ 	dev_err(&rport->phy->dev, "U2PHY set_mode: host=%d\n", host_mode);
+ 	rport->host_mode = host_mode;
+ 
++	/*
++	 * VBUS comes up before anyone says which way round the port is, so
++	 * charger detection may already be running against a bus that is about
++	 * to be used the other way. Whatever it has decided belongs to the old
++	 * role either way.
++	 */
++	rockchip_chg_detect_cancel(rphy, rport);
++
+ 	/* let the state machine act on the new role */
+ 	mod_delayed_work(system_wq, &rport->otg_sm_work, 0);
+ 
+@@ -845,6 +856,12 @@ static void rockchip_usb2phy_otg_sm_work(struct work_struct *work)
+ 		if (!rockchip_usb2phy_host_mode(rphy, rport)) {
+ 			dev_dbg(&rport->phy->dev, "usb otg host disconnect\n");
+ 			rport->state = OTG_STATE_B_IDLE;
++			/*
++			 * Nothing was ever detected here, we were sourcing
++			 * VBUS. Do not let that reach the next connection.
++			 */
++			rphy->chg_state = USB_CHG_STATE_UNDEFINED;
++			rphy->chg_type = POWER_SUPPLY_TYPE_UNKNOWN;
+ 			rockchip_usb2phy_power_off(rport->phy);
+ 		}
+ 		break;
+@@ -953,6 +970,29 @@ static void rockchip_chg_leave_mode(struct rockchip_usb2phy *rphy,
+ 		     rphy->chg_mode_cfg | (mask << BIT_WRITEABLE_SHIFT));
+ }
+ 
++/*
++ * Charger detection parks the transceiver and drives DP/DM, so it must not be
++ * left running once the port turns out to be a host: there is no charger to
++ * find, VBUS is ours, and the bus is about to be enumerated. Undo whichever
++ * stage it had reached and drop the result.
++ */
++static void rockchip_chg_detect_cancel(struct rockchip_usb2phy *rphy,
++				       struct rockchip_usb2phy_port *rport)
++{
++	cancel_delayed_work_sync(&rport->chg_work);
++
++	if (rphy->chg_state != USB_CHG_STATE_UNDEFINED &&
++	    rphy->chg_state != USB_CHG_STATE_DETECTED) {
++		rockchip_chg_enable_dcd(rphy, false);
++		rockchip_chg_enable_primary_det(rphy, false);
++		rockchip_chg_enable_secondary_det(rphy, false);
++		rockchip_chg_leave_mode(rphy, rport, false);
++	}
++
++	rphy->chg_state = USB_CHG_STATE_UNDEFINED;
++	rphy->chg_type = POWER_SUPPLY_TYPE_UNKNOWN;
++}
++
+ #define CHG_DCD_POLL_TIME	(100 * HZ / 1000)
+ #define CHG_DCD_MAX_RETRIES	6
+ #define CHG_PRIMARY_DET_TIME	(40 * HZ / 1000)
+-- 
+2.55.0
+

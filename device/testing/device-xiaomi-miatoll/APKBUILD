@@ -1,0 +1,71 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Barnabas Czeman <barnabas.czeman@postmarketos.org>"
+pkgname=device-xiaomi-miatoll
+pkgdesc="Xiaomi Redmi Note 9 Pro / Redmi Note 9S"
+pkgver=12
+pkgrel=3
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf-qcom-sm7125
+	firmware-qcom-adreno-a630
+	firmware-qcom-adreno-a630-sqe
+	firmware-xiaomi-miatoll
+	hexagonrpcd>=0.3.2-r3
+	linux-firmware-ath10k
+	linux-firmware-qca
+	linux-postmarketos-qcom-sm7125
+	make-dynpart-mappings
+	mkbootimg
+	postmarketos-base
+	soc-qcom
+	soc-qcom-modem
+	swclock-offset
+	systemd-boot
+"
+makedepends="devicepkg-dev"
+install="
+	$pkgname-openrc.post-install
+	$pkgname-openrc.post-upgrade
+"
+subpackages="
+	$pkgname-openrc
+	$pkgname-udev
+"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	hexagonrpcd.confd
+	modules-initfs
+	81-libssc-xiaomi-miatoll.rules
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -Dm644 "$srcdir"/81-libssc-xiaomi-miatoll.rules \
+		"$pkgdir"/usr/lib/udev/rules.d/81-libssc-xiaomi-miatoll.rules
+	install -Dm644 "$srcdir"/hexagonrpcd.confd \
+		"$pkgdir"/usr/share/hexagonrpcd/hexagonrpcd-adsp-sensorspd.conf
+}
+
+openrc() {
+	default_openrc
+	depends="hexagonrpcd-openrc openrc"
+
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+78ba6fa05487289eaca8046992a6b4d26b29d64131e0628d01e43fb8cd9fbba5c07468e752984729cb500f24845439d28afea38db1f3360afbf1c8faae6257af  deviceinfo
+97e88eaa9b8e7989a20d2572479fe5d1fe0284de862da11c91b1f347099d5704673837db01a6b0c289fee0a2d7236f64fba31fd6001475f957c23203e34fd6fb  kernel-cmdline.conf
+9a70ba5c036f2d3dc90c5c34a1d5bf0ef0805a19e5b49cd2821897bf3e6fe8af0cd2148aebb263807359ac616958da1c4032d85079d91d975f4bf220df1028ea  hexagonrpcd.confd
+5372956c7b06df80e0978bc64b3718162cb88b1080bc020899acb27d509425a30cc6009f36ecf86532e66afc5023d497c2359b1812d40f4cad12d76e61d84748  modules-initfs
+2c16ba75e0077b2b1eaefa4c73b287475505a1aeb291ec29316d41cc094277320f9d2aaabfd91eb1dc0f488ab2d61a94faef16e7afe0f1e226779113761b9a37  81-libssc-xiaomi-miatoll.rules
+"

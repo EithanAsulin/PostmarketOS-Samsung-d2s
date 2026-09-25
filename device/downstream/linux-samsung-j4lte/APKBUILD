@@ -1,0 +1,94 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/exynos7570-j4lte_defconfig
+maintainer="Hendra Manudinata <hendra@manoedinata.com>"
+pkgname=linux-samsung-j4lte
+pkgver=3.18.140
+pkgrel=3
+pkgdesc="Samsung Galaxy J4 kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="samsung-j4lte"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	findutils
+	flex
+	gcc6
+	openssl-dev
+	perl
+	dtbtool-exynos
+"
+
+# Source
+_repository="android_kernel_samsung_universal7570"
+_commit="57ffdcdde7e968af314e809cdab6b3ee24bc4d24"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/DaunScape/$_repository/archive/$_commit.tar.gz
+	$_config
+	0001-drivers-leds-ktd2692-Guard-function-calls-under-CONF.patch
+	0002-zram-Set-zstd-as-the-default-compressor.patch
+	0003-drivers-usb-u_ether-Force-setting-random-MAC-address.patch
+	0004-staging-samsung-sec_batt-Force-disable-low-power-cha.patch
+	0005-drivers-samsung-scsc-Fix-FW_LOCATION_AUTO-symbol.patch
+	0006-drivers-samsung-scsc-Skip-mount-point-check.patch
+	0007-fbdev-decon_7570-Initialize-framebuffer-more-late.patch
+	0008-HACK-loop-Force-disable-Direct-I-O-operations.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+	fix-check-lxdialog.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+# Compiler: GCC 6 (not tested with LLVM)
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# Build dt image with exynos dtbtool
+	dtbTool-exynos --pagesize 2048 \
+		--platform 0x50a6 \
+		--subtype  0x217584da \
+		-o "$_outdir/arch/$_carch/boot"/dt.img \
+		$(find "$_outdir/arch/$_carch/boot/dts/" -name *.dtb)
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+
+	install -Dm644 "$_outdir/arch/$_carch/boot"/dt.img \
+		"$pkgdir"/boot/dt.img
+}
+
+sha512sums="
+495e1f9d4c6b4997a5f5faced507493421ecaa104fc6c8affff546f855cc5ea8f535177464f422f5b76db96fbbd1ead2471ef0fd7537659c2041d03c53ede97c  linux-samsung-j4lte-57ffdcdde7e968af314e809cdab6b3ee24bc4d24.tar.gz
+006be1fb59880c0b0eedef7410201718ee88d872d1c48eaac7cf1070f897ea4d67dbd1bd2a83a647cb4a8914c602623c05ba129f7f7c90abc3c268cc67ad15bf  config-samsung-j4lte.aarch64
+fafed0c79633b50f9c62febeb1198bc863ddcaf7d3140bf58b87f574a75a16c1b73d563ce849ab8400030d6700bf64ea3bbb60b5cb86a902696e1bd702a3b276  0001-drivers-leds-ktd2692-Guard-function-calls-under-CONF.patch
+f81dc234b7c37e5c33472a22f96299c435d4e2728e24164dc375abbc80912ce5a9045178deb2338f1f484a52296ad558541c01c101f244a62bf6149e75e0406b  0002-zram-Set-zstd-as-the-default-compressor.patch
+f69b9363ffd543f98f7799256bb3cfccc84623b69d8c7ee3ea291b52cecac7d961d4b491db6b5477bdd527ad3e9cbd738d67647fc074adcd2927b5eb6d2478dd  0003-drivers-usb-u_ether-Force-setting-random-MAC-address.patch
+8f17a56957476832df48f90c229302958ec848300ea7dff76c2e9fc9433c301b28239bbc7404cf9c1bac5410dd9984dce39d132bbb29650324b9136777185583  0004-staging-samsung-sec_batt-Force-disable-low-power-cha.patch
+e0f5e505e794d4db1ed87a86dadf8321199c8c749a2b1a9b31fc572320b95d9cc004664eea2f3e20163d2993bfe0f50bdcecf027b70ce551d02abb2874985f9a  0005-drivers-samsung-scsc-Fix-FW_LOCATION_AUTO-symbol.patch
+f0da70e3b5cc498e19430936422cf89476d68a5bbe45d593ab3c8bf353a81401a9133df983d3f1f84d0127670ad32b8adcb91e1beb821eb2efddd831f22f79dc  0006-drivers-samsung-scsc-Skip-mount-point-check.patch
+76700ecaea56f15d4204ff3064e640552eca35d3713fddaaaee204d7bf983ef419c08c7d759ca58430a27bd10d4bda7d1b6a7ec34ba27f503256f4ee6e42649d  0007-fbdev-decon_7570-Initialize-framebuffer-more-late.patch
+ee281f9a6d5bab871d83e02cea6e222c6883e452c7b22ac65b512eca37d007218cad50e297189a4ad46be8d3d5a70f26f62867c75de30387cb4777a0c3a3e5e0  0008-HACK-loop-Force-disable-Direct-I-O-operations.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+182be3c596b9cc267ac108d7cf03fc8c328ccc6b36770800e4dcedea8d1bb65e3f5eacf590c2948f58b1418cc60a1670ba77dde8c259e428d158c31b6e1dbaf5  fix-check-lxdialog.patch
+"

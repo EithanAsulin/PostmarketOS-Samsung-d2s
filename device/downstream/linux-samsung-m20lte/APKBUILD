@@ -1,0 +1,94 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/m20lte_defconfig
+
+maintainer="Diego Stocco <diegostocco.2008@gmail.com>"
+pkgname=linux-samsung-m20lte
+pkgver=4.4.177
+pkgrel=2
+_commit="339a04eabab9310ad9f6039831f6834d7f9d3c2b"
+pkgdesc="Samsung Galaxy M20 kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="samsung-m20lte"
+url="https://kernel.org"
+license="GPL-2.0-only"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	dtbtool-exynos
+	findutils
+	flex
+	gcc6
+	openssl-dev
+	perl
+"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/android_kernel_samsung_universal7904/archive/$_commit.tar.gz
+	$_config
+	cross-compile.patch
+	fix-check-lxdialog.patch
+	fix-scsc-kconfig.patch
+	fix-decon.patch
+	fix-multiple-modules.patch
+	fix-spinlock.patch
+	fix-usblog-proc-notify-not-included.patch
+"
+options="!check !strip !tracedeps pmb:cross-native"
+builddir="$srcdir/android_kernel_samsung_universal7904-$_commit"
+_outdir="out"
+
+# Compiler: GCC 6 (not tested with LLVM)
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# deviceinfo_bootimg_qcdt
+	dtbTool-exynos -o "$_outdir/arch/$_carch/boot"/dt.img \
+		$(find "$_outdir/arch/$_carch/boot/dts/" -name *m20lte*.dtb)
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+	install -Dm644 "$_outdir/arch/$_carch/boot"/dt.img \
+		-t "$pkgdir"/boot/
+
+	make modules_install \
+		O="$_outdir" \
+		ARCH="$_carch" \
+		INSTALL_PATH="$pkgdir"/boot/ \
+		INSTALL_MOD_PATH="$pkgdir"/usr \
+		INSTALL_MOD_STRIP=1
+
+	mkdir "$pkgdir"/boot/dtbs
+	mkdir "$pkgdir"/boot/dtbs/exynos
+	install -Dm644 $(find "$_outdir/arch/$_carch/boot/dts/" -name *m20lte*.dtb) \
+		"$pkgdir"/boot/dtbs/exynos/$(basename $(find "$_outdir/arch/$_carch/boot/dts/" -name *m20lte*.dtb))
+}
+
+sha512sums="
+663f7cff6dee546104a34f38ba27f89211ef40514e4ebdf63d4bc60a523f31d831e349060b70cc407498a33044ced3d0e806b8325c07f7b5a3b829d610bef490  linux-samsung-m20lte-339a04eabab9310ad9f6039831f6834d7f9d3c2b.tar.gz
+9e845c05b97670855eea16b85241948b1c94625cb38af32e2001f72acac6c68cb97ddc845449cf8d22886c2a93ad26d749089df317bbad17cb49ec24ebdb0e31  config-samsung-m20lte.aarch64
+4bff19e4711dc5363520ae2d5f165e82d9588d51858a3f1ea48f77fde5a1674ee23bbed8a270a11ec48c0877d27cc28a393ba58ba87f8f2c97fd6abe8495efc3  cross-compile.patch
+182be3c596b9cc267ac108d7cf03fc8c328ccc6b36770800e4dcedea8d1bb65e3f5eacf590c2948f58b1418cc60a1670ba77dde8c259e428d158c31b6e1dbaf5  fix-check-lxdialog.patch
+2038a0e7b3a076e83e4a8fa2e5d35650c52f947985ca58310aaf94211756eef1635bb3c8e047a77ecc0a69de55f49be37081bfd570e49031b2397a9d6de87285  fix-scsc-kconfig.patch
+88a5ef18d9eb31e6d80317925907651229529cd41f8b181b61c14ff56b340341c8ff5c95ab0dd9562b9575d4e206623e7dc039a9eb6b34c455165878df63cd86  fix-decon.patch
+707d7fe4cde4932f6cf8fc1c33c0b5ab3fbb522a6b8f456ae42d3070783a7d0984b645e4850db618c03d87d559951678fe078c321b07ad41ef25543f3895557d  fix-multiple-modules.patch
+47b313f27b4d0e04f9635e887ad3cfe7d741b43b5ade2fd0149a585e0ade77162e8507c71df369af13cb6bd9f0176b67ba723d44e437c530c7345ad32d195dca  fix-spinlock.patch
+94cff37f62cc61aa5c6b97f2497b03bb4c0bf9f112f7ce950cdc7ef8345ebb802a16e40a5fbea6830d17c3dce50db1402837344d2a2a30f77521934343607837  fix-usblog-proc-notify-not-included.patch
+"

@@ -1,0 +1,105 @@
+From 579865b00acc1987a998c47e83dd0bf9fd8adc00 Mon Sep 17 00:00:00 2001
+From: Ondrej Jirman <megi@xff.cz>
+Date: Tue, 21 Jul 2026 23:15:20 +0200
+Subject: [PATCH 77/90] phy: rockchip-typec: Publish the DP lane count
+
+Publish the negotiated lane count from the mode mux with
+phy_set_bus_width(): four lanes for DP alone, two when it shares the
+connector with USB SuperSpeed, and zero whenever the lanes carry USB or
+no sink has raised HPD.
+
+The DP controller sits behind this PHY and is the one the mux configures,
+so it has no other way to learn how many lanes it was left; it reads the
+count back over the phandle it already holds. Zero doubles as "nothing to
+drive", sparing it from telling "no alternate mode" from "alternate mode
+without a sink".
+
+Signed-off-by: Ondrej Jirman <megi@xff.cz>
+---
+ drivers/phy/rockchip/phy-rockchip-typec.c | 28 ++++++++++++++++++++++-
+ 1 file changed, 27 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/phy/rockchip/phy-rockchip-typec.c b/drivers/phy/rockchip/phy-rockchip-typec.c
+index 25e89ce7856e..989274f456b9 100644
+--- a/drivers/phy/rockchip/phy-rockchip-typec.c
++++ b/drivers/phy/rockchip/phy-rockchip-typec.c
+@@ -404,6 +404,13 @@ struct rockchip_typec_phy {
+ 	 */
+ 	struct typec_mux_dev *mux;
+ 	u8 mux_mode;
++
++	/*
++	 * The DP PHY, kept so that the lane count the alternate mode settled
++	 * on can be published on it. The DP controller sits behind this PHY
++	 * and has no other way of learning how many lanes it was left.
++	 */
++	struct phy *dp_phy;
+ };
+ 
+ struct phy_reg {
+@@ -929,6 +936,8 @@ static int tcphy_mux_set(struct typec_mux_dev *mux,
+ {
+ 	struct rockchip_typec_phy *tcphy = typec_mux_get_drvdata(mux);
+ 	bool is_dp = state->alt && state->alt->svid == USB_TYPEC_DP_SID;
++	struct typec_displayport_data *data;
++	u8 lanes = 0;
+ 	u8 mode;
+ 
+ 	/*
+@@ -949,12 +958,18 @@ static int tcphy_mux_set(struct typec_mux_dev *mux,
+ 			return 0;
+ 		/* four lanes of DP, no USB SuperSpeed */
+ 		mode = MODE_DFP_DP;
++		data = state->data;
++		if (data->status & DP_STATUS_HPD_STATE)
++			lanes = 4;
+ 		break;
+ 	case TYPEC_DP_STATE_D:
+ 		if (!is_dp)
+ 			return 0;
+ 		/* two lanes of DP alongside USB SuperSpeed */
+ 		mode = MODE_DFP_DP | MODE_DFP_USB;
++		data = state->data;
++		if (data->status & DP_STATUS_HPD_STATE)
++			lanes = 2;
+ 		break;
+ 	default:
+ 		dev_warn(tcphy->dev, "unhandled mux mode %lu\n", state->mode);
+@@ -965,6 +980,13 @@ static int tcphy_mux_set(struct typec_mux_dev *mux,
+ 	tcphy->mux_mode = mode;
+ 	mutex_unlock(&tcphy->lock);
+ 
++	/*
++	 * Publish the lane count on the DP PHY. Zero means the DP controller
++	 * has nothing to drive, either because the lanes carry USB or because
++	 * no sink has raised HPD yet.
++	 */
++	phy_set_bus_width(tcphy->dp_phy, lanes);
++
+ 	return 0;
+ }
+ 
+@@ -1317,8 +1339,9 @@ static int rockchip_typec_phy_probe(struct platform_device *pdev)
+ 
+ 	for_each_available_child_of_node(np, child_np) {
+ 		struct phy *phy;
++		bool is_dp = of_node_name_eq(child_np, "dp-port");
+ 
+-		if (of_node_name_eq(child_np, "dp-port"))
++		if (is_dp)
+ 			phy = devm_phy_create(dev, child_np,
+ 					      &rockchip_dp_phy_ops);
+ 		else if (of_node_name_eq(child_np, "usb3-port"))
+@@ -1336,6 +1359,9 @@ static int rockchip_typec_phy_probe(struct platform_device *pdev)
+ 		}
+ 
+ 		phy_set_drvdata(phy, tcphy);
++
++		if (is_dp)
++			tcphy->dp_phy = phy;
+ 	}
+ 
+ 	phy_provider = devm_of_phy_provider_register(dev, of_phy_simple_xlate);
+-- 
+2.55.0
+

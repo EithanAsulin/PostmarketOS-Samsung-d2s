@@ -1,0 +1,76 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Yassine Oudjana (Tooniis) <y.oudjana@protonmail.com>"
+pkgname=device-xiaomi-scorpio
+pkgdesc="Xiaomi Mi Note 2"
+pkgver=11
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	bootmac
+	firmware-xiaomi-scorpio
+	linux-firmware-ath10k
+	linux-firmware-qca
+	linux-firmware-qcom
+	linux-postmarketos-qcom-msm8996
+	megapixels
+	mesa-egl
+	mkbootimg
+	msm-modem
+	postmarketos-base
+	postprocessd
+	soc-qcom-msm8996
+	soc-qcom-msm8996-ucm
+	"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-openrc
+	$pkgname-phosh
+	"
+install="$pkgname-openrc.post-install"
+source="
+	30-gpu-firmware.files
+	deviceinfo
+	modules-initfs
+	pointercal
+	phoc.ini
+	"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -D -m644 "$srcdir"/pointercal \
+		"$pkgdir"/etc/pointercal
+
+	install -Dm644 "$srcdir/30-gpu-firmware.files" \
+		-t "$pkgdir/usr/share/mkinitfs/files"
+}
+
+openrc() {
+	default_openrc
+
+	mkdir "$subpkgdir"
+}
+
+phosh() {
+	install_if="$pkgname=$pkgver-r$pkgrel postmarketos-ui-phosh"
+	replaces="phosh"
+
+	install -Dm644 "$srcdir"/phoc.ini \
+		"$subpkgdir"/usr/share/phosh/phoc.ini
+}
+
+
+sha512sums="
+b033e7357c4ef91ba84f6f715e96e67637c2631d4746402f8a92333ba8974bbee7736a7bc081b0f84a84dc5b555a7db4dbb4f14f628bbfc42cbfa501c4f0ed36  30-gpu-firmware.files
+abb476a5504cae20109d68e4246bfcf6605ec76a9d603f75f418b2b03b1a7ec01305c48eca57f06c5c67caf5c2e8a29b7f43d6e1d6a9513a93b1653f730536d0  deviceinfo
+93518206c01baa4ef8216dfdbbc5df27c61ea7f17d11c1167a074f4324411b195be2fb29124430a537b1e724067806060f53a2d769a89a4928c33eae93279847  modules-initfs
+dfae5737f007e57ccd1d0c44001a46c5db754ef65c9bd0519ffafda0e5d6d50c4cca3fb4745da84581f790f984f8d98abe47c5598b708e1c9720ff4c83b7e6b4  pointercal
+38409d4ce48db4624539dbfd695d3c6e1596a29fd7c3004a41368b28cba646495d05360420ad728f82c63d6ddeeca71d09944df06ebaca120aedd9cc2b436eb3  phoc.ini
+"

@@ -1,0 +1,97 @@
+# Based on linux-postmarketos-qcom-sdm845
+#
+# This kernel package can be replaced with linux-postmarketos-qcom-sdm845 once
+# https://gitlab.com/sdm845-mainline/linux/-/merge_requests/91 is merged
+maintainer="Stefan Hansson <newbyte@postmarketos.org>"
+_flavor="ayn-odin"
+pkgname=linux-$_flavor
+pkgver=7.1_rc1
+pkgrel=0
+_commit="68360b73aaee537c359c13c457d3b5bb779f4f0d"
+pkgdesc="Mainline Kernel fork for AYN Odin"
+arch="aarch64"
+_carch="arm64"
+url="https://gitlab.com/jenneron/linux"
+license="GPL-2.0-only"
+options="!check !tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-community
+	pmb:kconfigcheck-uefi
+"
+makedepends="
+	bash
+	bison
+	clang
+	elfutils-dev
+	findutils
+	flex
+	linux-headers
+	lld
+	llvm
+	openssl-dev
+	pahole
+	perl
+	postmarketos-installkernel
+	python3
+	zstd
+"
+
+_config="config-$_flavor.$arch"
+
+# Source
+source="
+	linux-$_commit.tar.gz::https://gitlab.com/jenneron/linux/-/archive/$_commit/linux-$_commit.tar.gz
+	$_config
+	libbpf-Fix-UAF-in-strset__add_str.patch
+"
+builddir="$srcdir/linux-$_commit"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$arch" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor"
+}
+
+package() {
+	if [ -e "$builddir/arch/$_carch/boot/vmlinuz.efi" ]; then
+		# ZBOOT EFI decompressor for EFI booting
+		install -Dm644 "$builddir/arch/$_carch/boot/vmlinuz.efi" \
+			"$pkgdir/boot/linux.efi"
+
+		# Old GZIP'd kernel image for boot.img compatibility
+		install -Dm644 "$builddir/arch/$_carch/boot/vmlinuz" \
+			"$pkgdir/boot/vmlinuz"
+	else
+		echo "WARNING: CONFIG_ZBOOT not enabled!"
+		install -Dm644 "$builddir/arch/$_carch/boot/Image.gz" \
+			"$pkgdir/boot/vmlinuz"
+	fi
+
+	make modules_install dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_PATH="$pkgdir"/boot/ \
+		INSTALL_MOD_PATH="$pkgdir"/usr \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs-tmp
+
+	mkdir -p "$pkgdir"/boot/dtbs/qcom
+	cp -r "$pkgdir"/boot/dtbs-tmp/qcom/sdm8* "$pkgdir"/boot/dtbs/qcom
+	rm -rf "$pkgdir"/boot/dtbs-tmp
+
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+3edef8ed3583568943ad0a2e2d0ea46bf47bc96cc17dfdbda84da792a0b4fdbabf86dc98d6b3264594dab5fc4628fbc2859d4a9bf833fe2c771afd9973f8487a  linux-68360b73aaee537c359c13c457d3b5bb779f4f0d.tar.gz
+73aa9b9b77e5c368e992878602a242de9ae1f05859d8754f8cbd1d8d229eff41e0cf3b0c8031928165884af3127ef15a14926b1c27f72c74268e45ee12aeeb3b  config-ayn-odin.aarch64
+e2555390d48cbbdc32a7d3f0c27599ff88f2fe3e786d1d0086caaa5b092cc3edcb6e95e2fb07034edb3793f6dc954da0662c723202eb7e2c4956c99b50919b12  libbpf-Fix-UAF-in-strset__add_str.patch
+"

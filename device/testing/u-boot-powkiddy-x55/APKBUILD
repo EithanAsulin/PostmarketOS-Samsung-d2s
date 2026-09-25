@@ -1,0 +1,60 @@
+maintainer="Vitaliy Ognev <vitaliy.ognev@gmail.com>"
+pkgname=u-boot-powkiddy-x55
+pkgver=2026.04
+pkgrel=0
+pkgdesc="U-Boot bootloader for the Powkiddy X55 (rk3566)"
+url="https://source.denx.de/u-boot/u-boot.git"
+arch="aarch64"
+_carch="arm64"
+license="GPL-2.0-or-later OFL-1.1 BSD-2-Clause BSD-3-Clause eCos-2.0 IBM-pibs
+	ISC LGPL-2.0-only LGPL-2.1-only X11"
+options="!check"
+
+makedepends="
+	bash
+	bc
+	bison
+	flex
+	gnutls-dev
+	libfdt
+	make
+	openssl-dev
+	py3-elftools
+	py3-setuptools
+	python3-dev
+	swig
+"
+
+_uboot="88dc2788777babfd6322fa655df549a019aa1e69"
+_rkbin="a2a0b89b6c8c612dca5ed9ed8a68db8a07f68bc0"
+
+builddir=$srcdir/u-boot-$_uboot
+
+source="
+	uboot-$_uboot.tar.gz::https://github.com/u-boot/u-boot/archive/$_uboot.tar.gz
+	rkbin-$_rkbin.tar.gz::https://github.com/rockchip-linux/rkbin/archive/$_rkbin.tar.gz
+"
+
+build() {
+	make powkiddy-x55-rk3566_defconfig
+
+	export ROCKCHIP_TPL=$srcdir/rkbin-$_rkbin/bin/rk35/rk3566_ddr_1056MHz_v1.21.bin
+	export BL31=$srcdir/rkbin-$_rkbin/bin/rk35/rk3568_bl31_v1.44.elf
+
+	make spl/u-boot-spl.bin u-boot.dtb u-boot.img tools
+	make CONFIG_MKIMAGE_DTC_PATH="scripts/dtc/dtc"
+
+	tools/mkimage -n rk3568 -T rksd -d $ROCKCHIP_TPL:spl/u-boot-spl.bin -C bzip2 idbloader.img
+}
+
+package() {
+	_installdir="$pkgdir/usr/share/u-boot/powkiddy-x55"
+
+	install -Dm644 u-boot.itb -t $_installdir
+	install -Dm644 idbloader.img -t $_installdir
+}
+
+sha512sums="
+d4470668561ce084b04cdae7930085a3ea2ea4adfcf9b14080db9a6288355507603c95326da7a0afeaa0e93fb29d961cdf7a2adb7f6b7eec17960317b40ee7fd  uboot-88dc2788777babfd6322fa655df549a019aa1e69.tar.gz
+715253b5ef5c7fbcbce8478d4dea5ad3d1b4b738da437b5f0e9b31eed20f9bcb86cab082e4c04c69b42b6ffcc2cbb1a31079b33b968bb76826ff0dd4f83043e1  rkbin-a2a0b89b6c8c612dca5ed9ed8a68db8a07f68bc0.tar.gz
+"

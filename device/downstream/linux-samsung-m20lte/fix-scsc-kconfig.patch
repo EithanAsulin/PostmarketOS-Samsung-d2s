@@ -1,0 +1,13 @@
+diff --git a/drivers/misc/samsung/scsc/Kconfig b/drivers/misc/samsung/scsc/Kconfig
+index 59386756..85839432 100755
+--- a/drivers/misc/samsung/scsc/Kconfig
++++ b/drivers/misc/samsung/scsc/Kconfig
+@@ -13,7 +13,7 @@ config SCSC_CORE_FW_LOCATION
+ 	  Select the FW location, when CONFIG_SCSC_CORE_FW_LOCATION_AUTO=n
+ 
+ config SCSC_CORE_FW_LOCATION_AUTO
+-	string "SCSC FW location auto select"
++	bool "SCSC FW location auto select"
+ 	default y
+ 	---help---
+ 	  Select the FW location (Android N/O) automatically

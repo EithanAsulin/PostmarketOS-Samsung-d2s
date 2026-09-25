@@ -1,0 +1,53 @@
+maintainer="Ali Nasrullayev <nesrullayev.ali@gmail.com>"
+pkgname=firmware-xiaomi-vayu
+pkgver=3
+pkgrel=0
+pkgdesc="Firmware for Xiaomi POCO X3 Pro"
+url="https://gitlab.com/alinasrullayev/firmware-xiaomi-vayu"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+_commit="9240ae83a70189c7513666a245a72de2c7aaf698"
+source="
+	$pkgname-$_commit.tar.gz::$url/-/archive/$_commit/$pkgname-$_commit.tar.gz
+	30-touchscreen-firmware.files
+"
+builddir="$srcdir/$pkgname-$_commit"
+
+package() {
+
+	# linux-firmware-ath10k crashes when used. until it has been fixed,
+	# temporarily using the vendor firmware.
+	# See also: https://gitlab.postmarketos.org/postmarketOS/pmaports/-/work_items/3803
+	install -Dm644 "$builddir"/lib/firmware/ath10k/WCN3990/hw1.0/board-2.bin -t \
+		"$pkgdir/usr/lib/firmware/ath10k/WCN3990/hw1.0/"
+
+	install -Dm644 "$builddir"/lib/firmware/ath10k/WCN3990/hw1.0/firmware-5.bin -t \
+		"$pkgdir/usr/lib/firmware/ath10k/WCN3990/hw1.0/"
+
+	install -Dm644 "$builddir"/lib/firmware/qcom/sm8150/xiaomi/vayu/adsp* -t \
+		"$pkgdir/usr/lib/firmware/qcom/sm8150/Xiaomi/vayu/"
+
+	install -Dm644 "$builddir"/lib/firmware/qcom/sm8150/xiaomi/vayu/a640_zap.mbn -t \
+		"$pkgdir/usr/lib/firmware/qcom/sm8150/Xiaomi/vayu/"
+
+	install -Dm644 "$builddir"/lib/firmware/qcom/sm8150/xiaomi/vayu/cdsp* -t \
+		"$pkgdir/usr/lib/firmware/qcom/sm8150/Xiaomi/vayu/"
+
+	install -Dm644 "$builddir"/lib/firmware/qcom/sm8150/xiaomi/vayu/modem* -t \
+		"$pkgdir/usr/lib/firmware/qcom/sm8150/Xiaomi/vayu/"
+
+	install -Dm644 "$builddir"/lib/firmware/novatek/j20s_novatek_ts* -t \
+		"$pkgdir/usr/lib/firmware/novatek/"
+
+	install -Dm644 "$srcdir/30-touchscreen-firmware.files" \
+		"$pkgdir/usr/share/mkinitfs/files/30-touchscreen-firmware.files"
+
+	install -Dm644 "$builddir"/lib/firmware/qcom/sm8150/xiaomi/vayu/wlanmdsp.mbn -t \
+		"$pkgdir/usr/lib/firmware/qcom/sm8150/Xiaomi/vayu/"
+}
+
+sha512sums="
+dc94db8d3988c9c7cf64abea0801488e08f528cb6cc7693954f025d160347be8d900823461b3b51bee553f1876b093e8a87dc04ca9b648f82b5609feea2ec57a  firmware-xiaomi-vayu-9240ae83a70189c7513666a245a72de2c7aaf698.tar.gz
+fb1cdad6242c6bf6c07e1e8a87d6c08b8b3f86d6f865e28f27a5a764c4eeb0d74cae6167df04c56913fd5ec6314d3e1c830a759a2ec8f5b66c13f6ea80c7c1a4  30-touchscreen-firmware.files
+"

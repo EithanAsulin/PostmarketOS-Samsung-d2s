@@ -1,0 +1,160 @@
+# Co-Maintainer: Achill Gilgenast <achill@achill.org>
+# Co-Maintainer: Oliver Smith <ollieparanoid@postmarketos.org>
+maintainer="Clayton Craft <craftyguy@postmarketos.org>"
+pkgname=systemd-stage0
+pkgver=262
+_pkgver="${pkgver/_/-}"
+# pkgrel must match systemd!
+pkgrel=1
+pkgdesc="Minimal systemd bootstrap package"
+url="https://github.com/systemd/systemd"
+# armhf: pmb#2618
+arch="all !armhf"
+license="MIT AND GPL-2.0-only AND LGPL-2.1-or-later"
+
+# This is only for bootstrapping other packages, make sure it does not get
+# pulled into real installations via !postmarketos-base and !tracedeps
+depends="!postmarketos-base"
+
+# !tracedeps is set to prevent abuild from automatically adding `provides`
+# based on sonames. Without this, apk would consider systemd-stage0
+# a valid provider for packages that depend on systemd. Since we have to use
+# !tracedeps, runtime dependencies must be listed manually in depends_*.
+depends_libs="!postmarketos-base libucontext"
+depends_dev="!postmarketos-base"
+depends_doc="!postmarketos-base"
+options="!tracedeps !check pmb:cross-native2"
+subpackages="$pkgname-doc $pkgname-dev $pkgname-libs"
+
+makedepends_build="
+	meson
+	coreutils
+	gperf
+	py3-jinja2
+	bash
+"
+makedepends_host="
+	libucontext-dev
+	linux-headers
+	util-linux
+	util-linux-dev
+"
+
+# When building systemd, this will be installed at the same time as eudev-libs
+# or systemd-udevd (depending on if systemd was already built previously).
+# Let usr/lib/libudev.so.1 from systemd-stage0 be the file that gets used
+replaces="eudev-libs systemd-udevd"
+
+source="systemd-$pkgver.tar.gz::https://github.com/systemd/systemd/archive/refs/tags/v$_pkgver.tar.gz"
+builddir="$srcdir/systemd-$_pkgver"
+
+build() {
+	abuild-meson \
+		-Dtests=false \
+		-Ddbuspolicydir=/usr/share/dbus-1/system.d \
+		-Ddbussessionservicedir=/usr/share/dbus-1/services \
+		-Ddbussystemservicedir=/usr/share/dbus-1/system-services \
+		-Dbashcompletiondir=no \
+		-Dzshcompletiondir=no \
+		\
+		-Dmode=release \
+		-Dsplit-bin=true \
+		-Dlibc=musl \
+		\
+		-Dkmod-path=/bin/kmod \
+		-Dsulogin-path=/sbin/sulogin \
+		\
+		-Dwheel-group=true \
+		-Ddebug-shell=/bin/ash \
+		\
+		-Dbootloader=disabled \
+		-Dukify=disabled \
+		-Dutmp=false \
+		-Dldconfig=false \
+		-Duserdb=false \
+		-Dhomed=disabled \
+		-Dnss-myhostname=false \
+		-Dnss-mymachines=disabled \
+		-Dnss-resolve=disabled \
+		-Dnss-systemd=false \
+		-Dsysext=false \
+		-Dsysusers=false \
+		-Dselinux=disabled \
+		-Dinstall-sysconfdir=false \
+		\
+		-Dsystem-alloc-uid-min=101 \
+		-Dsystem-alloc-gid-min=101 \
+		-Dsystem-uid-max=999 \
+		-Dsystem-gid-max=999 \
+		-Dwheel-group=true \
+		-Dnobody-user=nobody \
+		-Dnobody-group=nobody \
+		\
+		-Ddefault-kill-user-processes=true \
+		-Dgshadow=false \
+		-Ddefault-locale=en_US.UTF-8 \
+		\
+		-Didn=false \
+		\
+		-Dbacklight=false \
+		-Dbinfmt=false \
+		-Dcoredump=false \
+		-Dfirstboot=false \
+		-Dhibernate=false \
+		-Dhostnamed=false \
+		-Dhwdb=false \
+		-Dinitrd=false \
+		-Dkernel-install=false \
+		-Dlocaled=false \
+		-Dlogind=false \
+		-Dmachined=false \
+		-Dmountfsd=false \
+		-Dnetworkd=false \
+		-Dnspawn=disabled \
+		-Dnsresourced=false \
+		-Doomd=false \
+		-Dportabled=false \
+		-Dpstore=false \
+		-Dquotacheck=false \
+		-Drandomseed=false \
+		-Drepart=false \
+		-Dresolve=false \
+		-Drfkill=false \
+		-Dsysinstall=false \
+		-Dstoragetm=false \
+		-Dtimedated=false \
+		-Dtimesyncd=false \
+		-Dtmpfiles=false \
+		-Dvconsole=false \
+		-Dxdg-autostart=false \
+		-Dtpm=false \
+		build .
+	meson compile ${JOBS:+-j ${JOBS}} -C build
+}
+
+dev() {
+	default_dev
+
+	# Since we set !tracedeps, we must explicitly list things we want this
+	# package to provide. We mainly need systemd-stage0 to build dbus, which
+	# we then use to build the "real" systemd. We do not want to re-compile
+	# dbus afterwards, dbus-dev should pull in libsystemd.
+	# If we don't explicitly provide pc:libsystemd here, building dbus
+	# against systemd-stage0 would result in the following abuild log:
+	# "Could not find any provider for pc:libsystemd>=209"
+	# and dbus-dev would not depend on libsystemd.
+	# If systemd-stage0-dev provides pc:libsystemd, this is solved and
+	# dbus-dev correctly depends on pc:libsystemd. And yes, this is only
+	# necessary because of !tracedeps.
+	# See pma#4156 for the bootstrap issue this solves.
+	provides="$provides pc:libsystemd=${pkgver%%[._]*}"
+	provider_priority=1
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install --no-rebuild -C build
+}
+
+sha512sums="
+4765e29d37c716dbe629d88bf1ed07b857d373333e64966832039c0031aa46ed7e76efd7b112eb199508adffc8afbf185b3360c9a66d100da052c407bd3f02d5  systemd-262.tar.gz
+"

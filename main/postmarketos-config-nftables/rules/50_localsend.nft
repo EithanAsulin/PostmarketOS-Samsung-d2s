@@ -1,0 +1,8 @@
+#!/usr/sbin/nft -f
+
+table inet filter {
+	chain input {
+		udp dport 53317 accept comment "localsend device discovery"
+		tcp dport 53317 accept comment "localsend file transfer"
+	}
+}

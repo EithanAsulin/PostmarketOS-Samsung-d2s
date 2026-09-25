@@ -1,0 +1,42 @@
+From 2b99f67873b1ad56f3ff3ce94f17500610a10049 Mon Sep 17 00:00:00 2001
+From: Ondrej Jirman <megi@xff.cz>
+Date: Mon, 20 Jul 2026 17:53:56 +0200
+Subject: [PATCH 39/90] arm64: dts: rockchip: rk3399: Power cycle the USB3 PHY
+ on role change
+
+The Type-C PHY on RK3399 latches the plug orientation while it is being
+powered on, and only while the USB3 OTG controller is held in reset, so
+the controller driver has to power cycle it.
+
+The property is inert unless the port is actually in dual-role mode with
+either an extcon or a usb-role-switch to report the cable state, so it
+can be set at the SoC level.
+
+Signed-off-by: Ondrej Jirman <megi@xff.cz>
+---
+ arch/arm64/boot/dts/rockchip/rk3399-base.dtsi | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/rockchip/rk3399-base.dtsi b/arch/arm64/boot/dts/rockchip/rk3399-base.dtsi
+index d1d124501759..c9ee3a20943b 100644
+--- a/arch/arm64/boot/dts/rockchip/rk3399-base.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3399-base.dtsi
+@@ -555,6 +555,7 @@ usbdrd_dwc3_0: usb@fe800000 {
+ 			phys = <&u2phy0_otg>, <&tcphy0_usb3>;
+ 			phy-names = "usb2-phy", "usb3-phy";
+ 			phy_type = "utmi_wide";
++			usb3-phy-power-cycle-on-role-change;
+ 			snps,dis_enblslpm_quirk;
+ 			snps,dis-u2-freeclk-exists-quirk;
+ 			snps,dis_u2_susphy_quirk;
+@@ -591,6 +592,7 @@ usbdrd_dwc3_1: usb@fe900000 {
+ 			phys = <&u2phy1_otg>, <&tcphy1_usb3>;
+ 			phy-names = "usb2-phy", "usb3-phy";
+ 			phy_type = "utmi_wide";
++			usb3-phy-power-cycle-on-role-change;
+ 			snps,dis_enblslpm_quirk;
+ 			snps,dis-u2-freeclk-exists-quirk;
+ 			snps,dis_u2_susphy_quirk;
+-- 
+2.55.0
+

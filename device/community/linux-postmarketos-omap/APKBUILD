@@ -1,0 +1,104 @@
+# Kernel config based on: arch/arm/configs/omap2plus_defconfig
+maintainer="Mithil Bavishi <bavishimithil@gmail.com>"
+pkgname=linux-postmarketos-omap
+pkgver=7.1.5
+pkgrel=1
+pkgdesc="Mainline kernel fork for OMAP devices"
+arch="armv7"
+url="https://kernel.org/"
+license="GPL-2.0-only"
+options="!check !strip !tracedeps pmb:cross-native pmb:kconfigcheck-community"
+makedepends="
+	bash
+	bison
+	clang
+	elfutils-dev
+	findutils
+	flex
+	linux-headers
+	lld
+	llvm
+	openssl-dev
+	pahole
+	perl
+	postmarketos-installkernel
+	python3
+	xz
+	zstd
+"
+_carch="arm"
+_flavor="postmarketos-omap"
+_config="config-$_flavor.armv7"
+
+case $pkgver in
+	*.*rc*)	_rc=1
+	        _kernver=$(echo $pkgver | tr '_' '-');;
+	*.*.0) _kernver=${pkgver%.0};;
+	*.*.*) _kernver=$pkgver;;
+esac
+
+if [ $_rc ]
+then
+	_kernsrc="linux-$pkgver.tar.gz::https://git.kernel.org/torvalds/t/linux-$_kernver.tar.gz"
+else
+	_kernsrc="https://cdn.kernel.org/pub/linux/kernel/v${pkgver%%.*}.x/linux-$_kernver.tar.xz"
+fi
+
+source="
+	$_kernsrc
+	$_config
+	0001-iio-rescale-revert-logic.patch
+	0002-hsi-dma-fix.patch
+	0003-Add-TWL6030-power-button-support-to-twl-pwrbutton.patch
+	0004-arm-dts-Add-barnesnoble-encore-support.patch
+	0005-panel-Add-lg-ld070ws1-for-barnesnoble-encore.patch
+	0006-omap4-cfi.patch
+	0007-dt-bindings-extcon-add-Samsung-P30-connector.patch
+	0008-extcon-add-Samsung-P30-connector-driver.patch
+	0009-usb-musb-omap2430-handle-initial-ID-ground-transitio.patch
+	0010-usb-phy-twl6030-add-extcon-and-external-VBUS-support.patch
+	0011-ARM-dts-omap4-espresso-add-USB-OTG-support.patch
+"
+builddir="$srcdir/linux-$_kernver"
+replaces="linux-samsung-espresso3g linux-nokia-n900"
+
+prepare() {
+	default_prepare
+	cp -v "$srcdir"/$_config .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+	make zinstall modules_install dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_MOD_PATH="$pkgdir"/usr \
+		INSTALL_DTBS_PATH="$pkgdir/boot/dtbs"
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir/usr/share/kernel/$_flavor/kernel.release"
+}
+
+sha512sums="
+17f95307b6e86a0794df146d97256ba4783b7a494f5eb43aafc14d64367541874cec7f6e8c2ea724eca149db18e4bd5880bf28a8c5e47ae8a769776bbd955af8  linux-7.1.5.tar.xz
+b01da60f2543caeab6f8510575d5886aed06e6ac03cfc38b6f1d4ba32d678b1bbfab5f0765ffeec94ba32a2a5e731f6827e99d637146890ec964f297ac14f431  config-postmarketos-omap.armv7
+1a68e3a32ae1e56d325c0f759ee66d64d14f46a5d52e75ae008dfddac335beb3aa7acaf62abb95b6d5ce1557f0cf9b4c31ab78e110af178db1ac963bb377dbf0  0001-iio-rescale-revert-logic.patch
+11bcc2bdcd8862e56f23a763d393b1d5f62af82cfd6dd347b5786b9f299144950d5941579091fea144371bad1188f366d8cd5a26453fc852fd3e769df2bd21bc  0002-hsi-dma-fix.patch
+a17ddc7a41ce2a6be04a8ee0ffcfb8dbb0381d1ce7fac8336befd79bc388ce5d16b6ba3a4732a540a43add55c43b015a3b77205a007a058d4d6e3291234b5cc0  0003-Add-TWL6030-power-button-support-to-twl-pwrbutton.patch
+2626cdd833bfbee5e714e224953533f02a7d1faba0d7c9b968ab728a28d70ebfb3a9ed46aab30e3784165c6eeeff3f26b482e188af5bc5c15de5c970d262c188  0004-arm-dts-Add-barnesnoble-encore-support.patch
+f03770e3c2f4c2876b31750f194646bbbe43b60fc7489ee9c54d1f6b36d72da4d2894b86dc47c1c9bf7676ef0c5d1788fa4f8c4d0f8eff1dd4e75d1ce4b9dfc8  0005-panel-Add-lg-ld070ws1-for-barnesnoble-encore.patch
+25df8fb362e6f4e3612fd2e7ac02978674daabb7bf246928f94f4c8e408e196c5831f6eace3e2838c2e8f835cf1517f6a5e96160fcaec4ff4020c8859e25712c  0006-omap4-cfi.patch
+b968d9901efa9a89727e2b0fb50a0b47992a495c55aeda92784394c37acab0236cc256f0ee82edbf59b7e2edb4308c4ffa93789f2fec12fc993809524f2aa980  0007-dt-bindings-extcon-add-Samsung-P30-connector.patch
+95120d4caa0d871d42a5ab159dcd6e5a64ce5b87bf352b17715ff0d238b9c3582363a445882f6dc44a3c9048f92383827b94a2977fab96df1a8218b0262ce02e  0008-extcon-add-Samsung-P30-connector-driver.patch
+ccde740a45a90037739e14b64215c5ffbad5c23572b98baf8d85c6b1aa598ca79abfab5d980cbe9bece56858d2517f8a27b809f153ebf1f1c0d37bb0446613bc  0009-usb-musb-omap2430-handle-initial-ID-ground-transitio.patch
+c4db84620e6fb4e7f279ab0d82493400d06e8bf3195c2e30196b9f7421166fa804d54a59a8f6030ce4ae7e8d2432ee08dd19e6de915436f0f7e8ebe1f4ce1de4  0010-usb-phy-twl6030-add-extcon-and-external-VBUS-support.patch
+1100e084f4058bdaaf5b193b3b316f76fb55ddde9c4d5091a133db96468df438de8f0afe2d3127745c2896bf52f63af8d59522c9512bc992aa5e3194cfe2489f  0011-ARM-dts-omap4-espresso-add-USB-OTG-support.patch
+"

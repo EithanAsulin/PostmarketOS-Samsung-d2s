@@ -1,0 +1,27 @@
+maintainer="Alexander Baransky <sanyapilot496@gmail.com>"
+pkgname=firmware-xiaomi-tucana
+pkgver=3
+pkgrel=0
+pkgdesc="Firmware for Xiaomi Mi Note 10 / Mi CC9 Pro"
+url="https://github.com/sm7150-mainline/firmware-xiaomi-tucana"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+_commit="a5c17ecf33320021e2c91a030d48b8726e9b5553"
+source="
+	$pkgname-$_commit.tar.gz::$url/archive/$_commit/$pkgname-$_commit.tar.gz
+	30-initramfs-$pkgname.files
+"
+builddir="$srcdir/$pkgname-$_commit"
+
+package() {
+	find . -type f -exec install -Dm644 {} "$pkgdir"/{} \;
+
+	install -Dm644 "$srcdir/30-initramfs-$pkgname.files" -t \
+		"$pkgdir"/usr/share/mkinitfs/files
+}
+
+sha512sums="
+210ad26e0b7c474457c2f08db38daf8c081a2a30e75e650f6516bb13e1076aad90db981702642bacdff25ca94ad7492b9dceddd46434333b905f69475a050be1  firmware-xiaomi-tucana-a5c17ecf33320021e2c91a030d48b8726e9b5553.tar.gz
+4c1a5c411dfae33b46b7915e2c0a2039dca33dcff3d1daec3f54d47d6aaeafde7b229d60365a6402d1372ed10219279b1eafa4abed49d909d4c51cdd19150f07  30-initramfs-firmware-xiaomi-tucana.files
+"

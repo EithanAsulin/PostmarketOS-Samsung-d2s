@@ -1,0 +1,64 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Ali Nasrullayev <nesrullayev.ali@gmail.com>"
+pkgname=device-xiaomi-vayu
+pkgdesc="Xiaomi POCO X3 Pro"
+pkgver=7
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf
+	firmware-qcom-adreno-a640
+	firmware-xiaomi-vayu
+	linux-firmware-qca
+	make-dynpart-mappings
+	mkbootimg
+	postmarketos-base
+	soc-qcom
+	soc-qcom-modem
+	soc-qcom-qbootctl
+"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-kernel-tianma:kernel_tianma
+	$pkgname-kernel-huaxing:kernel_huaxing
+"
+source="
+	deviceinfo
+	HiFi.conf
+	vayu.conf
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install	-Dm644 "$srcdir"/HiFi.conf -t \
+		"$pkgdir/usr/share/alsa/ucm2/Xiaomi/vayu/"
+
+	install	-Dm644 "$srcdir"/vayu.conf -c \
+		"$pkgdir/usr/share/alsa/ucm2/conf.d/sm8150/Xiaomi POCO X3 Pro.conf"
+}
+
+kernel_tianma() {
+	pkgdesc="Tianma Panel. To know which panel your device use and the status of the port, Visit the Poco X3 Pro wiki page: https://wiki.postmarketos.org/wiki/Xiaomi_POCO_X3_Pro_(xiaomi-vayu)"
+	depends="linux-postmarketos-qcom-sm8150"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_huaxing() {
+	pkgdesc="Huaxing Panel. To know which panel your device use and the status of the port, Visit the Poco X3 Pro wiki page: https://wiki.postmarketos.org/wiki/Xiaomi_POCO_X3_Pro_(xiaomi-vayu)"
+	depends="linux-postmarketos-qcom-sm8150"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+sha512sums="
+a199525d3edfaad447848a4042da89b8286ecd541d1fb89525598cdd6af3c0136e193a1f23c6411991ff00a31ed0399bd020b21a44605017f2d81f56d6ff2837  deviceinfo
+6965a2e744436a45f1655f1e925aac73236ed06e1a31c4f6f743409b0eb4ec5c38acca9bb742362fe0b3c8d7b3b2eae36914ff533b9a1c25874392ad09b11ac2  HiFi.conf
+2533bc96dca682b2b425ff208f8273a70c039abfb435267cffefce1b42be726f89005efb8cf266ce560185336532692de3d26a8d6c50877fa5ebc7818aba628d  vayu.conf
+"

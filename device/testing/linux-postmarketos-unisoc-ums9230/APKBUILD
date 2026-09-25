@@ -1,0 +1,69 @@
+maintainer="Affe Null <affenull2345@gmail.com>"
+_flavor="postmarketos-unisoc-ums9230"
+pkgname=linux-$_flavor
+pkgver=7.2.0_rc6_git20260807
+pkgrel=0
+pkgdesc="Linux kernel with patches for Unisoc UMS9230 devices"
+arch="aarch64"
+_carch="arm64"
+url="https://codeberg.org/ums9230-mainline/linux"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-nftables
+	pmb:kconfigcheck-community
+"
+makedepends="
+	bison
+	clang
+	elfutils-dev
+	findutils
+	flex
+	linux-headers
+	lld
+	llvm
+	openssl-dev
+	pahole
+	perl
+	postmarketos-installkernel
+	python3
+	zstd
+"
+
+_tag="v7.2-rc6-ums9230-0"
+_config="config-$_flavor.$arch"
+source="
+	linux-$_tag.tar.gz::https://codeberg.org/ums9230-mainline/linux/archive/$_tag.tar.gz
+	$_config
+"
+builddir="$srcdir/linux"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/$_config" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+	make zinstall modules_install dtbs_install \
+		ARCH="$_carch" LLVM=1 \
+		INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_MOD_PATH="$pkgdir"/usr \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+	rm -f "$pkgdir"/usr/lib/modules/*/build "$pkgdir"/usr/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+3fa24b0720994802fee53b0b343de722a3a4a9db547dff597411e7eb5cb15d63ec62120705b279edc559a78f6c67e1d1ec52adad4d72ffb4a611767e8ccb86f2  linux-v7.2-rc6-ums9230-0.tar.gz
+7b1c472d10a21253f4fb06604784142fa25e9e644fe2cd38b8e37f0d1299c6185f15877c17a54b3e7e524fadae629bb5965e4b0e3e6f203ec855a0c06bf72845  config-postmarketos-unisoc-ums9230.aarch64
+"

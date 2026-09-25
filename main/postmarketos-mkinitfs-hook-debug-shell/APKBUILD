@@ -1,0 +1,20 @@
+maintainer="Aster Boese <asterboese@mailbox.org>"
+pkgname=postmarketos-mkinitfs-hook-debug-shell
+pkgver=0.8.1
+pkgrel=2
+pkgdesc="Root shell in the initramfs (security hole, for debugging only)"
+url="https://postmarketos.org"
+depends="postmarketos-mkinitfs devicepkg-utils fbdebug evtest linuxconsoletools reboot-mode libinput libinput-tools"
+source="20-debug-shell.files"
+arch="noarch"
+license="GPL-3.0-or-later"
+options="!check"
+
+package() {
+	install -Dm644 "$srcdir"/20-debug-shell.files \
+		"$pkgdir"/usr/share/mkinitfs/files/20-debug-shell.files
+}
+
+sha512sums="
+793760737487d0034d93dd0ff526959cda9cd639f489d417cdd69bc49576b709a37f57cd496afca1fa91d3fd3a3e24a0cf641aeaa4ff2a2bbb27434eca0be1ce  20-debug-shell.files
+"

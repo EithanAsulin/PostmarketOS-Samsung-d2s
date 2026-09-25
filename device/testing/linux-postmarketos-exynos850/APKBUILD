@@ -1,0 +1,81 @@
+# Kernel config based on: arch/arm64/configs/exynos850_defconfig
+maintainer="Thomas Turner <tturner@lineageos.org>"
+pkgname=linux-postmarketos-exynos850
+pkgver=7.2.0
+pkgrel=0
+pkgdesc="Mainline kernel fork for Exynos850"
+arch="aarch64"
+_carch="arm64"
+_flavor="postmarketos-exynos850"
+url="https://github.com/samsungexynos850/linux"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-nftables
+"
+makedepends="
+	android-tools-mkdtboimg
+	bash
+	bc
+	bison
+	clang
+	elfutils-dev
+	findutils
+	flex
+	linux-headers
+	lld
+	llvm
+	openssl-dev
+	pahole
+	perl
+	postmarketos-installkernel
+	python3
+"
+
+_repository="linux"
+_commit="8be82eacf2ea237e8a3d06d4f5b1bf6554571322"
+_config="config-$_flavor.$arch"
+
+# Source
+source="
+	linux-$_commit.tar.gz::https://github.com/samsungexynos850/$_repository/archive/$_commit.tar.gz
+	$_config
+"
+builddir="$srcdir/linux-$_commit"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/$_config" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1))-postmarketOS"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+
+	for ram in 3gb 4gb 6gb; do
+		mv arch/arm64/boot/dts/exynos/exynos850-a217f-"${ram}".dtb dtb
+		mkdtboimg create arch/arm64/boot/dts/exynos/exynos850-a217f-"${ram}".dtb dtb --custom1=0xff
+	done
+
+	make install modules_install dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_MOD_PATH="$pkgdir"/usr \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+	rm -f "$pkgdir"/usr/lib/modules/*/build "$pkgdir"/usr/lib/modules/*/source
+
+	install -Dm644 "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+41d91860fcbb7f3c8e8e1c9bd05ebffb1665a4c7ffa308692c065d7c78d8e400f099ef497c8a1016c729f2ebc1bd1ff004d87be480aa23e38e3bf4ef1fafcfca  linux-8be82eacf2ea237e8a3d06d4f5b1bf6554571322.tar.gz
+3a8a4fe4a6136aef54ec959db6b7bc717fb07067c96c64b7bacf58bfccc1bf18b50fa21283549b201ba0464e02285f186d723717af16ba84293dec4446eb3a3e  config-postmarketos-exynos850.aarch64
+"

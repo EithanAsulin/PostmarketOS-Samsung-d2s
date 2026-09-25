@@ -1,0 +1,108 @@
+# Forked from Alpine to add systemd!
+# Co-Maintainer: Pablo Correa Gomez <pabloyoyoista@postmarketos.org>
+# Co-Maintainer: Achill Gilgenast <achill@achill.org>
+maintainer="Stefan Hansson <newbyte@postmarketos.org>"
+pkgname=mutter
+_pkgver=51.0
+pkgver=9999$_pkgver
+pkgrel=0
+pkgdesc="clutter-based window manager and compositor"
+url="https://gitlab.gnome.org/GNOME/mutter"
+# armhf: pmb#2618
+arch="all !armhf"
+license="GPL-2.0-or-later"
+depends="
+	gnome-settings-daemon
+	gsettings-desktop-schemas
+	mutter-schemas
+	xkeyboard-config
+	"
+makedepends="
+	at-spi2-core-dev
+	cairo-dev
+	dbus-dev
+	fribidi-dev
+	gdk-pixbuf-dev
+	glib-dev
+	gnome-desktop-dev
+	gnome-settings-daemon-dev
+	gobject-introspection-dev
+	graphene-dev
+	gtk4.0-dev
+	json-glib-dev
+	lcms2-dev
+	libadwaita-dev
+	libcanberra-dev
+	libdisplay-info-dev
+	libdrm-dev
+	libei-dev
+	libglycin-dev
+	libgudev-dev
+	libice-dev
+	libinput-dev
+	libsm-dev
+	libwacom-dev
+	libx11-dev
+	libxau-dev
+	libxcb-dev
+	libxcomposite-dev
+	libxcursor-dev
+	libxdamage-dev
+	libxext-dev
+	libxfixes-dev
+	libxi-dev
+	libxinerama-dev
+	libxkbcommon-dev
+	libxkbfile-dev
+	libxrandr-dev
+	libxrender-dev
+	libxtst-dev
+	mesa-dev
+	meson
+	pango-dev
+	pipewire-dev
+	py3-argcomplete
+	py3-docutils
+	startup-notification-dev
+	wayland-dev
+	wayland-protocols
+	xkeyboard-config-dev
+	xwayland-dev
+
+	systemd-dev
+	"
+# TODO: crossdirect disabled due to armv7 crosscompile failure on x86_64, see
+# https://gitlab.com/postmarketOS/pmaports/-/merge_requests/5115#note_1899890119
+options="!check !pmb:crossdirect" # Can't be run with release builds
+subpackages="$pkgname-dbg $pkgname-dev $pkgname-doc $pkgname-lang $pkgname-schemas::noarch $pkgname-udev"
+source="https://download.gnome.org/sources/mutter/${_pkgver%%.*}/mutter-$_pkgver.tar.xz"
+builddir="$srcdir/$pkgname-$_pkgver"
+
+build() {
+	abuild-meson \
+		-Db_lto=true \
+		-Dintrospection=true \
+		-Dremote_desktop=true \
+		-Dprofiler=false \
+		-Ddevkit=enabled \
+		-Dtests="$(want_check && echo enabled || echo disabled)" \
+		. output
+	meson compile -C output
+}
+
+schemas() {
+	pkgdesc="Mutter schemas related files"
+	depends=""
+
+	amove usr/share/glib-2.0/schemas
+	amove usr/share/GConf/gsettings
+	amove usr/share/gnome-control-center/keybindings
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install --no-rebuild -C output
+}
+
+sha512sums="
+61f2e9b368e768f8e53682496b35e52f712f5f85c47cf0ec78668ed39f7d925d361deca5b69a39bc1777cfdf5df9608a153efeb47a0f8f31c0a474b93ebcf7a6  mutter-51.0.tar.xz
+"

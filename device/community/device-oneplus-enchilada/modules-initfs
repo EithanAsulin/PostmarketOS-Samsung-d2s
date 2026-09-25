@@ -1,0 +1,8 @@
+bq27xxx_battery_i2c
+bq27xxx_battery
+i2c_qcom_geni
+rmi_core
+rmi_i2c
+qcom_spmi_haptics
+qcom_spmi_rradc
+qcom_smbx

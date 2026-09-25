@@ -1,0 +1,94 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Alex-min <contact@alex-min.fr>"
+pkgname=device-samsung-jflte
+pkgver=6
+pkgrel=0
+pkgdesc="Samsung Galaxy S4"
+url="https://postmarketos.org"
+arch="armv7"
+license="MIT"
+depends="
+	evtest
+	firmware-qcom-adreno-a300
+	firmware-samsung-jflte
+	linux-firmware-brcm
+	linux-postmarketos-qcom-apq8064
+	mkbootimg
+	msm-firmware-loader
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-lomiri:lomiri
+	$pkgname-lomiri-openrc:lomiri_openrc
+	$pkgname-xfce:xfce"
+source="
+	adreno-a3xx-quirks.sh
+	deviceinfo
+	device-samsung-jflte-lomiri.post-install
+	kernel-cmdline.conf
+	lomiri-init.sh
+	lomiri_power_key_service_openrc
+	lomiri_power_button_suspend
+	modules-initfs
+	xfce-phone-tweaks.desktop
+	xfce-phone-tweaks.sh
+"
+options="!archcheck !check pmb:systemd"
+install="$pkgname-lomiri.post-install"
+
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -Dm644 "$srcdir"/adreno-a3xx-quirks.sh \
+		"$pkgdir"/etc/profile.d/adreno-a3xx-quirks.sh
+
+	install -Dm644 -t "$pkgdir"/etc/profile.d/ \
+		"$srcdir"/lomiri-init.sh
+
+	install -Dm644 -t "$pkgdir"/usr/bin/ \
+		"$srcdir"/lomiri_power_button_suspend
+
+	install -Dm744 "$srcdir"/lomiri_power_key_service_openrc \
+		"$pkgdir"/etc/init.d/lomiri-power-key
+}
+
+lomiri() {
+	install_if="$pkgname=$pkgver-r$pkgrel postmarketos-ui-lomiri"
+	amove etc/profile.d/lomiri-init.sh
+	amove usr/bin/lomiri_power_button_suspend
+}
+
+lomiri_openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel postmarketos-ui-lomiri openrc"
+
+	amove etc/init.d/lomiri-power-key
+}
+
+xfce() {
+	install_if="$pkgname=$pkgver-r$pkgrel postmarketos-ui-xfce4"
+
+	install -Dm755 "$srcdir"/xfce-phone-tweaks.sh \
+		"$subpkgdir"/usr/bin/xfce-phone-tweaks.sh
+
+	install -Dm644 "$srcdir"/xfce-phone-tweaks.desktop \
+		"$subpkgdir"/etc/xdg/autostart/xfce-phone-tweaks.desktop
+}
+
+sha512sums="
+f5e2a9cd2a0468ef7492096245319954e7d4de2db363f42a9b69d7e738b8808a0162fc74aa3d7bd44ebc30039d023e160e7be1bd571aeb0a7a2a3984090eaa94  adreno-a3xx-quirks.sh
+a228c9f93f041f6843f9eb9d8ce832b3e53083cef6e689067fb9ea63b4fff8940ce83039669754f5703eba44a9b99db9706f5702fedf51e0a0ee1d62d4821f16  deviceinfo
+568ad708d6844512f8e24ded91762671e1a5b9ecfd4c6fd52f5ec9fa1c7c2cf692ebd803117aa451e4e2ea7612eed1ecaf2b9cc2367998025cfacb170058f32d  device-samsung-jflte-lomiri.post-install
+dce529d931031708299d534cb59e5d9862fb6d7bdb42f687242c6c88f5df96f184c39b99a27d734bea30471710dc63e80a356a6d9de78e4998e9da738158c252  kernel-cmdline.conf
+1dca3d37ae63db457464c15c19abce10b6ec6ff1dc29cbf93e41080020a4c2c8314f6244ec3da70c7bdf50825d431a9c0b41f3df37489dc1753ce0fdf836f079  lomiri-init.sh
+dc9ea2fdc979db4d40f9fc1bf793dc1cb4a519278e6c4b6d1061adfc9acf76b159d76e602fc83e5e2940eb73252776e056b897d15c660227fe11d3922617ca64  lomiri_power_key_service_openrc
+96b5093df4e89bc6d4295864ab5d7f2c917e0d482ab0d3c7335a35ad6a74a2415fd65e8c4d24a280b8f3eac6240ca9d8455a2c387a991f72b180421524338580  lomiri_power_button_suspend
+f627d473ccfc01f39ed7b1345c2795af0cd358b4738d202e53fbae07c605d239f9139b034c5a29411bafe368b92a44c756e2bd029246b385d6397f519af8ff7c  modules-initfs
+2d9c82df7faa4c89350e634acfac533650ebce8e10a887d217ae7b9f820514b3347f1b2bccf1524bbdd32470665ba290cb6aace3262d396659bf2f580bba0fc6  xfce-phone-tweaks.desktop
+60d78e7b5da086c8bba9c1b1905e35776e3e049cbcb6e0fcbb4b373b9a0122ff9561102ab78134a346ea3d950462e6948761507cf23f9699273b7516d4ab904b  xfce-phone-tweaks.sh
+"

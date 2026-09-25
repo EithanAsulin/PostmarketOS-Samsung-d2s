@@ -1,0 +1,53 @@
+From ec6dcb2882a29bbaa8b0f714709fe957d5274ac1 Mon Sep 17 00:00:00 2001
+From: Ondrej Jirman <megi@xff.cz>
+Date: Tue, 21 Jul 2026 22:43:47 +0200
+Subject: [PATCH 42/90] arm64: dts: rockchip: rk3399: Number the CDN DP ports
+
+Number the input port and add the output port. The binding requires both
+port@0 (VOP input) and port@1 (output), but the node had only a single
+unnamed input port, so every board that enables the DP fails validation:
+
+  ports: 'port@0' is a required property
+  ports: 'port@1' is a required property
+
+The output is what a Type-C connector reaches when the DP is behind an
+alternate mode, which no board could describe until now. Endpoint
+numbering inside the input port is unchanged and nothing looks the ports
+up by name, so boards that already enable the DP are unaffected.
+
+Signed-off-by: Ondrej Jirman <megi@xff.cz>
+---
+ arch/arm64/boot/dts/rockchip/rk3399-base.dtsi | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/rockchip/rk3399-base.dtsi b/arch/arm64/boot/dts/rockchip/rk3399-base.dtsi
+index c9ee3a20943b..3cb02ba78a77 100644
+--- a/arch/arm64/boot/dts/rockchip/rk3399-base.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3399-base.dtsi
+@@ -622,7 +622,11 @@ cdn_dp: dp@fec00000 {
+ 		status = "disabled";
+ 
+ 		ports {
+-			dp_in: port {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			dp_in: port@0 {
++				reg = <0>;
+ 				#address-cells = <1>;
+ 				#size-cells = <0>;
+ 
+@@ -636,6 +640,10 @@ dp_in_vopl: endpoint@1 {
+ 					remote-endpoint = <&vopl_out_dp>;
+ 				};
+ 			};
++
++			dp_out: port@1 {
++				reg = <1>;
++			};
+ 		};
+ 	};
+ 
+-- 
+2.55.0
+

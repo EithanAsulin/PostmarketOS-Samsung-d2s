@@ -1,0 +1,46 @@
+#!/bin/sh
+
+if [ ! -f /usr/lib/powervm-boot/powervm-boot ]; then
+    echo "powervm-boot not found"
+    exit
+fi
+
+PREP_GUID="9e1a2d38-c612-4316-aa26-8b49521e5a8b"
+PREP_TYPE=0x41
+
+lsblk -nrpo NAME,TYPE,PARTTYPE |
+while read -r dev type parttype; do
+    [ "$type" = "part" ] || continue
+
+    case "$(printf '%s' "$parttype" | tr '[:upper:]' '[:lower:]')" in
+        "$PREP_GUID"|"$PREP_TYPE")
+            echo "Found PReP boot partition $dev"
+
+            magic=$(dd if="$dev" bs=1 count=4 2>/dev/null | od -An -tx1 | tr -d ' \n')
+
+            if [ "$magic" != "7f454c46" ]; then
+                echo "Not an ELF file"
+                continue
+            fi
+
+            class=$(dd if="$dev" bs=1 skip=4 count=1 2>/dev/null | od -An -tu1 | tr -d ' ')
+
+            if [ "$class" != "1" ]; then
+                echo "Not ELF32"
+                continue
+            fi
+
+            machine=$(dd if="$dev" bs=1 skip=18 count=2 2>/dev/null | od -An -tx1 | tr -d ' \n')
+
+            if [ "$machine" != "0014" ]; then
+                echo "Not PowerPC ELF"
+                continue
+            fi
+
+            echo "PReP boot partition with bootloader installed detected, flashing powervm-boot"
+
+            dd if=/usr/lib/powervm-boot/powervm-boot of="$dev" bs=512 conv=notrunc
+            sync
+            ;;
+    esac
+done

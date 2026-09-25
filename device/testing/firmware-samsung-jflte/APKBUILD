@@ -1,0 +1,50 @@
+maintainer="Alex-min <contact@alex-min.fr>"
+pkgname=firmware-samsung-jflte
+pkgver=1.2
+pkgrel=0
+_commit="af95c8f4af9fda8b909579dafc30ec1ce29cb12d"
+pkgdesc="Samsung Galaxy S4 Firmware"
+url="https://github.com/flo071/proprietary_vendor_samsung_jf-common"
+arch="armv7"
+license="proprietary"
+makedepends="python3"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/flo071/proprietary_vendor_samsung_jf-common/archive/$_commit.tar.gz
+	barcode_emul_ice4.h::https://raw.githubusercontent.com/LineageOS/android_kernel_samsung_jf/refs/heads/lineage-18.1/drivers/barcode_emul/barcode_emul_ice4.h
+	ice4-firmware-extract.py
+	30-ice4-firmware.files
+"
+options="
+	!archcheck
+	!check
+	!spdx
+	!strip
+	!tracedeps
+	pmb:cross-native
+"
+builddir="$srcdir/proprietary_vendor_samsung_jf-common-$_commit"
+
+package() {
+	# Bluetooth
+	install -Dm644 proprietary/vendor/firmware/bcm4335_V0343.0353.hcd \
+		"$pkgdir"/usr/lib/firmware/brcm/BCM4335A0.hcd
+	# Wifi
+	install -Dm644 proprietary/etc/wifi/nvram_net.txt \
+		"$pkgdir"/usr/lib/firmware/brcm/brcmfmac4335-sdio.txt
+
+	# ICE4 FPGA
+	# Originally bytes just stuffed in a .h file in downstream
+	# We're repackaging it to a proper .bin firmware
+	python3 "$srcdir/ice4-firmware-extract.py" "$srcdir/barcode_emul_ice4.h" -o "$srcdir"
+	install -Dm644 "$srcdir"/30-ice4-firmware.files -t \
+		"$pkgdir"/usr/share/mkinitfs/files
+	install -Dm644 "$srcdir/ice4.bin" \
+		"$pkgdir"/usr/lib/firmware/samsung/ice4.bin
+}
+
+sha512sums="
+b8b92806123b4ab5c02adfb1e33ad18a84a51f181485f7fffe51a6d60678b9750c3bc461550b0a3afde99b4685c8720b0b8be3626f68a284863cb10e3c68c7c5  firmware-samsung-jflte-af95c8f4af9fda8b909579dafc30ec1ce29cb12d.tar.gz
+8992b7dcffc669f15ba83c8e86455f84d4db88594f33365b4b3ff7690a890ca7b9634f4992243d89b72f02f5d25f960f0c50e552220ad37a463c266d504d59be  barcode_emul_ice4.h
+727d969945586000419a1ca600ba70d6dbe3f977315a5e0e6d6951d927810da42dae09750f930087909e08b6a7b7d23ed577ab2409516aab97545e5830a12991  ice4-firmware-extract.py
+084268e9e748aa3c32a77d15036b115008a708ee3d70d78c8bf580a5926eb28b2f58e97cc126a30dab73745e1eedf864a0e959a2df4cc4a0385317c6f294c828  30-ice4-firmware.files
+"

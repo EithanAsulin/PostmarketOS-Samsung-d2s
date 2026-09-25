@@ -1,0 +1,3 @@
+evdev:input:b0018v0000p0000e0000*
+  XKB_FIXED_MODEL=blackberry-key2
+  ID_INPUT_KEYBOARD=1

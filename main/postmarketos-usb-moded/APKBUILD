@@ -1,0 +1,96 @@
+maintainer="Clayton Craft <clayton@craftyguy.net>"
+pkgname=postmarketos-usb-moded
+pkgver=11
+pkgrel=0
+pkgdesc="Meta package for configuring usb modes on postmarketOS"
+url="https://postmarketos.org"
+arch="noarch"
+license="GPL-3.0-or-later"
+depends="
+	umtprd
+	usb-signaller
+	usb-moded-notify
+"
+depends_openrc="
+	umtprd-openrc
+	usb-signaller-openrc
+	usb-moded-notify-openrc
+"
+install="$pkgname-openrc.post-install $pkgname-openrc.post-upgrade"
+subpackages="
+	$pkgname-default-profile-charging:charging_default
+	$pkgname-default-profile-developer:developer_default
+	$pkgname-openrc
+	$pkgname-systemd
+"
+_pmb_select="$pkgname-default-profile"
+
+_source644="
+	etc/umtprd/umtprd.conf
+"
+_source755="
+	usr/lib/systemd/system-generators/umtprd-config-generator
+"
+
+# Avoid filename based checksum conflicts by including the whole path.
+flatpath() {
+	local i
+	for i in $@; do
+		echo "rootfs-$i" | sed s./.-.g
+	done
+}
+source="$(flatpath $_source644 $_source600 $_source755)"
+
+package() {
+	# usb-moded default profile config are provided by subpackages in this
+	# APKBUILD and it won't exist when this is evaluated at the top level.
+	# It's moved into this function to work around it.
+	depends="
+		$depends
+		$pkgname-default-profile
+	"
+
+	local i
+	for i in $_source644; do
+		install -Dm644 "$srcdir/$(flatpath "$i")" "$pkgdir/$i"
+	done
+	for i in $_source755; do
+		install -Dm755 "$srcdir/$(flatpath "$i")" "$pkgdir/${i%.initd}"
+	done
+}
+
+charging_default() {
+	pkgdesc="Make 'charging mode' the default usb-moded profile (usb networking must be manually enabled)"
+	provides="$pkgname-default-profile=$pkgver-r$pkgrel"
+	provider_priority=90
+
+	mkdir -p "$subpkgdir"/usr/lib/usb-signaller
+	cat <<-EOF > "$subpkgdir"/usr/lib/usb-signaller/usb-signaller.toml
+		[main]
+		default_mode="charging_only"
+	EOF
+}
+
+developer_default() {
+	pkgdesc="Make 'developer mode' the default usb-moded profile (always enables usb networking)"
+	provides="$pkgname-default-profile=$pkgver-r$pkgrel"
+	# We want this mode to be the default if not specified with e.g. pmb_select
+	provider_priority=100
+
+	mkdir -p "$subpkgdir"/usr/lib/usb-signaller
+	cat <<-EOF > "$subpkgdir"/usr/lib/usb-signaller/usb-signaller.toml
+		[main]
+		default_mode="developer_mode"
+	EOF
+}
+
+openrc() {
+	default_openrc
+
+	mkdir -p "$subpkgdir"
+}
+
+sha512sums="
+912f0700c87883b55f631cfc3d76e172ff1c21aa57b0c18d1e7b9671ecd6254b1e7565816e3967c68caab196076bf7c8b848375c89185aa4466f4ca7f65231be  rootfs-etc-umtprd-umtprd.conf
+ca4b82b0cccbbb498b8898c4e360142136c46687e97bce85553dc1793bf8ae2e0f509c2a1acdf96b08dc7c6b69f098b56181f9033ad669cabbf5a159ad8efbaa  rootfs-usr-lib-systemd-system-generators-umtprd-config-generator
+"

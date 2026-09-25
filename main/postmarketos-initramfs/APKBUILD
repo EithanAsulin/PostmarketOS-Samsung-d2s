@@ -1,0 +1,127 @@
+# Co-Maintainer: Clayton Craft <clayton@craftyguy.net>
+maintainer="Casey Connolly <kcxt@postmarketos.org>"
+pkgname=postmarketos-initramfs
+pkgver=3.12.3
+pkgrel=1
+pkgdesc="Base files for the postmarketOS initramfs / initramfs-extra"
+url="https://postmarketos.org"
+provides="postmarketos-ramdisk=$pkgver-r$pkgrel"
+provider_priority=10
+checkdepends="postmarketos-testlib"
+depends="
+	beebzzr
+	blkid
+	btrfs-progs
+	buffyboard
+	busybox-extras
+	bzip2
+	cryptsetup
+	device-mapper
+	devicepkg-utils>=0.2.0
+	dosfstools
+	e2fsprogs
+	e2fsprogs-extra
+	f2fs-tools
+	font-terminus
+	iskey
+	kmod
+	libinput-libs
+	libinput-udev
+	losetup
+	lz4
+	parted
+	postmarketos-fde-unlocker
+	postmarketos-mkinitfs>=2.2
+	udev
+	unudhcpd
+	util-linux-misc
+	xfsprogs
+	xfsprogs-extra
+	xz
+	"
+source="
+	00-default.modules
+	00-default-extra.modules
+	00-initramfs-base.dirs
+	00-initramfs-base.files
+	00-initramfs-extra-base.files
+	init.sh
+	init_functions.sh
+	init_2nd.sh
+	init_functions_2nd.sh
+	mdev.conf
+	tests/01-parse-cmdline-testlib.sh
+	tests/02-find-partition-testlib.sh
+	"
+arch="noarch"
+license="GPL-2.0-or-later"
+
+build() {
+	mkdir -p "$builddir"
+
+	# Replace <<INITRAMFS_PKG_VERSION>> with the actual version
+	sed "s|<<INITRAMFS_PKG_VERSION>>|$pkgver-r$pkgrel|" \
+		"$srcdir/init.sh" > "$builddir/init.sh"
+}
+
+check() {
+	postmarketos-testlib "$srcdir"
+}
+
+package() {
+	install -Dm644 "$srcdir"/mdev.conf \
+		-t "$pkgdir"/usr/share/initramfs/
+
+
+	install -Dm644 "$srcdir/init_functions.sh" \
+		"$pkgdir/usr/share/initramfs/init_functions.sh"
+
+	install -Dm644 "$srcdir/init_functions_2nd.sh" \
+		"$pkgdir/usr/share/initramfs/init_functions_2nd.sh"
+
+	install -Dm755 "$builddir/init.sh" \
+		"$pkgdir/usr/share/initramfs/init.sh"
+
+	install -Dm755 "$srcdir/init_2nd.sh" \
+		"$pkgdir/usr/share/initramfs/init_2nd.sh"
+
+	install -Dm644 "$srcdir"/00-initramfs-base.dirs \
+		-t "$pkgdir"/usr/share/mkinitfs/dirs/
+	mkdir -p "$pkgdir"/etc/mkinitfs/dirs
+
+	install -Dm644 "$srcdir"/00-default.modules \
+		-t "$pkgdir"/usr/share/mkinitfs/modules/
+	mkdir -p "$pkgdir"/etc/mkinitfs/modules
+
+	install -Dm644 "$srcdir"/00-default-extra.modules \
+		-t "$pkgdir"/usr/share/mkinitfs/modules-extra/
+	mkdir -p "$pkgdir"/etc/mkinitfs/modules-extra
+
+	install -Dm644 "$srcdir"/00-initramfs-base.files \
+		-t "$pkgdir"/usr/share/mkinitfs/files/
+	mkdir -p "$pkgdir"/etc/mkinitfs/files
+
+	install -Dm644 "$srcdir"/00-initramfs-extra-base.files \
+		-t "$pkgdir"/usr/share/mkinitfs/files-extra/
+	mkdir -p "$pkgdir"/etc/mkinitfs/files-extra
+
+	mkdir -p "$pkgdir"/usr/share/mkinitfs/hooks
+	mkdir -p "$pkgdir"/usr/share/mkinitfs/hooks-extra
+	mkdir -p "$pkgdir"/etc/mkinitfs/hooks
+	mkdir -p "$pkgdir"/etc/mkinitfs/hooks-extra
+}
+
+sha512sums="
+22cdd663c8d153781284511140b7c994cd60f0231a2819dafa67f5a11e2963ac6e392e8f7a9e3b75e7fe5d6d7b0b5e262e1ff1a695637354a124560a5ec3ed8d  00-default.modules
+ace852ba267b3408998970df6042603c8bec1d033066d1c30ed65f1be955fee8644b57882898f10228ec43b912f8f03718b34ddd741b431e5a5c2e76f060a494  00-default-extra.modules
+9c0e8f6f61d5da191e03a1aa9d5d0ceb5baf1eae6dbb9bfb0af59817783525119ac8394b135f303f7b6434a3eab0b49185fb90379e06823db847a4999c75ce33  00-initramfs-base.dirs
+69852928464f01757e2f473bd2c2e7ecb4132ecf3e26bdec95932e928dfe9042f59316e0a509fd38bcda88e24dd94bf33e8a88118b5adbec7023d1c13da12f59  00-initramfs-base.files
+669240c0c6b84ff68ea7696b3ffd39c209c7c6d52233f67a2515ac423e16c3daa7841d8451946b14dc95e1d18ff31cc35c4a22efb8a36caceb48aada5d4ee5ea  00-initramfs-extra-base.files
+bd72e8b6345a46ec13516c64d78d4fa1a9a18a8db9ab04aac605f9708629453dc65b6fbccd96b58eeb1ea68102ddbcae9dc6b369255c6c6c1fb18ce0bd43ec79  init.sh
+9765cad4f6c420a77dc975532e28c20fd89f9c6645b1c42e2fee98e3616729d30785e93affd7fef012a0118dd92d4e8b90718488bbd7782aa14424acd37d3e99  init_functions.sh
+7aa82d5e2907470d667612643d98371dff27b2650051f8c568ab43d1b97677362c3e6fbd442474086d681ea7c0cfbcaf269d3eef2d2dc3ff4ebf17c786b82148  init_2nd.sh
+59f1e8954483dfe49182ddbaf0c1a4741f147161b92b5bb836e5bd405b419438f5757915546b46b846193c5a4b44c4b1a523f0ad0dcb87a1dfcaed9360e03146  init_functions_2nd.sh
+675e7d5bee39b2df7d322117f8dcaccc274d61beaf4d50ead19bbf2109446d64b1c0aa0c5b4f9846eb6c1c403418f28f6364eff4537ba41120fbfcbc484b7da7  mdev.conf
+776ac842df70a5ac7b20b942abf2afecfed83b59bd5bf775b77c1e8e071e1d9b9120c502410cd2643551589e9523221be0ca7a2734b2c5302fca7d631aa91916  01-parse-cmdline-testlib.sh
+a60b8affe7431d477f7480ca094721930f65a31f920c7eb937384ad708f98a4a4ab2ad68688bf92ff741d3083ce4f14c238ee2e1beae5cefc30b5fd9bfd6aa66  02-find-partition-testlib.sh
+"

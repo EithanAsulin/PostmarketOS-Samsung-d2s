@@ -1,0 +1,20 @@
+maintainer=""
+pkgname=devicepkg-utils
+pkgver=0.3.3
+pkgrel=0
+pkgdesc="Utilities for interacting with device packages"
+url="https://postmarketos.org"
+arch="noarch"
+license="MIT"
+source="
+	source_deviceinfo
+"
+options="!check"
+
+package() {
+	install -Dm644 "$srcdir"/source_deviceinfo -t "$pkgdir"/usr/share/misc
+}
+
+sha512sums="
+9e0a27f8f3e236817e3f5d5997bc376dc4d95508ecf5f812c48a29eaf7c9a21d46a2c78a65be98d60a12576b476e27314cdd3515a645b91706a85f929e83c053  source_deviceinfo
+"

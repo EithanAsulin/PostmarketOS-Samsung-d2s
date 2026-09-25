@@ -1,0 +1,58 @@
+From c9ab262ca21224c9b390f637c7029d92763bbd13 Mon Sep 17 00:00:00 2001
+From: Ondrej Jirman <megi@xff.cz>
+Date: Tue, 21 Jul 2026 08:45:42 +0200
+Subject: [PATCH 32/90] usb: typec: fusb302: Turn off VBUS and VCONN on
+ shutdown
+
+Nothing turns the port off on the way down, so a source keeps VBUS and
+VCONN applied across a reboot. The next kernel comes up with the port
+already powered, which starts BC1.2 charger detection before any role is
+known and leaves the Type-C state machine attaching to a port it never
+saw come up.
+
+Drop both in a shutdown handler so a reboot looks like a cold boot.
+Signed-off-by: Ondrej Jirman <megi@xff.cz>
+---
+ drivers/usb/typec/tcpm/fusb302.c | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+diff --git a/drivers/usb/typec/tcpm/fusb302.c b/drivers/usb/typec/tcpm/fusb302.c
+index c0bbce42f251..64e3e3ee0b22 100644
+--- a/drivers/usb/typec/tcpm/fusb302.c
++++ b/drivers/usb/typec/tcpm/fusb302.c
+@@ -1839,6 +1839,24 @@ static int fusb302_probe(struct i2c_client *client)
+ 	return ret;
+ }
+ 
++static void fusb302_shutdown(struct i2c_client *client)
++{
++	struct fusb302_chip *chip = i2c_get_clientdata(client);
++
++	/*
++	 * Nothing else turns the port off on the way down, so a source
++	 * would keep VBUS and VCONN applied across a reboot. The next
++	 * kernel then comes up with the port already powered, which
++	 * confuses both charger detection and the Type-C state machine.
++	 */
++	disable_irq(chip->gpio_int_n_irq);
++	cancel_work_sync(&chip->irq_work);
++	cancel_delayed_work_sync(&chip->bc_lvl_handler);
++
++	tcpm_set_vconn(&chip->tcpc_dev, false);
++	tcpm_set_vbus(&chip->tcpc_dev, false, false);
++}
++
+ static void fusb302_remove(struct i2c_client *client)
+ {
+ 	struct fusb302_chip *chip = i2c_get_clientdata(client);
+@@ -1908,6 +1926,7 @@ static struct i2c_driver fusb302_driver = {
+ 		   },
+ 	.probe = fusb302_probe,
+ 	.remove = fusb302_remove,
++	.shutdown = fusb302_shutdown,
+ 	.id_table = fusb302_i2c_device_id,
+ };
+ module_i2c_driver(fusb302_driver);
+-- 
+2.55.0
+

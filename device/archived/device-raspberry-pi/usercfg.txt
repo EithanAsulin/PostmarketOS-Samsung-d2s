@@ -1,0 +1,4 @@
+kernel=vmlinuz-rpi
+initramfs initramfs
+
+enable_uart=1

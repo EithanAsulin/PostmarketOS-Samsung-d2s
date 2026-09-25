@@ -1,0 +1,62 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Antoine Martin (ayakael) <dev@ayakael.net>"
+pkgname=device-clockworkpi-uconsole-rpi
+pkgdesc="Clockwork Tech ClockworkPi uConsole with Raspberry Pi compute modules"
+pkgver=10
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!archcheck !check"
+depends="
+	linux-clockworkpi-uconsole-rpi
+	linux-firmware-brcm
+	postmarketos-base
+	raspberrypi-bootloader
+"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-openrc
+	$pkgname-udev
+	$pkgname-x11
+"
+source="
+	95-vchiq-permissions.rules
+	deviceinfo
+	modules-initfs
+	usercfg.txt
+	xorg.conf
+"
+install="$pkgname-openrc.post-install $pkgname-openrc.post-upgrade"
+provides="device-clockworkpi-uconsole-cm4=$pkgver-r$pkgrel"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -Dm644 "$srcdir"/usercfg.txt \
+		-t "$pkgdir"/boot/
+
+	# will be picked up by default_udev
+	install -Dm644 "$srcdir"/95-vchiq-permissions.rules \
+		-t "$pkgdir"/usr/lib/udev/rules.d/
+
+	# dummy openrc folder for default_openrc
+	mkdir -p "$pkgdir"/etc/init.d
+}
+
+x11() {
+	install_if="$pkgname xorg-server"
+	install -Dm644 "$srcdir"/xorg.conf \
+		"$subpkgdir"/usr/share/X11/xorg.conf.d/10-monitor.conf
+}
+sha512sums="
+7e5505cb07d5b4a81bd28443d508336b5c547356538f1c06f91ed93ad0d7d456d4f74f1d24df5a2e08c17e74f0a66607352ac4874e967e9a91dfec9522d2d58d  95-vchiq-permissions.rules
+f90a20cde37c64805450781b0663b3f18483220aa51641d333bf93f308a17f43e486d16759fdd3ff97ff46df2993d97f4288883807696b263d5b5f1a69b88000  deviceinfo
+3e71320c2ff362761000abd929eeb66e7da21691f0e30a46bf9da0a60f2dfc99fd496c0108bc53e94d00221d4e3b7204da01b46324b69c814bed07fe42692413  modules-initfs
+bc2bfea04073895f02e21d9248eb3f77910e95022d65bab7d80fd12484a6523d670f81d0aae2f4e811b7ab29f8537d73d87891572c212e647c69f1e98916685b  usercfg.txt
+15cde27e41304f988009e3a1cbc4bb6a85b9d09538c727e9c22e1ec8a45d025b4be5d0064d7d7bba1988006ad291c06c8aec8bcc974f0689fbd0d187f8dc6979  xorg.conf
+"

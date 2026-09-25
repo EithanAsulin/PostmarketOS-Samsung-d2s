@@ -1,0 +1,55 @@
+From ce23c80dca58003c4e695f6331a407b2a2d5e60a Mon Sep 17 00:00:00 2001
+From: Aelin Reidel <aelin@mainlining.org>
+Date: Wed, 17 Jun 2026 00:38:17 +0200
+Subject: [PATCH] resolve_btfids: preserve parameter names when processing
+ implicit args
+
+process_kfunc_with_implicit_args() obtains parameter names through
+btf__name_by_offset() and passes them to btf__add_func_param() while
+constructing a new function prototype.
+
+The returned name pointer references memory owned by the BTF object.
+btf__add_func_param() modifies the same BTF and may grow its internal
+storage, invalidating previously returned string pointers.
+
+This can result in btf__add_func_param() dereferencing a stale pointer
+when copying the parameter name, leading to crashes in strset__add_str().
+
+Duplicate the parameter name before calling btf__add_func_param() so it
+remains valid across BTF updates.
+
+Fixes: 9d199965990c ("resolve_btfids: Support for KF_IMPLICIT_ARGS")
+Signed-off-by: Aelin Reidel <aelin@mainlining.org>
+---
+ tools/bpf/resolve_btfids/main.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/tools/bpf/resolve_btfids/main.c b/tools/bpf/resolve_btfids/main.c
+index f8a91fa7584f..970b810bb779 100644
+--- a/tools/bpf/resolve_btfids/main.c
++++ b/tools/bpf/resolve_btfids/main.c
+@@ -1113,6 +1113,7 @@ static int process_kfunc_with_implicit_args(struct btf2btf_context *ctx, struct
+ {
+ 	s32 idx, new_proto_id, new_func_id, proto_id;
+ 	const char *param_name, *tag_name;
++	char *tmp_param_name;
+ 	const struct btf_param *params;
+ 	enum btf_func_linkage linkage;
+ 	char tmp_name[KSYM_NAME_LEN];
+@@ -1193,7 +1194,11 @@ static int process_kfunc_with_implicit_args(struct btf2btf_context *ctx, struct
+ 		if (is_kf_implicit_arg(btf, &params[i]))
+ 			break;
+ 		param_name = btf__name_by_offset(btf, params[i].name_off);
+-		err = btf__add_func_param(btf, param_name, params[i].type);
++		tmp_param_name = strdup(param_name);
++		if (!tmp_param_name)
++			return -ENOMEM;
++		err = btf__add_func_param(btf, tmp_param_name, params[i].type);
++		free(tmp_param_name);
+ 		if (err < 0) {
+ 			pr_err("ERROR: resolve_btfids: failed to add param %s for %s\n",
+ 			       param_name, kfunc->name);
+--
+2.54.0
+
+

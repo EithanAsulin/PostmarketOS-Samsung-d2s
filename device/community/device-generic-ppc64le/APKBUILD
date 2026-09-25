@@ -1,0 +1,66 @@
+# Reference: <https://postmarketos.org/devicepkg>
+# Co-Maintainer: Achill Gilgenast <achill@achill.org>
+# Co-Maintainer: famfo <famfo@famfo.xyz>
+maintainer="Aelin <aelin@postmarketos.org>"
+pkgname=device-generic-ppc64le
+pkgver=2
+pkgrel=0
+pkgdesc="Generic ppc64le system"
+url="https://postmarketos.org"
+arch="ppc64le"
+license="MIT"
+depends="
+	postmarketos-base
+	powervm-boot
+	"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-kernel-stable:kernel_stable
+	$pkgname-kernel-lts:kernel_lts
+	$pkgname-kernel-mainline:kernel_mainline
+	"
+
+source="
+	deviceinfo
+	grub.cfg
+	kernel-cmdline.conf
+	modules-initfs
+	"
+options="!check !archcheck"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	# Install a stub GRUB configuration that declares that we're using BLS.1
+	# This is processed by Petitboot
+	install -Dm644 grub.cfg "$pkgdir"/boot/grub2/grub.cfg
+}
+
+kernel_stable() {
+	pkgdesc="Stable kernel (recommended, best balance between stability and features)"
+	depends="linux-postmarketos-stable linux-firmware-none"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_lts() {
+	pkgdesc="Long-term maintenance kernel (most stability, not all security fixes & new features)"
+	depends="linux-postmarketos-lts linux-firmware-none"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_mainline() {
+	pkgdesc="Upstream development kernel (regular breakage, latest features)"
+	depends="linux-postmarketos-mainline linux-firmware-none"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+sha512sums="
+82256f95bc2ab8b4020fa78aafc44162a78f7a1648d781cfa0aa38ca8fa9b4aa7d6617ba5d53e5b0d223d449c0c887365c6ff460e81869ed9d78387d2a9c9003  deviceinfo
+a40e00c25fdf4d6aaab4e602f8e5c4e72b225902324b4a6452cf3c91ff0867486627e1ad4ad023df2a6b0f15de6e056bec603c620f404acac46a0b93ca5ddacf  grub.cfg
+875267ce79b89ab77b7caa86f34bb942019ec0a5390a0f0a5156faa316367a59545b395a564875d2b2c48b83ebcb67c12b27895905301ac34410389333284ebd  kernel-cmdline.conf
+8ed60358801980fd217312ecb0b86d8f0ab1a11ffedb70d6c911c8dccb2f0dbf3a49acdb90bc339702b59a9b921649b3ed1d62e978e9ba3364c3d276d4ce5aab  modules-initfs
+"

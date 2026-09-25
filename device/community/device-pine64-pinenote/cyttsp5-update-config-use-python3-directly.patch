@@ -1,0 +1,10 @@
+diff --git a/bin/cyttsp5_update_config.py.orig b/bin/cyttsp5_update_config.py
+index e4a4d24..1f3d4e3 100755
+--- a/bin/cyttsp5_update_config.py.orig
++++ b/bin/cyttsp5_update_config.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env -S uv run --script --with pylibi2c,crcmod
++#!/usr/bin/env python3
+ 
+ # Prerequisites: uv or python modules crcmod and pylibi2c
+ # Before running this script: sudo modprobe -r cyttsp5; sudo chmod o+rw /dev/i2c-5

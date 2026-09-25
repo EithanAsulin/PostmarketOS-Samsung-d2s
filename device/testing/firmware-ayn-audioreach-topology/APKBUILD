@@ -1,0 +1,31 @@
+maintainer="Anton Bambura <jenneron@protonmail.com>"
+pkgname=firmware-ayn-audioreach-topology
+pkgver=0_git20260415
+_commit="37be59126ccaf89943a0921bca0de6d2b84e5419"
+pkgrel=0
+pkgdesc="Audioreach Topology for AYN Odin 2 and 3"
+url="https://github.com/AYNTechnologies/audioreach-topology"
+# these files are not specific to cpu architecture, but only make sense on aarch64 devices
+arch="aarch64"
+license="BSD-3-Clause"
+makedepends_build="alsa-utils cmake m4 samurai"
+source="$pkgname-$_commit.tar.gz::$url/archive/$_commit.tar.gz"
+options="!check !tracedeps pmb:cross-native2"
+builddir="$srcdir/audioreach-topology-$_commit"
+
+build() {
+	cmake -B build -S .
+	cmake --build build \
+		--target topology_SM8550-AYN topology_SM8750-AYN
+}
+
+package() {
+	install -Dm644 build/qcom/sm8550/SM8550-AYN-tplg.bin \
+		-t "$pkgdir"/usr/lib/firmware/qcom/sm8550
+	install -Dm644 build/qcom/sm8750/SM8750-AYN-tplg.bin \
+		-t "$pkgdir"/usr/lib/firmware/qcom/sm8750
+}
+
+sha512sums="
+ba1f3d24a82816cb49338b448c82189ab90d5ddaa3a52297825e1f1a7683241d0294b590c4b9e119dcb2030a70401ebd0492766911078e46ca78d89ccd5bd83b  firmware-ayn-audioreach-topology-37be59126ccaf89943a0921bca0de6d2b84e5419.tar.gz
+"

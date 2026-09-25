@@ -1,0 +1,2 @@
+#!/bin/sh
+rc-update add -q msm-modem-wwan-port default

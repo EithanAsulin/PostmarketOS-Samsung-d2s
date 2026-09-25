@@ -1,0 +1,27 @@
+maintainer="Aelin <aelin@postmarketos.org>"
+pkgname=firmware-thundercomm-rubikpi3
+pkgver=3
+pkgrel=0
+pkgdesc="Firmware for Thundercomm Rubik Pi 3"
+url="https://github.com/mainlining/firmware-thundercomm-rubikpi3"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native textrels"
+_commit="b26e5b2aca0722b1139d310edc3d11e7c9c3c990"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/mainlining/firmware-thundercomm-rubikpi3/archive/$_commit/firmware-thundercomm-rubikpi3-$_commit.tar.gz
+	30-initramfs-$pkgname.files
+"
+builddir="$srcdir/$pkgname-$_commit"
+
+package() {
+	find . -type f -exec install -Dm644 {} "$pkgdir"/{} \;
+
+	install -Dm644 "$srcdir/30-initramfs-$pkgname.files" -t \
+		"$pkgdir"/usr/share/mkinitfs/files
+}
+
+sha512sums="
+13b84f6633987c9e1a1564593348b3d8e98f6a7d8d65ec011a965b0825475679c2cc87682fe901f0c367d75bd493316b065858e5d1c81e39b164bf866a4ef01f  firmware-thundercomm-rubikpi3-b26e5b2aca0722b1139d310edc3d11e7c9c3c990.tar.gz
+636ab7aec13593156f12fe5fcdd25fcfc550db34b1d8692bf76d3a85a7509a7fbc8ffeac714cd5430eaf17b79c39617a95d826c2fdb1aa4612f1bf29b16d3387  30-initramfs-firmware-thundercomm-rubikpi3.files
+"

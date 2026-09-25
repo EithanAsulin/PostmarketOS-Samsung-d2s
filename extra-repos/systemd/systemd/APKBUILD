@@ -1,0 +1,636 @@
+# Co-Maintainer: Achill Gilgenast <achill@achill.org>
+# Co-Maintainer: Oliver Smith <ollieparanoid@postmarketos.org>
+
+#########################################################
+# Make sure to upgrade systemd-stage0 at the same time! #
+#########################################################
+
+# This is also used by upstream systemd CI with mkosi.
+# On upstream mkosi build, the following environment variables may be set:
+# $_systemd_upstream              : set to 1,
+# $_meson_extra_configure_options : set to extra meson config options,
+# $_meson_builddir                : set to the path to the meson build directory ($BUILDDIR in mkosi scripts),
+# $_upstream_srcdir               : set to the path to the upstream systemd source directory ($SRCDIR in mkosi scripts),
+
+maintainer="Clayton Craft <craftyguy@postmarketos.org>"
+pkgname=systemd
+pkgver=262
+_pkgver="${pkgver/_/-}"
+# pkgrel must match systemd-stage0!
+pkgrel=1
+pkgdesc="System and service manager"
+url="https://github.com/systemd/systemd"
+# armhf: no linux-stable
+arch="all !armhf"
+license="MIT AND GPL-2.0-only AND LGPL-2.1-or-later"
+# crossdirect disabled because of "ERROR: Problem encountered: unable to determine gperf len type"
+options="!pmb:crossdirect"
+
+_bootloader="enabled"
+case "$CARCH" in
+	# ppc64le s390x: no EFI support
+	ppc64le|s390x) _bootloader="disabled" ;;
+esac
+
+triggers="$pkgname.trigger=/usr/lib/systemd/catalog:\
+/usr/lib/udev/hwdb.d:\
+/usr/lib/binfmt.d:\
+/usr/lib/sysusers.d:\
+/usr/lib/tmpfiles.d:\
+/usr/lib/udev/rules.d:\
+/usr/lib/sysctl.d:\
+/usr/lib/systemd/system:\
+/usr/lib/systemd/user:\
+/etc/systemd/system:\
+/etc/systemd/user
+"
+checkdepends="cpio grep postmarketos-release"
+# clang: used for bpf compilation. this is the default compiler
+# grep: test-kernel-install requires 'grep -G', which is not supported by BusyBox grep.
+makedepends="
+	acl
+	acl-dev
+	audit-dev
+	bash
+	bash-completion
+	bpftool
+	bzip2-dev
+	clang
+	cmake
+	coreutils
+	cryptsetup-dev
+	curl-dev
+	dbus-dev
+	elfutils
+	gperf
+	grep
+	kmod-dev
+	libapparmor-dev
+	libarchive-dev
+	libbpf-dev
+	libfido2-dev
+	libgcc
+	libmicrohttpd-dev
+	libpwquality-dev
+	libqrencode-dev
+	libseccomp-dev
+	libselinux-dev
+	libucontext-dev
+	libxkbcommon-dev
+	linux-headers
+	linux-pam-dev
+	linux-stable-dev
+	lz4-dev
+	meson
+	musl-dev
+	pcre2-dev
+	pkgconf
+	polkit-dev
+	py3-elftools
+	py3-jinja2
+	py3-lxml
+	python3-dev
+	tpm2-tss-dev
+	tpm2-tss-esys
+	tpm2-tss-mu
+	tpm2-tss-rc
+	tpm2-tss-tcti-device
+	tzdata
+	util-linux-dev
+	xz-dev
+	zlib-dev
+	zstd-dev
+	"
+
+# valgrind-dev: not available on armhf and loongarch64.
+case "$CARCH" in
+	armhf|loongarch64) ;;
+	*) makedepends="$makedepends valgrind-dev" ;;
+esac
+
+# xen-dev: available only on aarch64, armv7, and x86_64.
+case "$CARCH" in
+	aarch64|armv7|x86_64) makedepends="$makedepends xen-dev" ;;
+esac
+
+# NOTE: these are dlopened and have to be listed explicitly since abuild cannot detect these dependencies
+# See:
+#  - https://gitlab.postmarketos.org/postmarketOS/pmaports/-/issues/3992
+#  - https://gitlab.alpinelinux.org/alpine/abuild/-/issues/10177
+depends="
+	acl-libs
+	audit-libs
+	cryptsetup-libs
+	kmod-libs
+	libapparmor
+	libarchive
+	libblkid
+	libbpf
+	libbz2
+	libdw
+	libelf
+	libfdisk
+	libfido2
+	libidn2
+	libmount
+	libpwquality
+	libqrencode
+	libseccomp
+	libselinux
+	libxkbcommon
+	linux-pam
+	lz4-libs
+	p11-kit
+	pcre2
+	tpm2-tss-esys
+	tpm2-tss-mu
+	tpm2-tss-rc
+	tpm2-tss-tcti-device
+	xz-libs
+	zlib
+	zstd-libs
+	"
+
+# provides=openrc and openrc-settingsd to prevent those packages
+# getting pulled in, as there are some conflicts (dbus)
+provides="busctl openrc-settingsd=$pkgver-r$pkgrel systemd-stage0=$pkgver-r$pkgrel"
+provider_priority=100
+
+install="$pkgname.post-upgrade"
+subpackages="
+	$pkgname-lang
+	$pkgname-dbg
+	$pkgname-dev
+	$pkgname-doc
+	$pkgname-tests
+	$pkgname-x11
+
+	$pkgname-udevd
+	$pkgname-udevd-zsh-completion:udevd_zcomp:noarch
+	$pkgname-udevd-bash-completion:udevd_bcomp:noarch
+
+	$pkgname-timesyncd
+	$pkgname-timesyncd-zsh-completion:timesyncd_zcomp:noarch
+	$pkgname-timesyncd-bash-completion:timesyncd_bcomp:noarch
+
+	$pkgname-networkd
+	$pkgname-networkd-zsh-completion:networkd_zcomp:noarch
+	$pkgname-networkd-bash-completion:networkd_bcomp:noarch
+
+	$pkgname-resolved
+	$pkgname-resolved-zsh-completion:resolved_zcomp:noarch
+	$pkgname-resolved-bash-completion:resolved_bcomp:noarch
+
+	$pkgname-logind
+	$pkgname-logind-zsh-completion:logind_zcomp:noarch
+	$pkgname-logind-bash-completion:logind_bcomp:noarch
+
+	$pkgname-journald
+	$pkgname-journald-zsh-completion:journald_zcomp:noarch
+	$pkgname-journald-bash-completion:journald_bcomp:noarch
+
+	$pkgname-libs
+
+	$pkgname-bash-completion
+	$pkgname-zsh-completion
+	"
+
+if [ "$_systemd_upstream" = 1 ]; then
+	if [ "$_bootloader" = enabled ]; then
+		makedepends="
+			$makedepends
+			py3-pefile
+			py3-pytest
+			"
+
+		subpackages="
+			$subpackages
+			$pkgname-boot
+			$pkgname-ukify
+			"
+
+		_meson_extra_configure_options="
+			$_meson_extra_configure_options
+			-Dukify=enabled
+			"
+	fi
+fi
+
+source="
+	$pkgname-$pkgver.tar.gz::https://github.com/systemd/systemd/archive/refs/tags/v$_pkgver.tar.gz
+	wired.network
+	"
+builddir=${_upstream_srcdir:-"$srcdir/$pkgname-$_pkgver"}
+_meson_builddir=${_meson_builddir:-build}
+
+_bashcomp="usr/share/bash-completion/completions"
+_zshcomp="usr/share/zsh/site-functions"
+
+_default_bashcomp() {
+	depends=""
+	pkgdesc="Bash completions for $pkgname"
+	install_if="$pkgname=$pkgver-r$pkgrel bash-completion"
+
+	cd "$pkgdir" || return 0
+	amove "$_bashcomp/$1"
+}
+
+_default_zshcomp() {
+	depends=""
+	pkgdesc="Zsh completions for $pkgname"
+	install_if="$pkgname=$pkgver-r$pkgrel zsh"
+
+	cd "$pkgdir" || return 0
+	amove "$_zshcomp/$1"
+}
+
+build() {
+	# TODO: after usr-merge completion: remove hardcoded "-D*-path" options
+	abuild-meson \
+		-Dlibc=musl \
+		-Dmode=release \
+		-Dsplit-bin=true \
+		\
+		-Dquotaon-path=/usr/sbin/quotaon \
+		-Dquotacheck-path=/usr/sbin/quotacheck \
+		-Dkmod-path=/bin/kmod \
+		-Dkexec-path=/usr/sbin/kexec \
+		-Dsulogin-path=/sbin/sulogin \
+		-Dmount-path=/bin/mount \
+		-Dumount-path=/bin/umount \
+		-Dloadkeys-path=/usr/bin/loadkeys \
+		-Dsetfont-path=/usr/bin/setfont \
+		-Dnologin-path=/sbin/nologin \
+		\
+		-Dldconfig=false \
+		\
+		-Dcompat-sysv-interfaces=false \
+		\
+		-Ddebug-shell=/bin/ash \
+		-Dpolkit=enabled \
+		-Dpam=enabled \
+		-Dpamlibdir=/usr/lib/security \
+		-Dpamconfdir=/usr/lib/pam.d \
+		-Dinstall-sysconfdir=false \
+		-Dinstall-tests=true \
+		\
+		-Dsysupdate=enabled \
+		-Dsysupdated=enabled \
+		-Dimportd=enabled \
+		\
+		-Dbootloader="$_bootloader" \
+		-Dinitrd=true \
+		-Dhibernate=false \
+		-Dselinux=enabled \
+		-Dukify=disabled \
+		-Dtpm2=enabled \
+		\
+		-Dhomed=disabled \
+		-Duserdb=false \
+		\
+		-Dstatic-libsystemd=true \
+		-Dstatic-libudev=true \
+		\
+		-Dman=enabled \
+		-Dhtml=disabled \
+		\
+		-Dsystem-alloc-uid-min=101 \
+		-Dsystem-alloc-gid-min=101 \
+		-Dsystem-uid-max=999 \
+		-Dsystem-gid-max=999 \
+		-Dwheel-group=true \
+		-Dnobody-user=nobody \
+		-Dnobody-group=nobody \
+		\
+		-Ddefault-kill-user-processes=true \
+		-Ddefault-locale=en_US.UTF-8 \
+		\
+		-Ddefault-dns-over-tls=yes \
+		-Ddns-over-tls=openssl \
+		-Ddns-servers="9.9.9.10#dns10.quad9.net 149.112.112.10#dns10.quad9.net 2620:fe::10#dns10.quad9.net 2620:fe::fe:10#dns10.quad9.net" \
+		-Dntp-servers="0.pool.ntp.org 1.pool.ntp.org 2.pool.ntp.org 4.pool.ntp.org" \
+		\
+		-Dbpf-framework=enabled \
+		-Dvmlinux-h=provided \
+		-Dvmlinux-h-path="$(find /usr/src -path "/usr/src/linux-headers-*-stable/vmlinux.h" | sort -V | tail -n1)" \
+		$_meson_extra_configure_options \
+		$_meson_builddir .
+	meson compile ${JOBS:+-j ${JOBS}} -C $_meson_builddir
+}
+
+check() {
+	if [ "$PMB_CROSS" = "unnecessary" ]; then
+		meson test --print-errorlogs --quiet --no-stdsplit -C $_meson_builddir
+	else
+		echo "*** NOTE: Skipping tests, not building natively ***"
+	fi
+}
+
+package() {
+	# FIXME: For some reason .note.dlopen isn't placed in the binary. Investigate!
+	# https://github.com/systemd/systemd/blob/main/docs/ELF_DLOPEN_METADATA.md
+	depends="
+		$depends
+		$pkgname-journald=$pkgver-r$pkgrel
+		$pkgname-udevd=$pkgver-r$pkgrel
+		!openrc
+		"
+
+	DESTDIR="$pkgdir" meson install --no-rebuild -C $_meson_builddir
+
+	# NOTE: Uncomment to print dlopened dependencies and crash the build:
+	# _dump_dlopen_metadata "$pkgdir" | _extract_sonames | _resolve_packages; exit 1
+
+	# ship default policy to leave services disabled
+	for type in system user; do
+		mkdir -p "$pkgdir"/usr/lib/systemd/"$type"-preset
+		echo 'disable *' > "$pkgdir"/usr/lib/systemd/"$type"-preset/99-default.preset
+	done
+
+	if [ "$_systemd_upstream" != 1 ]; then
+		# initramfs hardcodes /sbin/init
+		mkdir -p "$pkgdir"/sbin
+		ln -sf "../usr/lib/systemd/systemd" "$pkgdir"/sbin/init
+
+		# this stuff is packaged in Alpine aports under "systemd-boot"
+		rm -rf "$pkgdir"/usr/lib/systemd/boot
+	fi
+}
+
+udevd() {
+	pkgdesc="systemd udev"
+	# is a dependency of systemd
+
+	# Some lib dependencies can't be automatically detected because they are
+	# dlopened and must be explicitly listed
+	depends="kmod-libs"
+
+	# eudev-libs: pulled in by eudev-dev makedepend and added by abuild from the
+	# .so file
+	provides="udev=$pkgver-r$pkgrel eudev-libs=$pkgver-r$pkgrel"
+
+	amove usr/bin/udevadm
+	amove usr/lib/libudev*
+	amove usr/lib/systemd/system/sockets.target.wants/systemd-udev*
+	amove usr/lib/systemd/system/sysinit.target.wants/systemd-udev*
+	amove usr/lib/systemd/system/systemd-udev*
+	amove usr/lib/systemd/systemd-udevd
+	amove usr/lib/udev
+
+	# Install symlinks to be more like eudev
+	if [ "$_systemd_upstream" = 1 ]; then
+		mkdir -p "$subpkgdir"/usr/sbin
+		ln -sf ../bin/udevadm "$subpkgdir"/usr/sbin/udevd
+	else
+		# FIXME: After usr merge, convert these into relative symlinks to support
+		# installing this package into an arbitrary directory
+		mkdir -p "$subpkgdir"/sbin "$subpkgdir"/bin
+		ln -sf /usr/lib/systemd/systemd-udevd "$subpkgdir"/sbin/udevd
+		ln -sf /usr/lib/systemd/systemd-udevd "$subpkgdir"/bin/udevadm
+	fi
+}
+
+udevd_bcomp() {
+	_default_bashcomp udevadm
+}
+
+udevd_zcomp() {
+	_default_zshcomp _udevadm
+}
+
+timesyncd() {
+	pkgdesc="systemd Time Synchronization"
+	depends="$pkgname=$pkgver-r$pkgrel"
+
+	amove usr/bin/timedatectl
+	amove usr/lib/systemd/ntp-units.d/80-systemd-timesync.list
+	amove usr/lib/systemd/systemd-timesyncd
+	amove usr/lib/systemd/system/systemd-timesyncd.service
+	amove usr/lib/sysusers.d/systemd-timesync.conf
+	amove usr/share/dbus-1/system-services/org.freedesktop.timesync1.service
+	amove usr/share/dbus-1/system.d/org.freedesktop.timesync1.conf
+	amove usr/share/polkit-1/actions/org.freedesktop.timesync1.policy
+}
+
+timesyncd_bcomp() {
+	_default_bashcomp timedatectl
+}
+
+timesyncd_zcomp() {
+	_default_zshcomp _timedatectl
+}
+
+networkd() {
+	pkgdesc="systemd Network Configuration"
+	depends="$pkgname=$pkgver-r$pkgrel"
+
+	amove usr/bin/networkctl
+	amove usr/share/polkit-1/rules.d/systemd-networkd.rules
+	amove usr/lib/systemd/systemd-networkd
+	amove usr/lib/systemd/systemd-networkd-wait-online
+	amove usr/lib/systemd/network
+	amove usr/lib/systemd/system/systemd-networkd.service
+	amove usr/lib/systemd/system/systemd-networkd.socket
+	amove usr/lib/systemd/system/systemd-networkd-wait-online.service
+	amove usr/lib/sysusers.d/systemd-network.conf
+	amove usr/share/dbus-1/interfaces/org.freedesktop.network1.DHCPServer.xml
+	amove usr/share/dbus-1/interfaces/org.freedesktop.network1.Link.xml
+	amove usr/share/dbus-1/interfaces/org.freedesktop.network1.Manager.xml
+	amove usr/share/dbus-1/interfaces/org.freedesktop.network1.Network.xml
+	amove usr/share/dbus-1/system-services/org.freedesktop.network1.service
+	amove usr/share/dbus-1/system.d/org.freedesktop.network1.conf
+	amove usr/share/polkit-1/actions/org.freedesktop.network1.policy
+
+	install -D -m0644 "$srcdir/wired.network" "$subpkgdir/usr/lib/systemd/network/80-wired.network"
+}
+
+networkd_bcomp() {
+	_default_bashcomp networkctl
+}
+
+networkd_zcomp() {
+	_default_zshcomp _networkctl
+}
+
+resolved() {
+	pkgdesc="systemd Network Name Resolution"
+	depends="$pkgname=$pkgver-r$pkgrel"
+	replaces="resolvconf"
+	provides="resolvconf"
+
+	amove usr/bin/resolvectl
+	amove usr/sbin/resolvconf
+	amove usr/bin/systemd-resolve
+	amove usr/lib/systemd/resolv.conf
+	amove usr/lib/systemd/system/systemd-resolved.service
+	amove usr/lib/systemd/systemd-resolved
+	amove usr/lib/sysusers.d/systemd-resolve.conf
+	amove usr/lib/tmpfiles.d/systemd-resolve.conf
+	amove usr/share/dbus-1/interfaces/org.freedesktop.resolve1*
+	amove usr/share/dbus-1/system-services/org.freedesktop.resolve1.service
+	amove usr/share/dbus-1/system.d/org.freedesktop.resolve1.conf
+	amove usr/share/polkit-1/actions/org.freedesktop.resolve1.policy
+}
+
+resolved_bcomp() {
+	_default_bashcomp resolvectl
+	_default_bashcomp systemd-resolve
+}
+
+resolved_zcomp() {
+	_default_zshcomp _resolvectl
+}
+
+logind() {
+	pkgdesc="systemd User Login Management"
+	depends="
+		$pkgname=$pkgver-r$pkgrel
+		dbus
+		shadow
+		"
+
+	provides="elogind"
+	provider_priority=100
+
+	amove usr/bin/loginctl
+	amove usr/lib/systemd/systemd-logind
+	amove usr/lib/systemd/system/systemd-logind-varlink.socket
+	amove usr/lib/systemd/system/systemd-logind.service
+
+	amove usr/lib/systemd/system/dbus-org.freedesktop.login1.service
+	amove usr/share/dbus-1/interfaces/org.freedesktop.login1.*.xml
+	amove usr/share/dbus-1/system-services/org.freedesktop.login1.service
+	amove usr/share/dbus-1/system.d/org.freedesktop.login1.conf
+
+	amove usr/share/polkit-1/actions/org.freedesktop.login1.policy
+}
+
+logind_bcomp() {
+	_default_bashcomp loginctl
+}
+
+logind_zcomp() {
+	_default_zshcomp _loginctl
+}
+
+journald() {
+	pkgdesc="systemd Journal"
+
+	amove usr/bin/journalctl
+	amove usr/lib/systemd/system/sockets.target.wants/systemd-journal*
+	amove usr/lib/systemd/system/systemd-journal*
+	amove usr/lib/systemd/systemd-journal*
+	amove usr/lib/sysusers.d/systemd-journal.conf
+	amove usr/lib/tmpfiles.d/journal-nocow.conf
+	amove var/log/journal
+}
+
+journald_bcomp() {
+	_default_bashcomp journalctl
+}
+
+journald_zcomp() {
+	_default_zshcomp _journalctl
+}
+
+tests() {
+	depends="$pkgname=$pkgver-r$pkgrel"
+
+	amove usr/lib/systemd/tests
+}
+
+x11() {
+	pkgdesc="systemd x11"
+	install_if="$pkgname=$pkgver-r$pkgrel xorg-server-common"
+
+	amove usr/lib/tmpfiles.d/x11.conf
+}
+
+dev() {
+	provides="eudev-dev=$pkgver-r$pkgrel udev-dev=$pkgver-r$pkgrel systemd-stage0-dev=$pkgver-r$pkgrel"
+
+	default_dev
+}
+
+libs() {
+	provides="systemd-stage0-libs=$pkgver-r$pkgrel"
+
+	default_libs
+}
+
+boot() {
+	# Currently, this is only used in the upstream systemd CI with mkosi.
+
+	pkgdesc="systemd's EFI boot manager"
+	provides="efistub"
+	provider_priority=200
+
+	amove usr/lib/systemd/boot/efi
+}
+
+ukify() {
+	# Currently, this is only used in the upstream systemd CI with mkosi.
+
+	pkgdesc="Create unified kernel images (UKIs)"
+	provides="ukify"
+	provider_priority=200
+	depends="
+		binutils
+		py3-cryptography
+		py3-pefile
+		py3-zstandard
+		python3
+		systemd-boot=$pkgver-r$pkgrel
+		"
+
+	amove usr/bin/ukify
+	amove usr/lib/kernel/install.d/60-ukify.install
+	amove usr/lib/systemd/boot/hwids
+	amove usr/lib/systemd/ukify
+}
+
+# Scan for dlopened dependencies
+_dump_dlopen_metadata() {
+	mkdir -p "$pkgbasedir/.dlopen-metadata-tmp"
+	mkdir -p "$pkgbasedir/.dlopen-metadata"
+	scanelf -RyB -E ET_DYN --section '.note.dlopen' "$pkgdir" | while read type section src; do
+		[ "$section" != ".note.dlopen" ] && continue
+
+		section_data="$(readelf -j .note.dlopen "$src")"
+		local filename="${src##*/}"
+		if [ -e "$pkgbasedir/.dlopen-metadata/$filename" ]; then
+			error "filename reused, cannot handle this yet: $filename"
+		fi
+		readelf -j .note.dlopen "$src" | tee "$pkgbasedir/.dlopen-metadata/$filename"
+		local tmp="$pkgbasedir/.dlopen-metadata-tmp/$filename"
+		strip --remove-section=.note.dlopen -o "$tmp" "$src"
+		# only replace content to preserve attributes
+		cat "$tmp" > "$src"
+		rm "$tmp"
+	done
+
+	rm -r "$pkgbasedir/.dlopen-metadata-tmp"
+}
+
+# Extract sonames from readelf output
+_extract_sonames() {
+	grep 'Dlopen Metadata:' | \
+	sed 's/.*"soname":\[//' | \
+	sed 's/\].*//' | \
+	tr ',' '\n' | \
+	sed 's/"//g' | \
+	sort -u
+}
+
+# Resolve each soname to package
+_resolve_packages() {
+	while read -r soname; do
+		apk search "so:$soname" 2>/dev/null || true
+	done | sed 's/-[0-9].*//' | sort -u
+}
+
+
+sha512sums="
+4765e29d37c716dbe629d88bf1ed07b857d373333e64966832039c0031aa46ed7e76efd7b112eb199508adffc8afbf185b3360c9a66d100da052c407bd3f02d5  systemd-262.tar.gz
+81c897fed8a3fbfb67ec591b2398a5d65e4af1b3ef379376c157c98d71f085b707f8ebc896d5571a94f99f8fc84fd6b43e3b879ca9b0d57fc6c4596034c7a777  wired.network
+"

@@ -1,0 +1,47 @@
+From 79b80e3361e1f6e103b8abbc09a4aeb7bc79961f Mon Sep 17 00:00:00 2001
+From: Nuke <retuhmadam2010@proton.me>
+Date: Thu, 13 Aug 2026 18:41:58 +0400
+Subject: [PATCH 09/11] usb: musb: omap2430: handle initial ID ground
+ transition
+
+---
+ drivers/usb/musb/omap2430.c | 16 +++++++---------
+ 1 file changed, 7 insertions(+), 9 deletions(-)
+
+diff --git a/drivers/usb/musb/omap2430.c b/drivers/usb/musb/omap2430.c
+index 333ab79f0..2291cd03a 100644
+--- a/drivers/usb/musb/omap2430.c
++++ b/drivers/usb/musb/omap2430.c
+@@ -103,6 +103,13 @@ static void omap_musb_set_mailbox(struct omap2430_glue *glue)
+ 	case MUSB_ID_GROUND:
+ 		dev_dbg(musb->controller, "ID GND\n");
+ 		switch (musb->xceiv->otg->state) {
++		default:
++			musb->xceiv->otg->state = OTG_STATE_A_IDLE;
++			musb->xceiv->last_event = USB_EVENT_ID;
++			if (musb->gadget_driver)
++				omap_control_usb_set_mode(glue->control_otghs,
++							 USB_MODE_HOST);
++			fallthrough;
+ 		case OTG_STATE_A_IDLE:
+ 			error = musb_set_host(musb);
+ 			if (error)
+@@ -118,15 +125,6 @@ static void omap_musb_set_mailbox(struct omap2430_glue *glue)
+ 			 */
+ 			otg_set_vbus(musb->xceiv->otg, 1);
+ 			break;
+-		default:
+-			musb->xceiv->otg->state = OTG_STATE_A_IDLE;
+-			musb->xceiv->last_event = USB_EVENT_ID;
+-			if (musb->gadget_driver) {
+-				omap_control_usb_set_mode(glue->control_otghs,
+-							  USB_MODE_HOST);
+-				otg_set_vbus(musb->xceiv->otg, 1);
+-			}
+-			break;
+ 		}
+ 		break;
+ 
+-- 
+2.55.0
+

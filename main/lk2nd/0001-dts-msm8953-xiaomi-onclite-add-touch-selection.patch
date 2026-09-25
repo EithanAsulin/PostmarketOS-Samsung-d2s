@@ -1,0 +1,40 @@
+From f08af0ceab705929f9d92b0c6325f9a05301c097 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Barnab=C3=A1s=20Cz=C3=A9m=C3=A1n?=
+ <barnabas.czeman@mainlining.org>
+Date: Sat, 4 Jul 2026 15:42:55 +0200
+Subject: [PATCH 1/3] dts: msm8953: xiaomi-onclite: add touch selection
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Barnabás Czémán <barnabas.czeman@mainlining.org>
+---
+ lk2nd/device/dts/msm8953/sdm632-mtp.dts | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/lk2nd/device/dts/msm8953/sdm632-mtp.dts b/lk2nd/device/dts/msm8953/sdm632-mtp.dts
+index 2b49d66bb..2a18e3070 100644
+--- a/lk2nd/device/dts/msm8953/sdm632-mtp.dts
++++ b/lk2nd/device/dts/msm8953/sdm632-mtp.dts
+@@ -55,12 +55,18 @@
+ 
+ 			qcom,mdss_dsi_boe_hx8394f_720p_video {
+ 				compatible = "xiaomi,onclite-hx8394f";
++				touchscreen-compatible = "edt,edt-ft5406";
++				// touchscreen-compatible = "goodix,gt1158";
+ 			};
+ 			qcom,mdss_dsi_shenchao_ili9881_720p_video {
+ 				compatible = "xiaomi,onclite-ili9881";
++				touchscreen-compatible = "edt,edt-ft5406";
++				// touchscreen-compatible = "goodix,gt1158";
+ 			};
+ 			qcom,mdss_dsi_truly_otm1901a_720p_video {
+ 				compatible = "xiaomi,onclite-otm1901a";
++				touchscreen-compatible = "edt,edt-ft5406";
++				// touchscreen-compatible = "goodix,gt1158";
+ 			};
+ 		};
+ 	};
+-- 
+2.55.0
+

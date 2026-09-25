@@ -1,0 +1,26 @@
+maintainer="knuxify <knuxify@gmail.com>"
+pkgname=firmware-samsung-baffinlite
+pkgver=2
+pkgrel=0
+_commit="d7195e553eed22f58835d24ecdea40e97bf639f4"
+pkgdesc="WiFi/Bluetooth firmware for the Samsung Galaxy Grand Neo"
+url="https://github.com/SamsungBCM-GrandNeo/android_vendor_samsung_baffinlite"
+arch="armv7"
+license="proprietary"
+source="$pkgname-$_commit.tar.gz::https://github.com/SamsungBCM-GrandNeo/android_vendor_samsung_baffinlite/archive/$_commit.tar.gz"
+options="!check !strip !archcheck !spdx !tracedeps"
+builddir="$srcdir/android_vendor_samsung_baffinlite-$_commit"
+
+package() {
+	# WiFi
+	install -Dm644 proprietary/etc/wifi/bcmdhd_sta.bin \
+		"$pkgdir"/lib/firmware/postmarketos/brcm/brcmfmac4330-sdio.samsung,baffinlite.bin
+	install -Dm644 proprietary/etc/wifi/nvram_net.txt \
+		"$pkgdir"/lib/firmware/postmarketos/brcm/brcmfmac4330-sdio.samsung,baffinlite.txt
+
+	# Bluetooth
+	install -Dm644 proprietary/bin/BCM4330B1_002.001.003.1025.1257.hcd \
+		"$pkgdir"/lib/firmware/postmarketos/brcm/BCM4330B1.samsung,baffinlite.hcd
+}
+
+sha512sums="d89032dfbae9044f4318b719abee21e6bdaba7a03c082c04531b2ec306246db3b6f35c23520e33c802ce9d4444e41b6e2cea6107a83a7a25fda1a89fbae16113  firmware-samsung-baffinlite-d7195e553eed22f58835d24ecdea40e97bf639f4.tar.gz"

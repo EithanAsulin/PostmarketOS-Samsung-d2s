@@ -1,0 +1,23 @@
+maintainer="Anton Bambura <jenneron@protonmail.com>"
+pkgname=firmware-ayn-odin-3
+pkgver=1
+_commit="8fc6eb20341c265e44b8a86bf4a6684776b981e3"
+pkgrel=0
+pkgdesc="Firmware for AYN Odin 3"
+url="https://gitlab.com/jenneron/firmware-ayn-odin-3"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps textrels pmb:cross-native"
+
+_repo="firmware-ayn-odin-3"
+source="$pkgname-$_commit.tar.gz::$url/-/archive/$_commit/$_repo-$_commit.tar.gz"
+
+builddir="$srcdir/$_repo-$_commit"
+
+package() {
+	make DESTDIR="$pkgdir" install
+}
+
+sha512sums="
+7caad44838a36c22c6daaef34d126f6bb41dc8bde938913238fb3f56650cfe0588266c5dbfedbb6c0bd5a17522f4f8dbae33d8af32eee96ec9379d1ee2b71be2  firmware-ayn-odin-3-8fc6eb20341c265e44b8a86bf4a6684776b981e3.tar.gz
+"

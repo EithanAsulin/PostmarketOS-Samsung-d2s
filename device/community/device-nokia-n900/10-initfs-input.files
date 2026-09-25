@@ -1,0 +1,15 @@
+# console keyboard matrix mappings
+/usr/share/bkeymaps/us/rx51_us.bmap.gz
+/usr/share/bkeymaps/ch/rx51_ch.bmap.gz
+/usr/share/bkeymaps/it/rx51_it.bmap.gz
+/usr/share/bkeymaps/fi/rx51_fi.bmap.gz
+/usr/share/bkeymaps/se/rx51_se.bmap.gz
+
+# touchscreen calibration (and other input-related udev rules)
+/usr/lib/udev/rules.d/72-n900-input.rules
+
+# udev/hwdb hardware keyboard management
+/etc/udev/hwdb.bin
+
+# unl0kr config for hardware keyboard
+/usr/share/unl0kr/unl0kr.conf.d/00-n900-keyboard.conf

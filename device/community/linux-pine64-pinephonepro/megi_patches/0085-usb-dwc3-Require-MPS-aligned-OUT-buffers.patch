@@ -1,0 +1,43 @@
+From c8861d8968cc9da016f5c55385956a2757068e0b Mon Sep 17 00:00:00 2001
+From: Ondrej Jirman <megi@xff.cz>
+Date: Tue, 21 Jul 2026 10:22:14 +0200
+Subject: [PATCH 85/90] usb: dwc3: Require MPS-aligned OUT buffers
+
+An OUT request whose length is not a multiple of the maximum packet size
+gets an extra TRB pointing at a shared bounce buffer, so that a final
+full packet from the host has somewhere to land. Bytes the host sends
+past the end of the request land in that buffer and are dropped without
+the function driver ever hearing about it, silently desynchronising a
+byte stream.
+
+Set quirk_ep_out_aligned_size so the framework rounds OUT buffers up to
+the maximum packet size and the overflow cannot happen.
+Signed-off-by: Ondrej Jirman <megi@xff.cz>
+---
+ drivers/usb/dwc3/gadget.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/drivers/usb/dwc3/gadget.c b/drivers/usb/dwc3/gadget.c
+index 88792b22efc1..d92f91eac235 100644
+--- a/drivers/usb/dwc3/gadget.c
++++ b/drivers/usb/dwc3/gadget.c
+@@ -4815,6 +4815,16 @@ int dwc3_gadget_init(struct dwc3 *dwc)
+ 				dwc->revision);
+ 
+ 	dwc->gadget->max_speed		= dwc->maximum_speed;
++
++	/*
++	 * An OUT request that is not a multiple of the maximum packet size gets
++	 * an extra TRB pointing at a shared bounce buffer, so that a final full
++	 * packet from the host has somewhere to land. Anything the host sends
++	 * past the end of the request ends up in that buffer and is discarded -
++	 * see dwc3_gadget_ep_reclaim_completed_trb(). Tell the gadget framework
++	 * to round OUT buffers up instead, so the situation cannot arise.
++	 */
++	dwc->gadget->quirk_ep_out_aligned_size = true;
+ 	dwc->gadget->max_ssp_rate	= dwc->max_ssp_rate;
+ 
+ 	/*
+-- 
+2.55.0
+

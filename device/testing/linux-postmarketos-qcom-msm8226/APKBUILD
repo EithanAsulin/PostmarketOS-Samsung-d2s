@@ -1,0 +1,73 @@
+# Co-Maintainer: Luca Weiss <luca@lucaweiss.eu>
+maintainer="Stefan Hansson <newbyte@postmarketos.org>"
+_flavor="postmarketos-qcom-msm8226"
+pkgname=linux-$_flavor
+pkgver=6.16.12
+pkgrel=3
+pkgdesc="Mainline Kernel fork for APQ8026/MSM8226/MSM8926 devices"
+arch="armv7"
+_carch="arm"
+url="https://github.com/msm8226-mainline/linux"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-community
+	"
+makedepends="
+	bison
+	clang
+	elfutils-dev
+	findutils
+	flex
+	linux-headers
+	lld
+	llvm
+	openssl-dev
+	pahole
+	perl
+	postmarketos-installkernel
+	python3
+	xz
+	zstd
+"
+
+_config="config-$_flavor.$arch"
+_tag="v${pkgver/_/-}-msm8226-u2"
+
+# Source
+source="
+	https://github.com/msm8226-mainline/linux/archive/$_tag/linux-$_tag.tar.gz
+	$_config
+"
+builddir="$srcdir/linux-${_tag#v}"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$arch" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+	make zinstall modules_install dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_PATH="$pkgdir"/boot/ \
+		INSTALL_MOD_PATH="$pkgdir"/usr \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+63bd2038d6ac22e104f36e31e3137c1cd000de713ef79c8ad13a6b81a64e975c2e8259c25490b96766c500a4df1a8623fbba9be9fc40ddc868032a11cb516679  linux-v6.16.12-msm8226-u2.tar.gz
+f5f0c2a788cffa598404ba55d46535e173b92c2055ef0019774056af09870c2530b7b83f353c7f4516eb900a29f2ed50fe9ce59305189594c5b2e91a07d2a10b  config-postmarketos-qcom-msm8226.armv7
+"

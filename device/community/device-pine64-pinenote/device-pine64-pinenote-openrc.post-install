@@ -1,0 +1,4 @@
+#!/bin/sh
+
+rc-update add pinenote-init-waveform boot
+rc-update add tinydm-ebc

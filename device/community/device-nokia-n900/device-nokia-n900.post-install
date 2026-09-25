@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# Update hwdb
+udevadm hwdb --update
+
+exit 0

@@ -1,0 +1,3 @@
+#!/bin/sh
+rc-update add dropbear default 2>/dev/null || true
+rc-update del sshd default 2>/dev/null || true

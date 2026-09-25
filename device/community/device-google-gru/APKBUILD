@@ -1,0 +1,62 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Sebastian Fleer <dev@dwurp.de>"
+pkgname=device-google-gru
+pkgdesc="Google Gru Chromebooks"
+pkgver=15
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf
+	depthcharge-tools
+	linux-firmware-ath10k
+	linux-firmware-mrvl
+	linux-firmware-qca
+	linux-firmware-rockchip
+	linux-postmarketos-rockchip
+	postmarketos-base
+	postmarketos-cros-common
+	soc-rockchip-rk3399
+"
+makedepends="devicepkg-dev"
+subpackages="$pkgname-systemd"
+source="
+	deviceinfo
+	modules-initfs
+	systemd-gru-watchdog.conf
+"
+
+# provides and replaces to switch old installations to this package
+provides="
+	device-google-dru=$pkgver-r$pkgrel
+	device-google-druwl=$pkgver-r$pkgrel
+	device-google-dumo=$pkgver-r$pkgrel
+	device-google-kevin=$pkgver-r$pkgrel
+	device-google-bob=$pkgver-r$pkgrel
+"
+replaces="
+	device-google-dru
+	device-google-druwl
+	device-google-dumo
+	device-google-kevin
+	device-google-bob
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -Dm644 "$srcdir"/systemd-gru-watchdog.conf \
+	  "$pkgdir"/usr/lib/systemd/system.conf.d/90-gru-watchdog.conf
+}
+
+sha512sums="
+aa8ded3034eae5bca4c3cfd8add13d8aaa4f1f1dde3e86b4c6f001507d4b5a4d89a532adc9813f42a0fa2526db8223643481736eeffaf13bd673d312ecd06adf  deviceinfo
+363ac4c890f90910ded70663f2c3b703d9b7d5785a7aecf7abc03a4eeeba8726a4bbeaf824af981c16a8597925953cf41aa9baf3d545338a1d487096c1a73245  modules-initfs
+54989f531765745629565ea8506afaccf07a0968b9165304f704d529467eb21cecac0ec49d2cf14ebe2779958e4eaafe6721103163c760dcaf6099b761461ff6  systemd-gru-watchdog.conf
+"

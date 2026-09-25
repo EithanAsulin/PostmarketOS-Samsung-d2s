@@ -1,0 +1,8 @@
+/dts-v1/;
+
+/ {
+	model = "Samsung Galaxy A21s";
+	compatible = "samsung,exynos850";
+	dtbo-hw_rev = <0x06>;
+	dtbo-hw_rev_end = <0x20>;
+};

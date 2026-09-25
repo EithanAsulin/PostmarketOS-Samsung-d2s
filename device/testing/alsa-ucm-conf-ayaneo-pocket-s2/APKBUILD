@@ -1,0 +1,25 @@
+maintainer="Neil Armstrong <neil.armstrong@linaro.org>"
+pkgname=alsa-ucm-conf-ayaneo-pocket-s2
+pkgver=1.2.16_git20260612
+pkgrel=1
+pkgdesc="ALSA UCM configuration for Ayaneo Pocket S2"
+url="https://github.com/superna9999/alsa-ucm-conf"
+arch="aarch64"
+license="BSD-3-Clause"
+provides="alsa-ucm-conf=0.${pkgver%_*}-r$pkgrel" # versioned provides need to be below default version
+_commit="5e1cfc6810013182570d6ac8386a58d2fde83b0c"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/superna9999/alsa-ucm-conf/archive/$_commit.tar.gz
+"
+builddir="$srcdir/alsa-ucm-conf-$_commit"
+options="!check"
+
+package() {
+	# install audio config files
+	mkdir -p "$pkgdir"/usr/share/alsa/ucm2
+	cp -r "$srcdir/alsa-ucm-conf-$_commit"/ucm2 "$pkgdir"/usr/share/alsa/
+}
+
+sha512sums="
+b36484420c25f851d87e1f43ed8ee43736c9881c8c66a0570dbf7ed35979b7f579d32be63adfb345a598851d51858b016cff0e969e2466624bbee2627e0077ca  alsa-ucm-conf-ayaneo-pocket-s2-5e1cfc6810013182570d6ac8386a58d2fde83b0c.tar.gz
+"

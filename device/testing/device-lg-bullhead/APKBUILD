@@ -1,0 +1,43 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Petr Vorel <petr.vorel@gmail.com>"
+pkgname=device-lg-bullhead
+pkgdesc="Google Nexus 5X"
+pkgver=9
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+depends="
+	firmware-lg-bullhead
+	mkbootimg
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+subpackages="$pkgname-udev"
+source="deviceinfo kernel-cmdline.conf"
+subpackages="$pkgname-kernel-rev10:kernel_rev10 $pkgname-kernel-rev101:kernel_rev101"
+options="!check !archcheck"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+kernel_rev10() {
+	pkgdesc="Nexus 5X rev 1.0 (See https://wiki.postmarketos.org/wiki/Google_Nexus_5X_(lg-bullhead)#Get_your_hardware_revision)"
+	depends="linux-postmarketos-qcom-msm8994"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_rev101() {
+	pkgdesc="Nexus 5X rev 1.01 (See https://wiki.postmarketos.org/wiki/Google_Nexus_5X_(lg-bullhead)#Get_your_hardware_revision)"
+	depends="linux-postmarketos-qcom-msm8994"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+sha512sums="
+c162df6ba8428fe9e033bb032704c63b53746045ad5ac7d1a19905644f1346696134889f3a3466ab07fcec56fbbc41dc67f949e2c4b86c3ebf2211feadebf3cb  deviceinfo
+e9a2223fcb15391c52976e492648375a70f09fc1c7a5e876fd870d3091056d523f97d3e8fefc5113c3c3b0051ec163ed41d662bde8f0d5ed3c64c6075252e79c  kernel-cmdline.conf
+"

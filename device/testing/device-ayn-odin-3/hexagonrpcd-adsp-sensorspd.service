@@ -1,0 +1,10 @@
+[Unit]
+ConditionPathExists=
+ConditionPathExists=!/dev/fastrpc-sdsp
+ConditionPathExists=/dev/fastrpc-adsp-secure
+Requires=msm-firmware-loader.service
+After=msm-firmware-loader.service
+
+[Service]
+ExecStart=
+ExecStart=/usr/bin/hexagonrpcd -f /dev/fastrpc-adsp-secure -d adsp -s -R /usr/share/qcom/sm8750/ayn/odin-3

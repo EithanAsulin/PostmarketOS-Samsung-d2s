@@ -1,0 +1,59 @@
+From 5252286b5961c10c749dfa16d48d71cfe8d6aa2a Mon Sep 17 00:00:00 2001
+From: Ondrej Jirman <megi@xff.cz>
+Date: Tue, 21 Jul 2026 07:43:49 +0200
+Subject: [PATCH 83/90] usb: dwc3: Do not connect the gadget while no cable is
+ present
+
+usb_add_gadget() starts out assuming VBUS is present and binds any
+gadget driver that was waiting, so the connect happens inside
+dwc3_gadget_init(), before dwc3 has any way to say there is no cable.
+With the USB3 PHY powered down while disconnected, that runs the
+endpoint setup against a PHY that is off:
+
+  dwc3 fe800000.usb: request 000000002e1b5f5e was not queued to ep0out
+  udc fe800000.usb: failed to start adbd: -524
+  configfs-gadget.adbd gadget.2: probe with driver configfs-gadget.adbd
+      failed with error -524
+
+The gadget driver is then unbound for good, so the port stays dead until
+userspace sets it up again. It shows up after a host to device role
+change with nothing plugged in, which is where the gadget is registered
+while disconnected.
+
+Remember the request instead and leave the pullup to the connection
+state, which __dwc3_set_mode() already reports through
+usb_udc_vbus_handler().
+
+Signed-off-by: Ondrej Jirman <megi@xff.cz>
+---
+ drivers/usb/dwc3/gadget.c | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/drivers/usb/dwc3/gadget.c b/drivers/usb/dwc3/gadget.c
+index 45b468b4c9b5..88792b22efc1 100644
+--- a/drivers/usb/dwc3/gadget.c
++++ b/drivers/usb/dwc3/gadget.c
+@@ -2797,6 +2797,20 @@ static int dwc3_gadget_pullup(struct usb_gadget *g, int is_on)
+ 
+ 	dwc->softconnect = is_on;
+ 
++	/*
++	 * The UDC core connects as soon as a gadget driver binds, because it
++	 * assumes VBUS is present until told otherwise, and it can only be
++	 * told once the gadget is registered. On a port that powers its PHYs
++	 * down while nothing is plugged in, that would run the endpoint setup
++	 * against a PHY that is off and fail the bind.
++	 *
++	 * Record the request and let the connection state drive it instead.
++	 * __dwc3_set_mode() reports that state, so the pullup follows the
++	 * cable either way.
++	 */
++	if (is_on && dwc->dr_mode == USB_DR_MODE_OTG && !dwc->current_dr_connected)
++		return 0;
++
+ 	/*
+ 	 * Avoid issuing a runtime resume if the device is already in the
+ 	 * suspended state during gadget disconnect.  DWC3 gadget was already
+-- 
+2.55.0
+

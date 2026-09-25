@@ -1,0 +1,29 @@
+From 88b434cb18dc9b65605481f72e3fe85761d332af Mon Sep 17 00:00:00 2001
+From: Ondrej Jirman <megi@xff.cz>
+Date: Sun, 11 Jun 2023 19:39:57 +0200
+Subject: [PATCH 50/90] arm64: dts: rockchip: rk3399-pinephone-pro: Add I2C
+ supply to stk3311
+
+It is needed to communicate with the device, when other users of
+vcc3v0_touch shut down the regulator.
+
+Signed-off-by: Ondrej Jirman <megi@xff.cz>
+---
+ arch/arm64/boot/dts/rockchip/rk3399-pinephone-pro.dts | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm64/boot/dts/rockchip/rk3399-pinephone-pro.dts b/arch/arm64/boot/dts/rockchip/rk3399-pinephone-pro.dts
+index 564cbe307d0c..2a2568caf975 100644
+--- a/arch/arm64/boot/dts/rockchip/rk3399-pinephone-pro.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3399-pinephone-pro.dts
+@@ -848,6 +848,7 @@ light-sensor@48 {
+ 		proximity-near-level = <300>;
+ 		vdd-supply = <&vcc_3v0>;
+ 		leda-supply = <&vcc_3v0>;
++		i2c-supply = <&vcc3v0_touch>;
+ 	};
+ };
+ 
+-- 
+2.55.0
+

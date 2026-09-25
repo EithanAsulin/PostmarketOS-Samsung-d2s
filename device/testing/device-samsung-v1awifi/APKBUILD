@@ -1,0 +1,37 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Hendrik Noack <hendrik.noack@protonmail.com>"
+pkgname=device-samsung-v1awifi
+pkgdesc="Samsung Galaxy Note Pro 12.2 WiFi"
+pkgver=12
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	firmware-samsung-v1awifi
+	linux-firmware-brcm
+	linux-firmware-s5p-mfc
+	linux-postmarketos-exynos5
+	postmarketos-base
+	u-boot-exynos5420
+	systemd-boot
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+943f1f2069a58397f6ea87778d41233fc9992cd5681d714a697de0d0f52494fd3c4239582f98f83a41b54fb67ce015e85e9d6ef01c8851975b2d68bec5370048  deviceinfo
+8fe69b861088baf839b2c78f7e53eebeffeeb690b6187481d66e636519c7e99264911ff63d35a0da64f68cd8b8371bafe6e1ccf4a4014da19ff695dd992c459d  modules-initfs
+"

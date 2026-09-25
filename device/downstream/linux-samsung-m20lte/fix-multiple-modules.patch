@@ -1,0 +1,29 @@
+diff --git a/drivers/usb/gadget/function/f_acm.c b/drivers/usb/gadget/function/f_acm.c
+index 771a3ad5..109b819f 100755
+--- a/drivers/usb/gadget/function/f_acm.c
++++ b/drivers/usb/gadget/function/f_acm.c
+@@ -874,8 +874,8 @@ static void __exit acm_exit(void)
+ {
+ 	return usb_function_unregister(&acmusb_func);
+ }
+-module_init(acm_init);
+-module_exit(acm_exit);
++// module_init(acm_init);
++// module_exit(acm_exit);
+ #endif
+ 
+ MODULE_LICENSE("GPL");
+diff --git a/drivers/usb/gadget/function/f_uts.c b/drivers/usb/gadget/function/f_uts.c
+index 27b6eb99..44d5c94a 100755
+--- a/drivers/usb/gadget/function/f_uts.c
++++ b/drivers/usb/gadget/function/f_uts.c
+@@ -868,7 +868,7 @@ static void __exit uts_exit(void)
+ {
+ 	return usb_function_unregister(&utsusb_func);
+ }
+-module_init(uts_init);
+-module_exit(uts_exit);
++// module_init(uts_init);
++// module_exit(uts_exit);
+ #endif
+ MODULE_LICENSE("GPL");

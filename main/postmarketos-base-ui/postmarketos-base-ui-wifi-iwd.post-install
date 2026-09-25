@@ -1,0 +1,11 @@
+#!/bin/sh -e
+
+printf "\n"
+printf "NOTICE * * * * * * * * * *\n"
+printf "\n"
+printf "If you are switching from wpa_supplicant and use MAC modification,\n"
+printf "add the following to /etc/iwd/main.conf:\n"
+printf "\n"
+printf "\t[General]\n"
+printf "\tAddressRandomization=network\n"
+printf "\n"

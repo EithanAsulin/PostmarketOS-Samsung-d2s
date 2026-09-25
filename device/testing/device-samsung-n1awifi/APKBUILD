@@ -1,0 +1,37 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Hendrik Noack <hendrik.noack@protonmail.com>"
+pkgname=device-samsung-n1awifi
+pkgdesc="Samsung Galaxy Note 10.1 (2014) WiFi"
+pkgver=9
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	firmware-samsung-n1awifi
+	linux-firmware-brcm
+	linux-firmware-s5p-mfc
+	linux-postmarketos-exynos5
+	postmarketos-base
+	u-boot-exynos5420
+	systemd-boot
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+7068ab7f3842d7199e8f98b52f693cee55d6ad2fbed9bc2c67fd716414ee4a8d697999d560d3a207f1127742a32d145a59c5647404b3b52c201468f0172a035d  deviceinfo
+35d2cfb5c43d4b51e3684d94e0f8de0bcc46d4c441071c46986902198a88e11d067dbc87dbfce2f849a36b1e33d0130a05e89e629de9f6ebb4991cb9270dd150  modules-initfs
+"

@@ -1,0 +1,79 @@
+# Kernel config based on: arch/arm/configs/exynos_defconfig
+# Co-Maintainer: Henrik Grimler <henrik@grimler.se>
+# Co-Maintainer: knuxify <knuxify@gmail.com>
+maintainer="Stefan Hansson <newbyte@postmarketos.org>"
+pkgname=linux-postmarketos-exynos4
+pkgver=7.1.1
+pkgrel=0
+pkgdesc="Mainline kernel fork for Samsung Exynos4 devices"
+arch="armv7"
+_carch="arm"
+_flavor="${pkgname#linux-}"
+url="https://gitlab.com/exynos4-mainline/linux"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-community
+	"
+makedepends="
+	bison
+	clang
+	elfutils-dev
+	findutils
+	flex
+	linux-headers
+	lld
+	llvm
+	openssl-dev
+	pahole
+	perl
+	postmarketos-installkernel
+	python3
+	xz
+	zstd
+"
+
+# Source
+_config="config-$_flavor.$arch"
+case $pkgver in
+	*.*.*)	_kernver=${pkgver%.0};;
+	*.*)	_kernver=$pkgver;;
+esac
+_tag="v${pkgver//_/-}-exynos4"
+source="
+	$pkgname-$_tag.tar.bz2::$url/-/archive/$_tag/linux-$_tag.tar.bz2
+	$_config
+	0001-resolve_btfids-preserve-tag-and-parameter-names-when.patch
+"
+builddir="$srcdir/linux-$_tag"
+
+prepare() {
+	default_prepare
+	cp -v "$srcdir/$_config" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+	make zinstall modules_install dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_MOD_PATH="$pkgdir"/usr \
+		INSTALL_DTBS_PATH="$pkgdir/boot/dtbs"
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir/usr/share/kernel/$_flavor/kernel.release"
+}
+
+sha512sums="
+b44766295029c7e70cbb6862d3de49704ab3d9b871e7c39d5181311aa26ff514779b441211223c39ed51040d037e17a03e6656d655621622676c3c0c6d338ab3  linux-postmarketos-exynos4-v7.1.1-exynos4.tar.bz2
+284b3bd846fa5b64a50616e9fb040815fd5149259522fd67dea82933f3a5ac6a86707660f5da19b3a509f50a435835444b6c4be3cf67f3ad7509c556678e1258  config-postmarketos-exynos4.armv7
+245374b2d41771514774f729b577342f304c83437ef28cdf7b616c4d6421af7b33d72f0cda15ca1e50197019a71b50ef56393954ea4b98988882dd0a21cba5de  0001-resolve_btfids-preserve-tag-and-parameter-names-when.patch
+"

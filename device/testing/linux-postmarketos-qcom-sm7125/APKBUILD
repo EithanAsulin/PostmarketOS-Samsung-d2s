@@ -1,0 +1,72 @@
+# Co-Maintainer: Stefan Hansson <newbyte@postmarketos.org>
+maintainer="Erikas Bitovtas <xerikasxx@gmail.com>"
+_flavor="postmarketos-qcom-sm7125"
+pkgname=linux-$_flavor
+pkgver=6.14.7
+pkgrel=2
+pkgdesc="Mainline Kernel fork for SM7125 devices"
+arch="aarch64"
+_carch="arm64"
+url="https://github.com/sm7125-mainline/linux"
+license="GPL-2.0-only"
+options="
+	!check
+	!strip
+	!tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-nftables
+	"
+makedepends="
+	bison
+	clang
+	elfutils-dev
+	findutils
+	flex
+	linux-headers
+	lld
+	llvm
+	openssl-dev
+	pahole
+	perl
+	postmarketos-installkernel
+	python3
+	"
+
+_tag="sm7125-$pkgver-a52q-a72q"
+
+source="
+	linux-$_tag.tar.gz::https://github.com/sm7125-mainline/linux/archive/$_tag/linux-$_tag.tar.gz
+	config-$_flavor.$arch
+"
+builddir="$srcdir/linux-$_tag"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$arch" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 HOSTLDFLAGS="-fuse-ld=lld" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+	make dtbs_install modules_install zinstall \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_PATH="$pkgdir"/boot/ \
+		INSTALL_MOD_PATH="$pkgdir"/usr \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+	rm -f "$pkgdir"/usr/lib/modules/*/build "$pkgdir"/usr/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/"$_flavor"/kernel.release
+}
+
+sha512sums="
+844551dbc3ec91e630af20498132f0386ac5c5c38f3067db31a67254a0bace3949ca48c20742aa955fb422626d7ba40ee20ce88801a475e294d14251089a3e34  linux-sm7125-6.14.7-a52q-a72q.tar.gz
+0b88d8e5203c96a8bd3cc117585dc451416ead4cbceb543856a2b8838a7fef0d86fcbe9074b4096eb3757a1aae1228acc5a55d1b9a70295dbd25108ccf8817c4  config-postmarketos-qcom-sm7125.aarch64
+"
