@@ -8,7 +8,7 @@ license="MIT"
 arch="aarch64"
 options="!check !archcheck"
 depends="
-	linux-samsung-beyond2lte
+	linux-samsung-d2s
 	mkbootimg
 	msm-fb-refresher
 	postmarketos-base
