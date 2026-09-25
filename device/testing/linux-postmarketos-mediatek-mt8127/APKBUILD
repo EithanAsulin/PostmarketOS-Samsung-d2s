@@ -1,0 +1,79 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/ford_defconfig
+maintainer="SED4906 <sed4906birdie@gmail.com>"
+pkgname=linux-postmarketos-mediatek-mt8127
+pkgver=7.3_git20260920
+pkgrel=0
+_commit="9037b7da6fa08f3b9453b4fcca888af1e7c2dbc5"
+pkgdesc="Amazon Fire 7 (2015) kernel fork"
+arch="armv7"
+_carch="arm"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bc
+	bison
+	clang
+	clang-libclang
+	elfutils-dev
+	findutils
+	flex
+	linux-headers
+	lld
+	llvm
+	openssl-dev
+	pahole
+	perl
+	postmarketos-installkernel
+	python3
+	rust
+	rust-bindgen
+	rust-src
+	rustfmt
+	zstd
+"
+
+source="$pkgname-$_commit.tar.gz::https://github.com/SED4906/linux-custom/archive/$_commit.tar.gz
+	config-${pkgname#linux-}.$arch
+"
+builddir="$srcdir/linux-custom-$_commit"
+
+# Used internally by pmbootstrap. Don't touch.
+# TODO: Remove once minimum default pmbootstrap version supports
+# kernel packages without '_flavor' and '_config'.
+_config="config-${pkgname#linux-}.$arch"
+_flavor="${pkgname#linux-}"
+
+prepare() {
+	default_prepare
+	cp "$srcdir"/config-"${pkgname#linux-}"."$arch" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+
+	make zinstall modules_install dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_PATH="$pkgdir"/boot/ \
+		INSTALL_MOD_PATH="$pkgdir"/usr \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+
+	rm -f "$pkgdir"/usr/lib/modules/*/build "$pkgdir"/usr/lib/modules/*/source
+
+	install -Dm644 "$builddir"/include/config/kernel.release \
+		-t "$pkgdir"/usr/share/kernel/"${pkgname#linux-}"/
+}
+
+sha512sums="
+f3cc80bd3a626dc9c7f68ed91b325e2bb8eaeeda8658c78a9f4e7d50f595a0a32a3a6f0039e69e351d0350b80063d82a0cce9f0e1e1f053906acf47e7b434160  linux-postmarketos-mediatek-mt8127-9037b7da6fa08f3b9453b4fcca888af1e7c2dbc5.tar.gz
+aa3b9fa316d9ad174b7608053cdab753a585bfe859e159442d7f9aefec6025e46ea4e3fd382f88ac46eef2436aa79927fd889530d2403a302d81e34c6e0a93b1  config-postmarketos-mediatek-mt8127.armv7
+"

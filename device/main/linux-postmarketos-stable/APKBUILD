@@ -1,0 +1,135 @@
+# Co-Maintainer: Achill Gilgenast <achill@achill.org>
+maintainer="Aelin <aelin@postmarketos.org>"
+pkgname=linux-postmarketos-stable
+pkgver=7.2.7
+pkgrel=0
+_kver=${pkgver%.*}
+pkgdesc="Stable Kernel"
+# armhf: pmbootstrap cannot dynamically choose a defconfig, so it ends up using multi_v7_defconfig which isn't correct
+# s390x: kconfigcheck is not ready for it yet
+arch="all !armhf !s390x"
+_flavor="stable"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="
+	!check
+	!strip
+	!tracedeps
+	pmb:cross-native
+	pmb:generic-kernel
+	pmb:kconfigcheck-community
+	pmb:kconfigcheck-immutable
+	pmb:kconfigcheck-lockdown
+	pmb:kconfigcheck-rust
+	pmb:kconfigcheck-selinux
+	pmb:kconfigcheck-uefi
+	pmb:kconfigcheck-virt
+"
+makedepends="
+	bash
+	bison
+	clang
+	clang-libclang
+	diffutils
+	elfutils-dev
+	findutils
+	flex
+	grep
+	kmod
+	linux-headers
+	lld
+	llvm
+	openssl-dev
+	pahole
+	perl
+	postmarketos-installkernel
+	python3
+	rust
+	rust-bindgen
+	rust-src
+	rustfmt
+	sed
+	zstd
+"
+replaces="linux-stable"
+
+# powerpc boot wrapper patches:
+# Necessary for compilation without cross GCC in PATH, cherry-picked from
+# Nathan's fork, he does not have time to upstream them right now but would be
+# happy if someone else did:
+# https://lore.kernel.org/linuxppc-dev/aXs8sgAcci9FKKpx@luna/
+source="
+	linux-$_kver.tar.xz::https://cdn.kernel.org/pub/linux/kernel/v${pkgver%%.*}.x/linux-$_kver.tar.xz
+
+	0001-WIP-arch-powerpc-boot-Support-LLVM-1-in-wrapper-scri.patch
+	0002-WIP-arch-powerpc-boot-Add-z-norelro.patch
+
+	config-stable.aarch64
+	config-stable.armv7
+	config-stable.loongarch64
+	config-stable.ppc64le
+	config-stable.riscv64
+	config-stable.x86_64
+"
+builddir="$srcdir/linux-$_kver"
+
+if [ "${pkgver%.0}" = "$pkgver" ]; then
+	# Prepend to apply first
+	source="patch-$pkgver.patch.xz::https://cdn.kernel.org/pub/linux/kernel/v${pkgver%%.*}.x/patch-$pkgver.xz $source"
+fi
+
+case "$CARCH" in
+	aarch64*) _carch="arm64" ;;
+	arm*) _carch="arm" ;;
+	loongarch*) _carch="loongarch" ;;
+	ppc*) _carch="powerpc" ;;
+	riscv*) _carch="riscv" ;;
+	s390x) _carch="s390" ;;
+	x86) _carch="i386" ;;
+	x86_64) _carch="x86_64" ;;
+esac
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$CARCH" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor"
+}
+
+package() {
+	local _install
+	case "$CARCH" in
+		arm*|aarch64|riscv*) _install="zinstall dtbs_install" ;;
+		*) _install="install" ;;
+	esac
+
+	make modules_install $_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_MOD_PATH="$pkgdir"/usr \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+
+	rm -f "$pkgdir"/usr/lib/modules/*/build "$pkgdir"/usr/lib/modules/*/source
+
+	install -Dm644 "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/"$_flavor"/kernel.release
+}
+
+sha512sums="
+415ccdef822f9a417eb9a3223cd130e0dd4f3fb883013b7aa7fad1ff8620ba35b8e228a6343849841def211f649cc0141fd978f1523fe4fb4e63d0ab5068ce3e  patch-7.2.7.patch.xz
+47e63679363261a864d271277340a6f2d45f544e1a056be4159df081f4f6537d0efa865c4af26611ab33a3079ee65db88ec2f6bc0e5fff43e0c043cde0cd91e1  linux-7.2.tar.xz
+1f11df2480e9f691573283597160b4c806e492cdca4825f3acb3afb70bde43abfab487bcde1f5553b431a702a0039479d041b0ce7859970e706b5a51d2ad8fb0  0001-WIP-arch-powerpc-boot-Support-LLVM-1-in-wrapper-scri.patch
+302c20c85559fc9b3b2420ed25be1bfbb76c87f2a470e4141c32e9542cf1f5c6b3b5a7847231a3eaa0f6bc0e5942d0c1599e807175dcf5e63469704c3d6adde3  0002-WIP-arch-powerpc-boot-Add-z-norelro.patch
+3035713a7292607fc9c08e6855cc0f3a3e8fc628cd798afa31ebabad9497c0ddd8736f62c822dd7df0493d3df5eb4ebdcfc1cbfd8143ed2aa8bed3b7f1f15708  config-stable.aarch64
+fec7ab6134e9408c315861c9e0412afa0bb54c6b71afe4d447eb0e9ad3d366059caa0467608888a52e4883d450add09a2cceee213415c6f22f28c6760cbdaa33  config-stable.armv7
+c35c083623188575b0c2635e55594a5751cc0bcd8617477df10fed9452ddf8c73c1f995d23bfbdb18c7909af8e2868db7f97f1ae9b17a468382d5693715eba07  config-stable.loongarch64
+f7e3da86f86a2b260d9b9b420761cea0c23083df89dcecbd028e7448e6d669c0909fecd80aabac4a80ce3842dd29bb89bf15b1e2e3c867eabe89370743154f36  config-stable.ppc64le
+e70953be1be1de05396023b633f74ae21c898f1436c19dec65151fa12a40119a4cb412d45547d81cc2cc912853dfbabbd90ec64df776611b5e410151630f3e05  config-stable.riscv64
+affaf60cd1f404f7a2e30053ae825a7d70bb63c20eb54b12f56149cc7343e056f1577e136be51ebb5fa067962368fc4d504731075391f56a93f346a2e2f21866  config-stable.x86_64
+"

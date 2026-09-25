@@ -1,0 +1,15 @@
+#!/sbin/openrc-run
+
+descriptions="Remove temporary files and directories"
+
+depend() {
+	before mount-ro
+}
+
+start() {
+	if [ -x /usr/lib/tmpfiles.d ]; then
+		ebegin "Removing temporary files and directories"
+		/usr/bin/systemd-tmpfiles --remove
+		eend $?
+	fi
+}

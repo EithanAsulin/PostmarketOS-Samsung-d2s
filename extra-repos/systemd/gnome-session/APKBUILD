@@ -1,0 +1,79 @@
+# Forked from Alpine for systemd
+# --
+# We can use gnome-session 50 already on pmOS/systemd, while aports is stuck on
+# gnome-session 48 until a openrc backend is ported there.
+# Co-Maintainer: Pablo Correa Gomez <pabloyoyoista@postmarketos.org>
+# Co-Maintainer: Achill Gilgenast <achill@achill.org>
+maintainer="Stefan Hansson <newbyte@postmarketos.org>"
+pkgname=gnome-session
+_pkgver=51.0
+pkgver=9999$_pkgver
+pkgrel=0
+pkgdesc="GNOME session manager"
+url="https://gitlab.gnome.org/GNOME/gnome-session"
+# armhf: pmb#2618
+arch="all !armhf"
+license="GPL-2.0-or-later"
+depends="
+	alsa-plugins-pulse
+	bash
+	dconf
+	polkit
+	"
+makedepends="
+	docbook-xml
+	gnome-desktop-dev
+	gnome-settings-daemon-dev
+	gtk+3.0-dev
+	itstool
+	json-glib-dev
+	libsm-dev
+	libxml2-utils
+	libxslt
+	meson
+	systemd-dev
+	upower-dev
+	xmlto
+	"
+options="!check" #no tests
+subpackages="$pkgname-lang $pkgname-doc $pkgname-systemd gnome-shell-session:_shell:noarch"
+source="https://download.gnome.org/sources/gnome-session/${_pkgver%%.*}/gnome-session-$_pkgver.tar.xz
+	"
+builddir="$srcdir/gnome-session-$_pkgver"
+
+build() {
+	abuild-meson \
+		-Db_lto=true \
+		-Dsystemduserunitdir=/usr/lib/systemd/user \
+		. output
+	meson compile -C output
+}
+
+check() {
+	meson test --print-errorlogs -C output
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install --no-rebuild -C output
+}
+
+_shell() {
+	# For other consumers of gnome-session (e.g. phosh) these session files
+	# only confuse display managers as gnome-shell isn't installed
+
+	pkgdesc="Session files for GNOME Shell"
+	# FIXME: doesnt depend on gnome-shell right now because pmbootstrap
+	# currently can't handle it: https://gitlab.postmarketos.org/postmarketOS/pmbootstrap/-/merge_requests/2592
+	#depends="$pkgname=$pkgver-r$pkgrel gnome-shell"
+	install_if="$pkgname=$pkgver-r$pkgrel gnome-shell"
+
+	amove usr/share/gnome-session/sessions
+	amove usr/share/wayland-sessions
+	# x11 is disabled by default in meson.options. leaving this here for reference
+	#amove usr/share/xsessions
+	amove usr/share/xdg-desktop-portal
+}
+
+sha512sums="
+b3360cadae6ca773eeeaeebad78e6e25dddd5e3e1ce11628227eaa3955db7b2a0be2e25368fc86a7a75883552d88f0c090e2561abc276b0c88e3fc428345fe37  gnome-session-51.0.tar.xz
+"

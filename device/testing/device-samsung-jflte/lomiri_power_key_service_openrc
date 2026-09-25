@@ -1,0 +1,17 @@
+#!/sbin/openrc-run
+# /etc/init.d/lomiri-power-key
+
+description="Lomiri power key fix, makes the power key not loop"
+
+supervisor="supervise-daemon"
+command="/bin/sh"
+command_args="/usr/bin/lomiri_power_button_suspend"
+command_user="root"
+
+output_log="/var/log/lomiri_power_button_suspend.log"
+error_log="/var/log/lomiri_power_button_suspend.err"
+
+depend() {
+    need localmount
+    after bootmisc
+}

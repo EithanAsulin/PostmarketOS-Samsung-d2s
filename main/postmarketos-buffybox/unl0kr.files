@@ -1,0 +1,16 @@
+/bin/udevadm
+/etc/unl0kr.conf.d!optional
+/etc/unl0kr.conf!optional
+/sbin/cryptsetup
+/sbin/udevd
+/usr/bin/fde-unlock
+/usr/bin/unl0kr
+/usr/lib/udev/libinput-device-group
+/usr/lib/udev/libinput-fuzz-extract
+/usr/lib/udev/libinput-fuzz-to-zero
+/usr/lib/udev/rules.d/80-libinput-device-groups.rules
+/usr/lib/udev/rules.d/90-libinput-fuzz-override.rules
+/usr/share/libinput/*.quirks
+/usr/share/unl0kr/unl0kr.conf
+/usr/share/unl0kr/unl0kr.conf.d!optional
+/usr/share/X11/xkb

@@ -1,0 +1,15 @@
+./lib/firmware/postmarketos/qca/crbtfw21.tlv
+./lib/firmware/qcom/sdm845/Google/blueline/a630_zap.mbn
+./lib/firmware/qcom/sdm845/Google/blueline/adsp.mbn
+./lib/firmware/qcom/sdm845/Google/blueline/adspr.jsn
+./lib/firmware/qcom/sdm845/Google/blueline/adspua.jsn
+./lib/firmware/qcom/sdm845/Google/blueline/cdsp.mbn
+./lib/firmware/qcom/sdm845/Google/blueline/cdspr.jsn
+./lib/firmware/qcom/sdm845/Google/blueline/ipa_fws.mbn
+./lib/firmware/qcom/sdm845/Google/blueline/mba.mbn
+./lib/firmware/qcom/sdm845/Google/blueline/modem.mbn
+./lib/firmware/qcom/sdm845/Google/blueline/modemr.jsn
+./lib/firmware/qcom/sdm845/Google/blueline/modemuw.jsn
+./lib/firmware/qcom/sdm845/Google/blueline/slpi.mbn
+./lib/firmware/qcom/sdm845/Google/blueline/venus.mbn
+./lib/firmware/qcom/sdm845/Google/blueline/wlanmdsp.mbn

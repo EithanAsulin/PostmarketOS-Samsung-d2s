@@ -1,0 +1,54 @@
+From 264ef8ba822ed2e28eb5c5c7fc95e92171e85194 Mon Sep 17 00:00:00 2001
+From: Samuel Dionne-Riel <samuel@dionne-riel.com>
+Date: Wed, 8 Jul 2020 01:26:55 -0400
+Subject: [PATCH 4/8] Configure boot splash logo
+
+This assumes LOGO_BMP is set by the derivation as a make flag.
+
+Co-Authored-By: Hugo Osvaldo Barrera <hugo@whynothugo.nl>
+---
+ configs/pinebook-pro-rk3399_defconfig | 6 ++++++
+ include/configs/pinebook-pro-rk3399.h | 8 +++++++-
+ 2 files changed, 13 insertions(+), 1 deletion(-)
+
+diff --git a/configs/pinebook-pro-rk3399_defconfig b/configs/pinebook-pro-rk3399_defconfig
+index af09eb18b13..ebc03751237 100644
+--- a/configs/pinebook-pro-rk3399_defconfig
++++ b/configs/pinebook-pro-rk3399_defconfig
+@@ -101,3 +101,9 @@ CONFIG_DISPLAY=y
+ CONFIG_VIDEO_ROCKCHIP=y
+ CONFIG_DISPLAY_ROCKCHIP_EDP=y
+ CONFIG_ERRNO_STR=y
++CONFIG_SPLASH_SCREEN=y
++CONFIG_SPLASH_SCREEN_ALIGN=y
++CONFIG_CMD_BMP=y
++CONFIG_VIDEO_BMP_RLE8=y
++CONFIG_VIDEO_LOGO=y
++CONFIG_VIDEO_LOGO_MAX_SIZE=0x7E8480
+diff --git a/include/configs/pinebook-pro-rk3399.h b/include/configs/pinebook-pro-rk3399.h
+index 141ffcd036b..e737a075105 100644
+--- a/include/configs/pinebook-pro-rk3399.h
++++ b/include/configs/pinebook-pro-rk3399.h
+@@ -7,11 +7,17 @@
+ #ifndef __PINEBOOK_PRO_RK3399_H
+ #define __PINEBOOK_PRO_RK3399_H
+ 
++#define SPLASH_ENV \
++		"splashimage=0x08080000\0" \
++		"splashpos=m,m\0" \
++		"splashsource=mmc_fs\0"
++
+ #define ROCKCHIP_DEVICE_SETTINGS \
++		SPLASH_ENV \
+ 		"stdin=serial,usbkbd\0" \
+ 		"stdout=serial,vidconsole\0" \
+ 		"stderr=serial,vidconsole\0"
+ 
+ #include <configs/rk3399_common.h>
+ 
+-#endif
++#endif
+\ No newline at end of file
+-- 
+2.54.0
+

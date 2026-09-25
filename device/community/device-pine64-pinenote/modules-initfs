@@ -1,0 +1,6 @@
+drm_kms_helper
+drm_shmem_helper
+panel_simple
+pvi_waveform
+rockchip_ebc
+tps65185-regulator

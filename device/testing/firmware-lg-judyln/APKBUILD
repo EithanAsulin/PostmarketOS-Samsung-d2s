@@ -1,0 +1,33 @@
+maintainer="Paul Sajna <sajattack@postmarketos.org>"
+pkgname=firmware-lg-judyln
+pkgver=3
+pkgrel=0
+_commit="acaf7bb99ba2f14318d2fcd08db5f58590b89c75"
+pkgdesc="Firmware for LG G7 ThinQ"
+url="https://gitlab.com/sajattack/firmware-lg-judyln"
+arch="aarch64"
+depends="linux-firmware-ath10k firmware-qcom-adreno-a630"
+license="proprietary"
+source="$pkgname.tar.gz::$url/-/archive/$_commit/$pkgname-$_commit.tar.gz
+	firmware.files
+	firmware-initramfs.files
+	"
+options="!strip !check !archcheck !tracedeps textrels pmb:cross-native"
+builddir="$srcdir/$pkgname-$_commit"
+
+package() {
+	local _i _u
+	while IFS="" read -r _i || [ -n "$_i" ]; do
+		_u="${_i/usr\/lib/lib}"
+		install -Dm644 "$builddir"/"$_u" "$pkgdir"/"$_i"
+	done < "$srcdir"/firmware.files
+
+	install -Dm644 "$srcdir"/firmware-initramfs.files \
+		"$pkgdir"/usr/share/mkinitfs/files/"$pkgname".files
+}
+
+sha512sums="
+ba21f2970ca7a4529cf57fbb6e190db8d4bbbc9ac9f4404c499bcd41dc9380c08069436a1a2a60f53116581cfe14e1d810d7e985e1a902f325d16c709a67b2c7  firmware-lg-judyln.tar.gz
+fc087dd39ed3ee8ea04a7cf0050670e99223a762a6082d9c0b626b3cf8440eceda2f8345ec72c1e9c036a18248db26206f9ddf8c9ca80e45f36e238e2c2b8b49  firmware.files
+6ee9cdec5e00f46900de7add65d624942292bb1fb8486739922ef897ee8a45f166316476a44b592370170a7a93fdc8ff6df550bb4c17b476d5baca14114044a2  firmware-initramfs.files
+"

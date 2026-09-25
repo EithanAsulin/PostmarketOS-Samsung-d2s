@@ -1,0 +1,4 @@
+# Needs to be loaded in the initramfs alongside msm_dpu
+/usr/lib/firmware/qcom/a630_gmu.bin
+/usr/lib/firmware/qcom/a630_sqe.fw
+/usr/lib/firmware/qcom/sdm845/OnePlus/enchilada/a630_zap.mbn

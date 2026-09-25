@@ -1,0 +1,73 @@
+maintainer="BotchedRPR <igor.belwon@mentallysanemainliners.org>"
+pkgname=linux-postmarketos-mediatek-mt6878
+pkgver=7.2
+pkgrel=0
+pkgdesc="Mainline Kernel fork for MT6878 devices"
+arch="aarch64"
+_carch="arm64"
+_flavor="postmarketos-mediatek-mt6878"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native pmb:kconfigcheck-community"
+makedepends="
+	bash
+	bc
+	bison
+	clang
+	devicepkg-dev
+	elfutils-dev
+	flex
+	linux-headers
+	lld
+	llvm
+	openssl-dev
+	pahole
+	perl
+	python3
+"
+
+_repository="linux"
+_commit="12f2e9f040d0049f3f5ce5a7e53bf5ef27b46422"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/MT6878-mainline/$_repository/archive/$_commit.tar.gz
+	$_config
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$arch" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+
+	install -Dm644 "$builddir/arch/$_carch/boot/Image.gz" \
+				   "$pkgdir/boot/vmlinuz"
+
+	make modules_install dtbs_install \
+		ARCH="$_carch" \
+		INSTALL_PATH="$pkgdir"/boot/ \
+		INSTALL_MOD_PATH="$pkgdir"/usr \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs \
+		LLVM=1
+
+	# "build" is symlink that will be invalid in rootfs (points to /home/pmos...)
+	rm -f "$pkgdir"/usr/lib/modules/*/build "$pkgdir"/usr/lib/modules/*/source
+
+	install -Dm644 "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+e265744a408ab230acb712a045af332086da2e4309feff8e757fd6ef8898622a82b40a486fa94f7417240b5c70d430ef8dc69efb1219ff7030182ae6127ce931  linux-postmarketos-mediatek-mt6878-12f2e9f040d0049f3f5ce5a7e53bf5ef27b46422.tar.gz
+f9833236e45fb93e4c8e98c7d86882131a14acd6d4a6570d8f3f76c413f200245a9703c0b7d8c4e9ce11f5041fdbc460635e759dba81ca960886633abcbf6a53  config-postmarketos-mediatek-mt6878.aarch64
+"

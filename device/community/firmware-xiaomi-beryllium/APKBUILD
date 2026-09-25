@@ -1,0 +1,51 @@
+maintainer="Joel Selvaraj <foss@joelselvaraj.com>"
+pkgname=firmware-xiaomi-beryllium
+pkgver=13
+pkgrel=0
+_commit="d396d32118803235a58aab0d0bc3643256634a05"
+pkgdesc="Firmware for Xiaomi Poco F1"
+url="https://gitlab.com/sdm845-mainline/firmware-xiaomi-beryllium"
+arch="aarch64"
+depends="linux-firmware-qcom linux-firmware-qca linux-firmware-ath10k"
+license="proprietary"
+subpackages="$pkgname-sensors:firmware_sensors"
+source="$pkgname-$_commit.tar.gz::https://gitlab.com/sdm845-mainline/firmware-xiaomi-beryllium/-/archive/$_commit/firmware-xiaomi-beryllium-$_commit.tar.gz
+	firmware.files
+	firmware-initramfs.files
+	mount-matrix.patch
+	sensor.files
+	"
+options="!archcheck !strip !check !tracedeps pmb:cross-native textrels"
+builddir="$srcdir/$pkgname-$_commit"
+
+package() {
+	while IFS="" read -r _i || [ -n "$_i" ]; do
+		local _u="${_i/usr\/lib/\/lib}"
+		[ ! -d "$(dirname $_i)" ] && mkdir -p "$(dirname "$pkgdir"/$_i)"
+		install -Dm644 ."$_u" "$pkgdir/$_i"
+	done < "$srcdir/firmware.files"
+
+	install -Dm644 "$srcdir"/firmware-initramfs.files \
+		"$pkgdir"/usr/share/mkinitfs/files/"$pkgname".files
+}
+
+firmware_sensors() {
+	pkgdesc="Files to be included to add sensor support"
+	depends="$pkgname=$pkgver-r$pkgrel"
+	mkdir "$subpkgdir"
+
+	cd "$builddir"
+	while IFS="" read -r _i || [ -n "$_i" ]; do
+		local _u="${_i/usr\/lib/\/lib}"
+		[ ! -d "$(dirname $_i)" ] && mkdir -p "$(dirname "$pkgdir"/$_i)"
+		install -Dm644 ."$_u" "$subpkgdir/$_i"
+	done < "$srcdir/sensor.files"
+}
+
+sha512sums="
+a8d96aef0d6929800cc32703c973ff903037e9365c35d0421d29a10ccbac63e92bae36ea66790e80151a77b775b456c24d9577617342abac0daf12ad0475f4e0  firmware-xiaomi-beryllium-d396d32118803235a58aab0d0bc3643256634a05.tar.gz
+45b9c287a239d3e20982258b2135d6915199a694b6fa2abd927f0b31537ee9584aa8d81fe815129c97b2e88247ee00cfdba66aa0c72506a65e1507af31a2c034  firmware.files
+7f56ae5b125c3b6502efcb26a660322abdcd6de2289892bd584ef2932e0aa0b97e7cd4730a6552d00cecb893eab222ee812edb956397b37787d6135d6ca82399  firmware-initramfs.files
+9337e243aee9e56bb9f9e297dfe5084b3a97b87ac36bcaf66f6f4d07cbb39c7b73d024afe07fdadef254c569ba9f2d3067324478c35175592ff8abb2ff19e930  mount-matrix.patch
+f2a2b648fb771dc965a88fdccccec18aeb47ca0603c81842988096312eb9cca494ff7b68b956303be00caf72d3248d3b4fdd0ed457b6c0b1d21c77acebd3e994  sensor.files
+"

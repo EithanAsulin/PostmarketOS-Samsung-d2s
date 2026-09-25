@@ -1,0 +1,44 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Thomas Turner <tturner@lineageos.org>"
+pkgname=device-samsung-a21s
+pkgver=1
+pkgrel=1
+pkgdesc="Samsung Galaxy A21s"
+url="https://postmarketos.org"
+arch="aarch64"
+license="MIT"
+depends="
+	android-tools-avbtool
+	android-tools-mkbootimg
+	firmware-samsung-a21s
+	linux-postmarketos-exynos850
+	postmarketos-base
+"
+makedepends="
+	android-tools-mkdtboimg
+	devicepkg-dev
+	dtc
+"
+source="
+	deviceinfo
+	exynos850-samsung-a21s-empty.dts
+"
+options="!archcheck !check"
+
+build() {
+	devicepkg_build $startdir $pkgname
+
+	dtc -O dtb -o "$srcdir/dtbo" -I dts "$srcdir/exynos850-samsung-a21s-empty.dts"
+	mkdtboimg create "$srcdir/dtbo.img" "$srcdir/dtbo" --custom0=0x6 --custom1=0x20
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -Dm644 "$srcdir/dtbo.img" "$pkgdir/boot/dtbo.img"
+}
+
+sha512sums="
+246ee4a60eba0354667313f1653a8df7468a09f9607b4330e3ef3818dec6d3840ad9467e778aa49082ab211e6a98b2a52393a1c918ca71284d120e45553ff772  deviceinfo
+6e127e53f2380efad88b64d9720954ca633b4dace54afba29207afd210b0c43cf6fe6c636cfb9f14aa486bd6887da3b30f2a241d4a9244cd593639790c0c53b9  exynos850-samsung-a21s-empty.dts
+"

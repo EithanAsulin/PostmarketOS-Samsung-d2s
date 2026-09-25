@@ -1,0 +1,41 @@
+maintainer="Erikas Bitovtas <xerikasxx@gmail.com>"
+pkgname=firmware-samsung-a72q
+pkgver=1
+pkgrel=0
+_commit="cbce286491dad00e7cbadc7ed923bb295a007d38"
+pkgdesc="Firmware for a72q"
+url="https://github.com/erikas9987/firmware-samsung-a72q"
+arch="aarch64"
+license="proprietary"
+depends="linux-firmware-ath10k linux-firmware-qca linux-firmware-qcom"
+source="
+	$pkgname.tar.gz::https://github.com/erikas9987/firmware-samsung-a72q/archive/$_commit/firmware-samsung-a72q-$_commit.tar.gz
+	30-initramfs-firmware.files
+	firmware.files
+"
+options="
+	!archcheck
+	!check
+	!strip
+	!tracedeps
+	pmb:cross-native
+	textrels
+"
+builddir="$srcdir/$pkgname-$_commit"
+
+package() {
+	local _i _u
+	while IFS="" read -r _i || [ -n "$_i" ]; do
+		_u="${_i/usr\/lib/\/lib}"
+		install -Dm644 "$builddir"/"$_i" "$pkgdir"/"$_i"
+	done < "$srcdir"/firmware.files
+
+	install -Dm644 "$srcdir"/30-initramfs-firmware.files \
+		-t "$pkgdir"/usr/share/mkinitfs/files
+}
+
+sha512sums="
+02a3831298c6b4ddf348f73d1421ad30d4da73a0bba6f344f5e93e9c06f2e8eadd835e287875d110ab0f39e862392fcbe62ce9f22784057536052863aea8686c  firmware-samsung-a72q.tar.gz
+34fd11af0983bc5fafc279ea31c68404e330f4c06d078dcd1d0b75c09f5a542e7cd6a5d412696df72311e150c206620e86e79376a86ea99ddd5a6f9d39406349  30-initramfs-firmware.files
+5e9452a376c529e4339dbd80d09800ee866e74961e7c900b4012780eeaa6491f914ae22ebd6e5481683e966032f867000ea667f04af6fccb7c87762f0b7fd8df  firmware.files
+"

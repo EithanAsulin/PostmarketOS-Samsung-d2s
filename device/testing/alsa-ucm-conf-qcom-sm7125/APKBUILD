@@ -1,0 +1,24 @@
+# Co-Maintainer: Stefan Hansson <newbyte@postmarketos.org>
+maintainer="Erikas Bitovtas <xerikasxx@gmail.com>"
+pkgname=alsa-ucm-conf-qcom-sm7125
+pkgver=1
+pkgrel=0
+_commit="a34eab049098b78ac5f586b11d93060046da3247"
+pkgdesc="ALSA UCM configuration for Qualcomm SM7125 devices"
+url="https://github.com/sm7125-mainline/alsa-ucm-conf"
+arch="aarch64"
+license="BSD-3-Clause"
+provides="alsa-ucm-conf=0.$pkgver-r$pkgrel" # versioned provides need to be below default version
+source="alsa-ucm-conf-$_commit.tar.gz::https://github.com/sm7125-mainline/alsa-ucm-conf/archive/$_commit/alsa-ucm-conf-$_commit.tar.gz"
+options="!check"
+builddir="$srcdir/alsa-ucm-conf-$_commit"
+
+package() {
+	# install audio config files
+	mkdir -p "$pkgdir"/usr/share/alsa/ucm2
+	cp -r ucm2 "$pkgdir"/usr/share/alsa/
+}
+
+sha512sums="
+7b383b931932a85812040a8a445a2d45cb6f31fa966073b1709b2d922e8a5fad0c39d0b9501c835bcf016d2e999f9bdb990fe946d4b3c811002105d2ab84b8f5  alsa-ucm-conf-a34eab049098b78ac5f586b11d93060046da3247.tar.gz
+"

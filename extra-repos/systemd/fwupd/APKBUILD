@@ -1,0 +1,156 @@
+# Forked from Alpine to build with systemd support
+
+maintainer="Clayton Craft <clayton@craftyguy.net>"
+pkgname=fwupd
+_pkgver=2.1.6
+pkgver=9999$_pkgver
+pkgrel=1
+pkgdesc="Firmware update daemon"
+url="https://fwupd.org/"
+arch="all"
+license="LGPL-2.1-or-later"
+depends="dbus hwdata-usb polkit"
+makedepends="
+	cairo-dev
+	curl-dev
+	efivar-dev
+	elfutils-dev
+	hwdata
+	flashrom-dev
+	font-opensans
+	fontconfig-dev
+	freetype-dev
+	glib-dev
+	gnutls-dev
+	gnutls-utils
+	gobject-introspection-dev
+	gpgme-dev
+	help2man
+	json-glib-dev
+	libarchive-dev
+	libcbor-dev
+	libdrm-dev
+	libgcab-dev
+	libgusb-dev
+	libjcat-dev
+	libmbim-dev
+	libqmi-dev
+	libxmlb-dev
+	linux-headers
+	meson
+	modemmanager-dev
+	ninja-build
+	polkit-dev
+	protobuf-c-dev
+	py3-cairo
+	py3-gobject3
+	py3-jinja2
+	py3-markdown
+	py3-pillow
+	py3-setuptools
+	python3
+	systemd-dev
+	tpm2-tss-dev
+	tpm2-tss-esys
+	vala
+	"
+checkdepends="
+	bubblewrap
+	umockdev
+	"
+subpackages="
+	$pkgname-dbg
+	$pkgname-dev
+	$pkgname-doc
+	$pkgname-fish-completion
+	$pkgname-lang
+	$pkgname-polkit
+	$pkgname-systemd
+	$pkgname-tests
+	"
+source="https://github.com/fwupd/fwupd/releases/download/$_pkgver/fwupd-$_pkgver.tar.xz"
+# armv7 doesn't build with crossdirect
+options="!pmb:crossdirect"
+builddir="$srcdir/$pkgname-$_pkgver"
+
+# libsmbios is a library for DELL devices which are x86/x86_64-only
+case "$CARCH" in
+	x86*)
+		makedepends="$makedepends libsmbios-dev"
+		;;
+	*) ;;
+esac
+
+case "$CARCH" in
+	x86_64|aarch64|loongarch64|riscv64)
+		# fwupd-efi needed for uefi-capsule
+		makedepends="$makedepends fwupd-efi-dev"
+		subpackages="$subpackages $pkgname-grub"
+		;;
+	*)	;;
+esac
+
+build() {
+	case "$CARCH" in
+		x86|x86_64)
+			hsi=enabled
+			;;
+		*)
+			hsi=disabled
+			;;
+	esac
+	abuild-meson \
+		-Db_lto=true \
+		-Dfirmware-packager=true \
+		-Ddocs=disabled \
+		-Dhsi=$hsi \
+		-Dlvfs=true \
+		-Dman=true \
+		-Dsupported_build=enabled \
+		-Dsystemd=enabled \
+		-Dlogind=enabled \
+		-Dtests=true \
+		. output
+
+	/usr/lib/ninja-build/bin/ninja -C output
+}
+
+check() {
+	# tests fail if usb is not available
+	[ -e /dev/bus/usb ] || return 0
+	meson test --print-errorlogs -C output
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install --no-rebuild -C output
+}
+
+grub() {
+	pkgdesc="$pkgdesc (grub integration)"
+	depends=""
+	install_if="$pkgname=$pkgver-r$pkgrel grub"
+
+	amove etc/grub.d
+}
+
+polkit() {
+	pkgdesc="$pkgdesc (polkit integration)"
+	depends=""
+	install_if="$pkgname=$pkgver-r$pkgrel polkit"
+
+	amove usr/share/polkit-1
+}
+
+tests() {
+	pkgdesc="$pkgdesc (data files for installed tests)"
+	depends=""
+
+	amove usr/share/fwupd/host-emulate.d/*.json.gz
+	amove usr/share/installed-tests
+	amove usr/libexec/installed-tests
+	amove usr/share/fwupd/remotes.d/fwupd-tests.conf
+}
+
+sha512sums="
+ac6400017df913b96f0df2616ffe92d4eeb4bf97d2c33fa1fe6ed8f5aba86438418d56db0b1e54a9977cb729b35c23c2010d778ef37486d0ed7058640e9c35d0  fwupd-2.1.6.tar.xz
+"

@@ -1,0 +1,35 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Aster Boese <asterboese@mailbox.org>"
+pkgname=device-gigaset-gs290
+pkgver=1
+pkgrel=0
+pkgdesc="Gigaset GS290"
+url="https://postmarketos.org"
+arch="aarch64"
+license="MIT"
+depends="
+	android-tools-mkbootimg
+	linux-postmarketos-mediatek-mt6763
+	postmarketos-base
+	"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+	"
+options="!archcheck !check"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+e5e040ec630cbaf2447999d3130730445cd8bc78625d1b66973261b8316062ec09255a3fc5dd62b04fc859ee568419753610d6a2cb2442a8d6d11e786d124989  deviceinfo
+c047db85c8056292b1d8a9b383e8f0683d91fa08e063291a955ec2b302d7718a146833254fb934eab24404e6732eed7cc8e0987d1c18f1ffb827d120a0ff5b3d  kernel-cmdline.conf
+8c941d8574b551bfaa422a2f91d4e1be287f6ec0e920e479a2df877a84c9c5dc9e593cd2a6ba7bb706d597ac59e4b84579e1446e1d04a59c531d02d37835f4df  modules-initfs
+"

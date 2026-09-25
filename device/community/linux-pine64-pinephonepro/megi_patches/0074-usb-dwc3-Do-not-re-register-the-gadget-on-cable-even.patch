@@ -1,0 +1,105 @@
+From 652933eb6956adb5491cfce54d687606a56fbba7 Mon Sep 17 00:00:00 2001
+From: Ondrej Jirman <megi@xff.cz>
+Date: Mon, 20 Jul 2026 23:15:39 +0200
+Subject: [PATCH 74/90] usb: dwc3: Do not re-register the gadget on cable
+ events
+
+The role init and exit ended up with different conditions: init ran for
+a role change or a connected cable, exit only for a role that was
+entered while connected. After a boot with nothing plugged in the role
+is entered but marked disconnected, so the next plug took the init path
+again without ever having taken the exit path, and the gadget was added
+twice:
+
+  kobject: kobject_add_internal failed for fe800000.usb with -EEXIST
+  dwc3 fe800000.usb: failed to add gadget
+
+Entering and leaving a role is what registers and unregisters the gadget
+or the host, so drive it purely from the role, as upstream does. A cable
+coming or going does not change the role, so park the controller instead
+the way the runtime PM path already does: soft disconnect and drop the
+event buffers before the reset window, then soft reset, restore the
+event buffers and soft connect after it.
+
+The UDC is now registered exactly once, at probe, and stays registered.
+Only its pullup follows the cable. That also stops usb_del_gadget() and
+usb_add_gadget() from running on every plug and unplug, which was taking
+seconds at a time under dwc->mutex.
+
+Fixup for "usb: dwc3: Register the role even when no cable is
+connected".
+
+Signed-off-by: Ondrej Jirman <megi@xff.cz>
+---
+ drivers/usb/dwc3/core.c | 40 +++++++++++++++++++++++++++-------------
+ 1 file changed, 27 insertions(+), 13 deletions(-)
+
+diff --git a/drivers/usb/dwc3/core.c b/drivers/usb/dwc3/core.c
+index 88ae18073eb8..b1e6178cec7b 100644
+--- a/drivers/usb/dwc3/core.c
++++ b/drivers/usb/dwc3/core.c
+@@ -197,10 +197,19 @@ static void __dwc3_set_mode(struct work_struct *work)
+ 	role_changed = desired_dr_role != dwc->current_dr_role;
+ 
+ 	/*
+-	 * Nothing was brought up for a role entered while no cable was
+-	 * connected, so there is nothing to tear down either.
++	 * Entering and leaving a role registers and unregisters the gadget or
++	 * the host, so it has to follow the role and nothing else. A cable
++	 * coming or going does not change the role, and must not take the UDC
++	 * away from userspace: the controller is parked below instead, the way
++	 * the runtime PM path does it.
+ 	 */
+-	switch (dwc->current_dr_connected ? dwc->current_dr_role : 0) {
++	if (!role_changed && dwc->current_dr_role == DWC3_GCTL_PRTCAP_DEVICE &&
++	    dwc->current_dr_connected) {
++		dwc3_gadget_suspend(dwc);
++		dwc3_event_buffers_cleanup(dwc);
++	}
++
++	switch (role_changed ? dwc->current_dr_role : 0) {
+ 	case DWC3_GCTL_PRTCAP_HOST:
+ 		dwc3_host_exit(dwc);
+ 		break;
+@@ -291,16 +300,7 @@ static void __dwc3_set_mode(struct work_struct *work)
+ 
+ 	spin_unlock_irqrestore(&dwc->lock, flags);
+ 
+-	/*
+-	 * Entering a role registers the gadget or the host, which has to happen
+-	 * even with no cable connected so that userspace can bind a gadget
+-	 * driver to the UDC before anything is plugged in.
+-	 *
+-	 * A connection change within the same role is different: the USB3 PHY
+-	 * has just been powered off, so there is nothing to bring up on top of
+-	 * it, and the role is already entered anyway.
+-	 */
+-	switch (desired_dr_connected || role_changed ? desired_dr_role : 0) {
++	switch (role_changed ? desired_dr_role : 0) {
+ 	case DWC3_GCTL_PRTCAP_HOST:
+ 		ret = dwc3_host_init(dwc);
+ 		if (ret) {
+@@ -343,6 +343,20 @@ static void __dwc3_set_mode(struct work_struct *work)
+ 		break;
+ 	}
+ 
++	/*
++	 * GCTL.CoreSoftReset above wiped the controller state, so put it back
++	 * for a cable that just showed up. The gadget stays registered
++	 * throughout, only its pullup follows the cable.
++	 */
++	if (!role_changed && desired_dr_role == DWC3_GCTL_PRTCAP_DEVICE &&
++	    desired_dr_connected) {
++		dwc3_core_soft_reset(dwc);
++		dwc3_event_buffers_setup(dwc);
++		phy_set_mode(dwc->usb2_generic_phy[0], PHY_MODE_USB_DEVICE);
++		phy_set_mode(dwc->usb3_generic_phy[0], PHY_MODE_USB_DEVICE);
++		dwc3_gadget_resume(dwc);
++	}
++
+ out:
+ 	pm_runtime_put_autosuspend(dwc->dev);
+ 	mutex_unlock(&dwc->mutex);
+-- 
+2.55.0
+

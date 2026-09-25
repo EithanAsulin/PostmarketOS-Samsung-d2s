@@ -1,0 +1,71 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Federico Amedeo Izzo <federico@izzo.pro>"
+pkgname=device-motorola-dubai
+pkgdesc="Motorola Edge 30"
+pkgver=1
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf-qcom-sc7280
+	firmware-motorola-dubai
+	firmware-qcom-adreno-a660
+	hexagonrpcd>=0.3.2-r3
+	linux-firmware-ath11k
+	linux-firmware-qca
+	make-dynpart-mappings
+	mkbootimg
+	postmarketos-base
+	soc-qcom
+	soc-qcom-modem
+	soc-qcom-qbootctl
+	systemd-boot
+	unl0kr-fbforcerefresh
+"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-kernel-csot:kernel_csot
+	$pkgname-kernel-tianma:kernel_tianma
+"
+source="
+	81-libssc-motorola-dubai.rules
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+
+	dd if=/dev/zero of="$srcdir/dtbo.img" bs=25165824 count=1
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -Dm644 "$srcdir/dtbo.img" "$pkgdir/boot/dtbo.img"
+
+	install -Dm644 "$srcdir"/81-libssc-motorola-dubai.rules -t \
+		"$pkgdir"/usr/lib/udev/rules.d
+}
+
+kernel_csot() {
+	pkgdesc="CSOT Panel. To know which panel your device uses, boot the device in fastboot mode after unlocking bootloader and read the 'Panel' string"
+	depends="linux-postmarketos-qcom-sc7280"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_tianma() {
+	pkgdesc="Tianma Panel. To know which panel your device uses, boot the device in fastboot mode after unlocking bootloader and read the 'Panel' string"
+	depends="linux-postmarketos-qcom-sc7280"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+sha512sums="
+2c16ba75e0077b2b1eaefa4c73b287475505a1aeb291ec29316d41cc094277320f9d2aaabfd91eb1dc0f488ab2d61a94faef16e7afe0f1e226779113761b9a37  81-libssc-motorola-dubai.rules
+5ffd3897eddfbf47e7f41e5105c40c67a36f647b91b384313013cc761b5a43dfcc264319a4f086a892eb47a5c6d68e780f66591805e4b792c783d75f0e6f562e  deviceinfo
+330062377f7eb28e65b31a41259a8f7f01c2b011926465b7ac507f08eda43a32b007d5e8735000851d8a2e9111ff018757801c076048d4c5a5ffe04c3d1594b3  kernel-cmdline.conf
+21e6680f90695167e8fd83b38852748e34d45eee9c0ca66cbde7bb09a79bb506f939bae0b293daff1e4f0ae875eea438eebb9b8390a9dea7f3ab6614381149fe  modules-initfs
+"

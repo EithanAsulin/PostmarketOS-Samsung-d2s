@@ -1,0 +1,6 @@
+# N900's volume keys actually emit F7 and F8 in the stock OS/kernel as well as
+# upstream (kernel.org) DTS. Correct them via hwdb.
+evdev:input:b0019v0001p0001e0003*
+ KEYBOARD_KEY_71=volumedown
+ KEYBOARD_KEY_72=volumeup
+ ID_INPUT_KEYBOARD=1

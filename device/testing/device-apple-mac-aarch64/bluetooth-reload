@@ -1,0 +1,9 @@
+#!/bin/sh
+
+# FIXME: this is a kernel/driver bug, bluetooth shouldn't get stuck on resume
+# from s2idle!
+# see: https://gitlab.postmarketos.org/postmarketOS/pmaports/-/work_items/4908
+case "$1" in
+	pre)  rmmod hci_bcm4377 2>/dev/null || true ;;
+	post) modprobe hci_bcm4377 2>/dev/null || true ;;
+esac

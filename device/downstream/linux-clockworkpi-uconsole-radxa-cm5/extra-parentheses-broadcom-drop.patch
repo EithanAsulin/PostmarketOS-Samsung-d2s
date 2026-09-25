@@ -1,0 +1,26 @@
+Fixes:
+
+drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c:9240:23: error: equality comparison with extraneous parentheses [-Werror,-Wparentheses-equality]
+ 9240 |                 } else if ((ch.band == BRCMU_CHAN_BAND_6G)) {
+      |                             ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~
+drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c:9240:23: note: remove extraneous parentheses around the comparison to silence this warning
+ 9240 |                 } else if ((ch.band == BRCMU_CHAN_BAND_6G)) {
+      |                            ~        ^                    ~
+drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c:9240:23: note: use '=' to turn this equality comparison into an assignment
+ 9240 |                 } else if ((ch.band == BRCMU_CHAN_BAND_6G)) {
+      |                                     ^~
+      |                                     =
+
+---
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
+@@ -9237,7 +9237,7 @@
+ 			band = wiphy->bands[NL80211_BAND_2GHZ];
+ 		} else if (ch.band == BRCMU_CHAN_BAND_5G) {
+ 			band = wiphy->bands[NL80211_BAND_5GHZ];
+-		} else if ((ch.band == BRCMU_CHAN_BAND_6G)) {
++		} else if (ch.band == BRCMU_CHAN_BAND_6G) {
+ 			if (brcmf_feat_is_6ghz_enabled(ifp)) {
+ 				band = wiphy->bands[NL80211_BAND_6GHZ];
+ 			} else {

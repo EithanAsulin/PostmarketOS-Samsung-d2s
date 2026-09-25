@@ -1,0 +1,33 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Abdullah AL Shohag <HackerShohag@outlook.com>"
+pkgname=device-xiaomi-lancelot
+pkgdesc="Xiaomi Redmi 9"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-postmarketos-mediatek-mt6768
+	mkbootimg
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+3ced54ed4ab0cfc835a29242a8b2c3e4a666d48e0978b2a28a25db6785a17fa427394f363bdb45e70c8a54e9584a17def6ce609517aafe46b602f4fcd77ce145  deviceinfo
+e245ec464934acce55b2c8e5a9bdb51e6542dbb018c9a08bda365dac72ea9d2b3d4547ab96db9c244bfe90cc531282fe64e4105b41e6d9fec2fd68c0f2143b05  kernel-cmdline.conf
+"

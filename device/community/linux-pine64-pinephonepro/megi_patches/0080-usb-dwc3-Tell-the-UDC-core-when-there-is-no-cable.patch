@@ -1,0 +1,101 @@
+From e258587f64983849231feaa678727911e079a6f5 Mon Sep 17 00:00:00 2001
+From: Ondrej Jirman <megi@xff.cz>
+Date: Tue, 21 Jul 2026 07:22:48 +0200
+Subject: [PATCH 80/90] usb: dwc3: Tell the UDC core when there is no cable
+
+The USB3 PHY is powered off while no cable is connected, so anything
+that touches the endpoints in that state fails. Binding a gadget driver
+does exactly that: the UDC core pulls up as soon as a driver binds,
+because udc->vbus starts out true and nothing ever says otherwise, and
+the pullup runs __dwc3_gadget_start() against the powered off PHY:
+
+  dwc3 fe800000.usb: failed to enable ep0out
+
+Report the connection state with usb_udc_vbus_handler() so the core only
+pulls up when there is a cable. That also replaces the
+dwc3_gadget_suspend()/dwc3_gadget_resume() pair that was approximating
+it: the pullup is what has to follow the cable, and the core already
+knows how to do that, including for a driver that binds later while
+still disconnected.
+
+usb_udc_vbus_handler() only records the new state and schedules the
+pullup change to a workqueue, though, while __dwc3_set_mode() goes
+straight on with the teardown: event buffers freed, GCTL.CORESOFTRESET
+asserted for 100ms and the USB3 PHY powered off. A soft disconnect
+scheduled at unplug races into that window and runs against a core held
+in reset with its PHY clocks gone: the endpoint end transfer commands
+read back fake completions, the DCTL/DSTS/DEVTEN accesses are lost, and
+the controller is left in a state even the DCTL.CSFTRST on the next
+plug-in does not recover from. The next session then comes up with a
+mute ep0 (host: 'Device not responding to setup address') and a stuck
+event interrupt that ends in a softirq lockup and 'irq: nobody cared'.
+
+So change the pullup synchronously with the cable state on top of the
+bookkeeping: usb_gadget_disconnect() before touching the event buffers,
+the core reset or the PHY power, and usb_gadget_connect() after the
+core is set back up. The scheduled work then finds the pullup already
+in the requested state and does nothing. Both directions serialize on
+the UDC connect lock, so a quick unplug also waits for an in-flight
+connect instead of resetting the core under it.
+
+Signed-off-by: Ondrej Jirman <megi@xff.cz>
+---
+ drivers/usb/dwc3/core.c | 35 ++++++++++++++++++++++++++++++++---
+ 1 file changed, 32 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/usb/dwc3/core.c b/drivers/usb/dwc3/core.c
+index b1e6178cec7b..7e86dce3d317 100644
+--- a/drivers/usb/dwc3/core.c
++++ b/drivers/usb/dwc3/core.c
+@@ -204,8 +204,20 @@ static void __dwc3_set_mode(struct work_struct *work)
+ 	 * the runtime PM path does it.
+ 	 */
+ 	if (!role_changed && dwc->current_dr_role == DWC3_GCTL_PRTCAP_DEVICE &&
+-	    dwc->current_dr_connected) {
+-		dwc3_gadget_suspend(dwc);
++	    dwc->current_dr_connected && dwc->gadget) {
++		/*
++		 * usb_udc_vbus_handler() only records the state and schedules
++		 * the pullup change for later, but the controller reset and
++		 * PHY power off below must not run while the gadget is still
++		 * live: the soft disconnect (endpoint end transfer commands,
++		 * DCTL/DEVTEN writes) would then hit a core that is held in
++		 * reset with its PHY clocks gone, be silently lost, and leave
++		 * the controller in a state the next plug-in cannot recover
++		 * from. Stop the gadget synchronously first; the scheduled
++		 * work then finds nothing left to do.
++		 */
++		usb_udc_vbus_handler(dwc->gadget, false);
++		usb_gadget_disconnect(dwc->gadget);
+ 		dwc3_event_buffers_cleanup(dwc);
+ 	}
+ 
+@@ -354,7 +366,24 @@ static void __dwc3_set_mode(struct work_struct *work)
+ 		dwc3_event_buffers_setup(dwc);
+ 		phy_set_mode(dwc->usb2_generic_phy[0], PHY_MODE_USB_DEVICE);
+ 		phy_set_mode(dwc->usb3_generic_phy[0], PHY_MODE_USB_DEVICE);
+-		dwc3_gadget_resume(dwc);
++	}
++
++	/*
++	 * Tell the UDC core whether there is a cable, so that it only pulls up
++	 * when there is one. Without this it pulls up as soon as a gadget
++	 * driver binds, which starts the endpoints on a USB3 PHY that is
++	 * powered off while disconnected, and ep0 fails to come up.
++	 *
++	 * Perform the connect synchronously as well, instead of leaving it to
++	 * the scheduled vbus work: the pullup then happens strictly after the
++	 * core and event buffer setup above, and a disconnect that follows a
++	 * quick unplug serializes against it on the UDC connect lock instead
++	 * of tearing the controller down under a half-finished connect.
++	 */
++	if (desired_dr_role == DWC3_GCTL_PRTCAP_DEVICE && dwc->gadget) {
++		usb_udc_vbus_handler(dwc->gadget, desired_dr_connected);
++		if (desired_dr_connected)
++			usb_gadget_connect(dwc->gadget);
+ 	}
+ 
+ out:
+-- 
+2.55.0
+

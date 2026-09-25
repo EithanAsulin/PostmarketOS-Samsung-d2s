@@ -1,0 +1,120 @@
+# Reference: <https://postmarketos.org/mainline>
+# Kernel config based on: arch/arm64/configs/defconfig
+# Co-Maintainer: exkc <exxxxkc@getgoogleoff.me>
+maintainer="Ferass El Hafidi <funderscore@postmarketos.org>"
+pkgname=linux-postmarketos-amlogic
+pkgver=7.1.1
+pkgrel=3
+pkgdesc="Mainline kernel for Amlogic devices"
+arch="aarch64"
+_carch="arm64"
+_flavor=postmarketos-amlogic
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-community
+"
+makedepends="
+	bc
+	bison
+	clang
+	devicepkg-dev
+	elfutils-dev
+	findutils
+	flex
+	gzip
+	linux-headers
+	lld
+	llvm
+	openssl-dev
+	pahole
+	perl
+	postmarketos-installkernel
+	python3
+	zstd
+"
+_config="
+	config-$_flavor.$arch
+	amlogic.config
+	misc.config
+	pmos.config
+"
+source="
+	$pkgname-$pkgver.tar.gz::https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/snapshot/linux-$pkgver.tar.gz
+	$_config
+	0001-add-x96-mini-support.patch
+	0002-add-initial-support-for-zte-b860hv5.patch
+	0004-resolve_btfids-preserve-tag-and-parameter-names-when.patch
+	0007-meson-g12b-bananapi-cm4-mnt-reform2.dts-fix-audio-an.patch
+	0008-Revert-drm-bridge-synopsys-dw-mipi-dsi-enable-EoTp-b.patch
+	0009-dw-mipi-dsi-phy-stop-wait-time.patch
+	0010-innolux-n125hce-gn1-timing-tweaks.patch
+	0011-meson-viu-hold-fifo-lines.patch
+	0012-meson-venc-sync.patch.patch
+	0013-meson-dw-mipi-dsi-sync-invert.patch
+	0014-sn65dsi86-burst-mode-support.patch
+	0015-sn65dsi86-never-turn-off.patch
+	0016-LOCAL-ALSA-Assign-internal-PCM-chmap-ELD-IEC958-kctl.patch
+	0017-HACK-of-partial-revert-of-fdt.c-changes.patch
+	0019-sdio-pullups.patch
+	0020-sdio-improve-wifi-speed.patch
+	0021-WORKAROUND-meson-plane-disable-afbc-32x8.patch
+	0022-arm64-dts-amlogic-add-zte-b860h-v1v2.patch
+	0023-arm64-dts-amlogic-add-fiberhome-hg680p.patch
+	0024-add-xiaomi-once-support.patch
+"
+builddir="$srcdir/linux-$pkgver"
+
+prepare() {
+	default_prepare
+	cp -v "$srcdir"/config-$_flavor.$arch .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+	make install modules_install dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_MOD_PATH="$pkgdir"/usr \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+
+	install -D "$builddir"/include/config/kernel.release \
+				"$pkgdir/usr/share/kernel/$_flavor/kernel.release"
+}
+
+sha512sums="
+d31b8dc75b6cd04bbef5b794ce5f47f388fe05b3fcdfa5977b78fdbdc0bc55f6369f249db29245b410f0f8b6247631617899b960dab2551fada7fecdc3d0905b  linux-postmarketos-amlogic-7.1.1.tar.gz
+e81e1a684f33f79ced2d89cd98bb56bb812eafea904b05c62ff96c973e5b0d81bf0e603d47c2247986c3e711c6709d5af67a3cedee1bde0babd7868d317ecb23  config-postmarketos-amlogic.aarch64
+3eda7524a4c2cf8bd5fd2105c1971f729a3423a0c5ca2e041c9707b5e12fb0e2fc421ac99a3adf19a2555bacb12354851811eb6817a8c1ef1ae735f8043ec234  amlogic.config
+76da48361759146957123f64a99b07893e83f976595246e707f9ab2a833fcd0d1e899d45c42e21315c77e266a6a265c6f0e029802f348ed862147fdff7763b2f  misc.config
+eb270c92066becfbd88eeffba498055941279308976a71fa8126b8768092beac576bad996225207bc8701af184e028a079cd2dad324185328e9b144a12cc9044  pmos.config
+4538994c7d3bbb0c4740e8ce108b6838618be239a549e407ca239f3ceca8eed29b5a9ca75d162567dbc06b13ac7caacc61ebf55b247ce6fe122fecc7e5b275d5  0001-add-x96-mini-support.patch
+222e7c12dbeb931f325b7d4a306c2f1e835992b5503ba3ab387a0b006e0fb2226291d93f32aec8ac7b2f6cf15704f20ef3285bb9bafe7374b11a034639d786ef  0002-add-initial-support-for-zte-b860hv5.patch
+4e705e038a91466a86fc5317b0028c2220aa1e7a4807e5d86db2f9ac815a927c59666a8f21ed50c4632147d3ce183d8042378a76f95341dbcd3db1047faf39e3  0004-resolve_btfids-preserve-tag-and-parameter-names-when.patch
+f1a3f10c67f491758bbaa2922b3acc84e2abee432ae22a39cb4081c9cea71792c5c740c57df93740e4b9756755e0e32583d23a93485933aeddb01c1d85eb4ccc  0007-meson-g12b-bananapi-cm4-mnt-reform2.dts-fix-audio-an.patch
+fb34099eefaf51b7bb36d7eca3c6130d7b23760250be8934341e93656d9315a099a243cbb02c9ed572dd76bf9017016b76aa1a8c03e867273f8ff4c3e7b3c9cb  0008-Revert-drm-bridge-synopsys-dw-mipi-dsi-enable-EoTp-b.patch
+00e257c1271fb9bfdb3cb3d61693e4226ec64cf7f168b19c504744c22844776f45e72005ec4def46450315ee71edfb5c762b323dad97df61c1106b835e91c372  0009-dw-mipi-dsi-phy-stop-wait-time.patch
+d9cf2556bc705a42088cdcb42f0dce4e32307e1315a53b68e7177e040848bfe51fce5c943be0a0ad3c19051fcc77ae2c8b04591034cf4c3c80c521471028be48  0010-innolux-n125hce-gn1-timing-tweaks.patch
+5df1e7f7b53c0a0246bc5bef185ee542ef249eb699013cee65f7a2b9a7aec449677750a58b9d8b6b0b3935d04a8fcf6a7e55341a5f87a0d356d7d10ed857c83c  0011-meson-viu-hold-fifo-lines.patch
+4ff6c694f1ed8281ce8309f2920f069510e61e23f44e3c21578e34964cdb94758db497d3bde2dae177f9e591a14cebed8adb87e7b91673b72633cbde41729f40  0012-meson-venc-sync.patch.patch
+04739b5df9dcf319a31a2229dd0294f8c62385a30705fc722b99888e194f335b63ec4da36131a80dab3aecfb65e1100a942ff8d064dc9c91206b3762e83602ad  0013-meson-dw-mipi-dsi-sync-invert.patch
+c0723efa41e9cce210ebefebc6c44b42e858be91006dac6305ddce11659e4e34a2231951215e3a76ad37fabd8e5e027f6662043757c2917601c24777a092e363  0014-sn65dsi86-burst-mode-support.patch
+1b38e2dab7506826a3eb5965c1d24f55b781612f2781110c8c45b6882215c8be18f54b4c4e4ee198ff768a695097ab42d3a91f9f2545a1b870f9880d9342cebb  0015-sn65dsi86-never-turn-off.patch
+f84cc1b22c0d10ac3c88dd9330d4a73ac903a13462298653c4ffb2c4c8dc4618fd7c2d635376d3d9a0d1a068465731b9220c5f24fdf890940203dc5d0b02d304  0016-LOCAL-ALSA-Assign-internal-PCM-chmap-ELD-IEC958-kctl.patch
+d21d3ac5e7e86e8df1b7634fa4f3ebaab47aaced021ec034d84f9478ee986707360db413d81b9f16840a705d70f446618564e31ca22d193ed9f0392f2032caef  0017-HACK-of-partial-revert-of-fdt.c-changes.patch
+9dc9a728bed858b5587a603fd0d31181d91755a3d2685ebe514195705c30474df43efc7bbe53b84615713192df7cc7593ee7d5c38b9c3f8d2d13c609b320a04c  0019-sdio-pullups.patch
+f6fb37ac0aa876f8d95ed598be20263417d8522a3c1f48a4ce148f95e6c6774664048064f4a96ff7f90ba3b4f71695ba8c51df2da3310bb820f627991d288851  0020-sdio-improve-wifi-speed.patch
+3d38202c1b5b56f25c16664924b72e6041e7911e71985a028b91c7151758659a2e662009c06342a0fddd8d829df03d6feb8ee929c550fde74a16f955cb01ae30  0021-WORKAROUND-meson-plane-disable-afbc-32x8.patch
+4a8bbd4d3c00e760ceb6e02eedd590b4dc20641276e4f9058c932d1cc0a2bbfa4a1b122296f052b6dfad6d01a155b7dc28a925f9c6982dfc7b9ebf2ea0ad2a86  0022-arm64-dts-amlogic-add-zte-b860h-v1v2.patch
+c85b997a9c6bc9190550a933f0bfd75bb834efc570869e6c6b9d8a2b8f93cf16f5f0bb6672b0451d4f1c7aa7878b32407b2d5007588fb1adeb5432028a6e2c8e  0023-arm64-dts-amlogic-add-fiberhome-hg680p.patch
+f9b4362a5be8655a6027101e2377a4506ba1fb2671534195c3b703df0933e08254ce8852d787c82b173d4917968542264fc849641deb810611cb005f362797db  0024-add-xiaomi-once-support.patch
+"

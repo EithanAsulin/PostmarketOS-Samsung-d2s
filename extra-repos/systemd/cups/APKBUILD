@@ -1,0 +1,168 @@
+# Forked from alpine for ondemand and sd-journald
+maintainer=""
+pkgname=cups
+_pkgver=2.4.19
+pkgver=9999$_pkgver
+pkgrel=2
+pkgdesc="The CUPS Printing System"
+url="https://github.com/OpenPrinting/cups/"
+# armhf: pmb#2618
+arch="all !armhf"
+license="Apache-2.0"
+depends_dev="libgcrypt-dev gnutls-dev zlib-dev"
+makedepends="
+	$depends_dev
+	avahi-dev
+	dbus-dev
+	libjpeg-turbo-dev
+	libpaper-dev
+	libusb-dev
+	linux-headers
+	systemd-dev
+	"
+depends="cups-client poppler-utils openssl dbus"
+install="cups.pre-install"
+pkggroups="lp lpadmin"
+pkgusers="lp"
+subpackages="
+	$pkgname-dbg
+	$pkgname-dev
+	$pkgname-doc
+	$pkgname-libs
+	ipptool
+	$pkgname-client
+	$pkgname-lang
+	$pkgname-systemd
+	"
+source="$pkgname-$_pkgver.tar.gz::https://github.com/OpenPrinting/cups/archive/v$_pkgver.tar.gz
+	$pkgname.logrotate
+	0001-Install-sysusers.d-config-for-user-groups.patch
+	0002-Regenerate-configure.patch
+	cups-no-export-ssllibs.patch
+	cups-nostrip.patch
+	default-config-no-gssapi.patch
+	"
+options="!check"
+builddir="$srcdir/cups-$_pkgver"
+
+build() {
+	# examples fail when building in qemu, with:
+	# 'error relocating fakeroot'
+	# Disabling for all archs since any could technically be cross compiled and some
+	# (aarch64) are native in CI but cross compiled under bpo. It's just simpler this way 🤷‍♂️
+	sed -i 's/doc examples templates/doc templates/' configure
+
+	# pmOS: remove lto
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--libdir=/usr/lib \
+		--sysconfdir=/etc \
+		--localstatedir=/var \
+		--with-menudir=/usr/share/applications \
+		--with-icondir=/usr/share/icons \
+		--with-logdir=/var/log/cups \
+		--with-docdir=/usr/share/cups \
+		--with-rundir=/run/cups \
+		--with-cupsd-file-perm=0755 \
+		--with-cups-user=lp \
+		--with-cups-group=lp \
+		--with-system-groups=lpadmin \
+		--with-domainsocket=/run/cups/cups.sock \
+		--enable-libusb \
+		--without-rcdir \
+		--without-php \
+		--disable-pam \
+		--enable-raw-printing \
+		--enable-dbus \
+		--with-dbusdir=/usr/share/dbus-1 \
+		--enable-libpaper \
+		--enable-ssl=yes \
+		--enable-gnutls \
+		--with-optim="$CFLAGS" \
+		\
+		--enable-systemd \
+		--with-ondemand=systemd
+	make
+}
+
+package() {
+	make BUILDROOT="$pkgdir" install
+
+	cd "$pkgdir"
+
+	# These no longer works since CUPS >= 1.6 (http://www.cups.org/str.php?L4120).
+	rm -rf usr/share/cups/banners/* \
+		usr/share/cups/data/testprint
+
+	install -D -m 644 "$srcdir"/cups.logrotate etc/logrotate.d/cups
+
+	if [ -e usr/share/applications/cups.desktop ] ; then
+		sed -i 's|^Exec=htmlview http://localhost:631/|Exec=xdg-open http://localhost:631/|g' \
+			usr/share/applications/cups.desktop
+	fi
+	find usr/share/cups/model -name "*.ppd" -exec gzip -n9f {} +
+}
+
+dev() {
+	default_dev
+
+	# needed for main cups operation
+	mv "$subpkgdir"/usr/share/cups/ppdc/* \
+		"$pkgdir"/usr/share/cups/ppdc
+	rmdir "$subpkgdir"/usr/share/cups/ppdc
+}
+
+libs() {
+	pkgdesc="CUPS libraries"
+	depends=""
+	replaces="libcups"
+
+	amove usr/lib/*.so*
+	install -d "$pkgdir"/etc/cups
+}
+
+ipptool() {
+	pkgdesc="Perform internet printing protocol requests"
+	depends=""
+
+	amove usr/bin/ipptool
+}
+
+client() {
+	pkgdesc="CUPS command-line client programs"
+	depends=""
+
+	amove usr/bin \
+		usr/sbin/cupsaccept \
+		usr/sbin/cupsctl \
+		usr/sbin/cupsdisable \
+		usr/sbin/cupsenable \
+		usr/sbin/lpadmin \
+		usr/sbin/lpc \
+		usr/sbin/lpinfo \
+		usr/sbin/lpmove
+}
+
+doc() {
+	default_doc
+
+	amove usr/share/cups/help
+}
+
+systemd() {
+	systemd_system_units_restart="cups.service"
+
+	default_systemd
+}
+
+sha512sums="
+e6b084e334d23a4689fc194d6463f30fa391665f1e9d5f89735e91a5b59e5056e03a5c0a8097d0e126133fe8d548ff47ca655be92d84b38ff627823511d54edc  cups-2.4.19.tar.gz
+bc2e9985b248bdf552306dcaad6ac86ada0053da97a742e57e7d65f0c2373a88edd622b326a39bb536c7aaabc449255d5597001297c9430d237379547c95caf3  cups.logrotate
+4b86ca34d1aa2b31513b0a356422de6af8cd6082f3bcc2b7e18fc9e8fe138335ab0bf4ab395e9a816b28f70c91c477e4c720c5186ad22896e2ccb1da39aa85d8  0001-Install-sysusers.d-config-for-user-groups.patch
+429d5edc60639521171a56c7dabee44c8d3afe3688575142574fbaa67fada8fc280ae74c80abd5e5abf5aa77770c58e68cb39de918022efb6edee9117759e91e  0002-Regenerate-configure.patch
+148eb01f0861e1cd0861a174a5c5262c49b079b27b972b4e90656b9b9357ec710e861604c30e897818f550e9c1cdcefcd8c8bc955ba4a333902a74cdd8dfb5a6  cups-no-export-ssllibs.patch
+ca93cd1490e1f17d1ce3a8a5bcf7b9d46a3efaf0cb16c53fc2da779b4ac2eec46fa2a43d1e14d320d410e27618b34744c705a12ca7e7e91fcaee4196a28ac0f6  cups-nostrip.patch
+c492f5e20a1bb73cf6bed86d0343659e839df4003aa1409bf608dd3ff05694d1e06ba26fd3786385d2c96dd668485dcef6cfee7f908416a2b125a8e30e82e670  default-config-no-gssapi.patch
+"

@@ -1,0 +1,69 @@
+# Co-Maintainer: Svyatoslav Ryhel <clamor95@gmail.com>
+maintainer="Robert Eckelmann <longnoserob@postmarketos.org>"
+pkgname=linux-postmarketos-grate
+pkgver=7.0.1
+pkgrel=4
+pkgdesc="Linux kernel with experimental patches for Tegra"
+arch="armv7"
+url="https://codeberg.org/libre-tegra/linux"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native pmb:kconfigcheck-community pmb:kconfigcheck-uefi"
+makedepends="
+	bison
+	clang
+	elfutils-dev
+	findutils
+	flex
+	linux-headers
+	lld
+	llvm
+	openssl-dev
+	pahole
+	perl
+	postmarketos-installkernel
+	python3
+	xz
+	zstd
+"
+
+# Source
+_flavor="${pkgname#linux-}"
+_tag="stable"
+_commit="bfffc6d6656e87f3de3aa4c09d852849081ef088"
+_carch="arm"
+_config="config-$_flavor.$arch"
+source="$pkgname-$_tag.tar.gz::$url/archive/$_commit.tar.gz
+	$_config
+"
+builddir="$srcdir/linux"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$CARCH" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+	make zinstall modules_install dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_MOD_PATH="$pkgdir"/usr \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+	rm -f "$pkgdir"/usr/lib/modules/*/build "$pkgdir"/usr/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+fa6a723db93d0c4c799ca8fb69a37ce13cc98a80ff688bc45dea7bd6d36df05b8f0deaa15a416e271a4ea0c5bb2097e63fc2d0a02903f11e6c404fbec82718a2  linux-postmarketos-grate-stable.tar.gz
+f10be227d398f578aa079890010ffab0e8b8ac9bf789cee1120084350d557faee085a19de9f90b8ea61e46f349a867a0795798cb9e28a5030579894dd0d6e07c  config-postmarketos-grate.armv7
+"

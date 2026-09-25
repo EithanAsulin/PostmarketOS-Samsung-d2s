@@ -1,0 +1,52 @@
+From accc163e18f235e37f639eb4caca641010b088b0 Mon Sep 17 00:00:00 2001
+From: Robert Eckelmann <longnoserob@gmail.com>
+Date: Fri, 28 Aug 2026 20:59:26 +0900
+Subject: arm: boot: dts: marvell/mmp3.dtsi: fix dma interrupts
+
+Signed-off-by: Robert Eckelmann <longnoserob@gmail.com>
+---
+ arch/arm/boot/dts/marvell/mmp3-dell-ariel.dts | 2 +-
+ arch/arm/boot/dts/marvell/mmp3.dtsi           | 6 ++++--
+ 2 files changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/boot/dts/marvell/mmp3-dell-ariel.dts b/arch/arm/boot/dts/marvell/mmp3-dell-ariel.dts
+index e2c3125eb39f..56676a86106f 100644
+--- a/arch/arm/boot/dts/marvell/mmp3-dell-ariel.dts
++++ b/arch/arm/boot/dts/marvell/mmp3-dell-ariel.dts
+@@ -258,7 +258,7 @@ &pdma {
+ &ssp1 {
+ 	status = "okay";
+ 	cs-gpios = <&gpio 46 GPIO_ACTIVE_LOW>;
+-
++	
+ 	firmware-flash@0 {
+ 		compatible = "winbond,w25q32", "jedec,spi-nor";
+ 		reg = <0>;
+diff --git a/arch/arm/boot/dts/marvell/mmp3.dtsi b/arch/arm/boot/dts/marvell/mmp3.dtsi
+index ff7c8c3008a1..0dc206d39fcc 100644
+--- a/arch/arm/boot/dts/marvell/mmp3.dtsi
++++ b/arch/arm/boot/dts/marvell/mmp3.dtsi
+@@ -91,7 +91,7 @@ dma_mux: interrupt-controller@d4282128 {
+ 				#interrupt-cells = <1>;
+ 				reg = <0x128 0x04 0x11c 0x04>;
+ 				reg-names = "mux status", "mux mask";
+-				mrvl,intc-nr-irqs = <24>;
++				mrvl,intc-nr-irqs = <64>;
+ 			};
+ 
+ 			pmic_mux: interrupt-controller@d4282150 {
+@@ -461,8 +461,10 @@ apb@d4000000 {
+ 			pdma: dma-controller@d4000000 {
+ 				compatible = "marvell,pdma-1.0";
+ 				reg = <0xd4000000 0x10000>;
++				interrupt-parent = <&dma_mux>; 
+ 				interrupts = <GIC_SPI 48 IRQ_TYPE_LEVEL_HIGH>;
+-				#dma-channels = <16>;
++				#dma-cells = <2>;
++				#dma-channels = <32>;
+ 				status = "disabled";
+ 			};
+ 
+-- 
+2.55.0
+

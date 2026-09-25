@@ -1,0 +1,60 @@
+From 1f1ae5cc394194aa46053c3fdad3845592e13676 Mon Sep 17 00:00:00 2001
+From: Ondrej Jirman <megi@xff.cz>
+Date: Tue, 21 Jul 2026 07:52:19 +0200
+Subject: [PATCH 84/90] phy: rockchip-inno-usb2: Power the PHY up before the
+ host starts
+
+Switching to host mode only queued the OTG state machine, so the PHY was
+powered up whenever that work happened to run. dwc3 sets the PHY mode
+and then immediately starts the host controller, which put the power up
+in the middle of the xHCI probe:
+
+  8.009  U2PHY set_mode: host=1
+  8.011  xhci-hcd: xHCI Host Controller
+  8.044  xhci-hcd: new USB bus registered, assigned bus number 8
+  8.054  U2PHY power_on
+  8.066  xhci-hcd: new USB bus registered, assigned bus number 9
+
+A device that is already attached has to be visible by the time the root
+hub is registered, and here it was not: an attached storage dongle never
+enumerated at all. It used to work by accident, because the mode was set
+after the host was up and the power up landed after the whole probe.
+
+Take the host transition immediately instead. Device mode still goes
+through the state machine, which has to work out what the port is facing
+before it can do anything anyway.
+
+Signed-off-by: Ondrej Jirman <megi@xff.cz>
+---
+ drivers/phy/rockchip/phy-rockchip-inno-usb2.c | 15 ++++++++++++++-
+ 1 file changed, 14 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/phy/rockchip/phy-rockchip-inno-usb2.c b/drivers/phy/rockchip/phy-rockchip-inno-usb2.c
+index 96d0042027a4..ffbe80342189 100644
+--- a/drivers/phy/rockchip/phy-rockchip-inno-usb2.c
++++ b/drivers/phy/rockchip/phy-rockchip-inno-usb2.c
+@@ -731,7 +731,20 @@ static int rockchip_usb2phy_set_mode(struct phy *phy, enum phy_mode mode,
+ 	 */
+ 	rockchip_chg_detect_cancel(rphy, rport);
+ 
+-	/* let the state machine act on the new role */
++	if (host_mode) {
++		/*
++		 * The controller starts the host right after this returns, and
++		 * the device is already attached, so its connect has to be
++		 * visible by then. Leaving the power up to the state machine
++		 * lands it somewhere in the middle of the host controller
++		 * probe, and the connect is missed.
++		 */
++		rport->state = OTG_STATE_A_HOST;
++		rockchip_usb2phy_power_on(phy);
++		return 0;
++	}
++
++	/* let the state machine work out what a device mode port is facing */
+ 	mod_delayed_work(system_wq, &rport->otg_sm_work, 0);
+ 
+ 	return 0;
+-- 
+2.55.0
+

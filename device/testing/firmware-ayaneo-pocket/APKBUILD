@@ -1,0 +1,81 @@
+maintainer="Neil Armstrong <neil.armstrong@linaro.org>"
+pkgname=firmware-ayaneo-pocket
+pkgver=20260612
+pkgrel=1
+pkgdesc="Firmware for Ayaneo Pocket"
+subpackages="
+	$pkgname-s2-adreno:s2_adreno
+	$pkgname-s2-adsp:s2_adsp
+	$pkgname-s2-ath12k:s2_ath12k
+	$pkgname-s2-cdsp:s2_cdsp
+	$pkgname-s2-iris:s2_iris
+	$pkgname-s2-tplg:s2_tplg
+	$pkgname-renesas-usb:renesas_usb
+	"
+url="https://github.com/superna9999/linux-firmware-ayaneo"
+arch="aarch64"
+license="proprietary"
+makedepends="zstd"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+_commit="7b0d4a031ee9a20f48a7749af0ea61c781bd9af4"
+source="https://github.com/superna9999/linux-firmware-ayaneo/archive/$_commit/linux-firmware-ayaneo-$_commit.tar.gz"
+builddir="$srcdir/linux-firmware-ayaneo-$_commit"
+
+package() {
+	mkdir -p "$pkgdir"
+}
+
+renesas_usb() {
+	pkgdesc="Renesas XHCI USB Firmware"
+
+	install -Dm644 "$builddir"/renesas_usb_fw.mem.zst -t \
+		"$subpkgdir/usr/lib/firmware/"
+}
+
+s2_adreno() {
+	pkgdesc="Ayaneo Pocket S2 adreno firmware"
+
+	install -Dm644 "$builddir"/qcom/sm8650/ayaneo/ps2/gen70900_zap.mbn.zst -t \
+		"$subpkgdir/usr/lib/firmware/qcom/sm8650/ayaneo/ps2/"
+}
+
+s2_adsp() {
+	pkgdesc="Ayaneo Pocket S2 adsp firmware"
+
+	install -Dm644 "$builddir"/qcom/sm8650/ayaneo/ps2/adsp* -t \
+		"$subpkgdir/usr/lib/firmware/qcom/sm8650/ayaneo/ps2/"
+	install -Dm644 "$builddir"/qcom/sm8650/ayaneo/ps2/battmgr.jsn.zst -t \
+		"$subpkgdir/usr/lib/firmware/qcom/sm8650/ayaneo/ps2/"
+}
+
+s2_tplg() {
+	pkgdesc="Ayaneo Pocket S2 Audio Topology"
+
+	install -Dm644 "$builddir"/qcom/ayaneo-ps2/SM8650-APS2-tplg.bin.zst -t \
+		"$subpkgdir/usr/lib/firmware/qcom/ayaneo-ps2/"
+}
+
+s2_cdsp() {
+	pkgdesc="Ayaneo Pocket S2 cdsp firmware"
+
+	install -Dm644 "$builddir"/qcom/sm8650/ayaneo/ps2/cdsp* -t \
+		"$subpkgdir/usr/lib/firmware/qcom/sm8650/ayaneo/ps2/"
+}
+
+s2_iris() {
+	pkgdesc="Ayaneo Pocket S2 iris firmware"
+
+	install -Dm644 "$builddir"/qcom/vpu/vpu33_p4.mbn.zst -t \
+		"$subpkgdir/usr/lib/firmware/postmarketos/qcom/vpu/"
+}
+
+s2_ath12k() {
+	pkgdesc="Ayaneo Pocket S2 ath12k firmware"
+
+	install -Dm644 "$builddir"/ath12k/WCN7850/hw2.0/board-2.bin.zst -t \
+		"$subpkgdir/usr/lib/firmware/postmarketos/ath12k/WCN7850/hw2.0/"
+}
+
+sha512sums="
+041bb687a951ec0745c3201e6b19ebfb30dd9fe34882fd6c2d3f2c713de890784fc433805502c3ec15980860e640ce86aed75a13c55d451d230d43d8229b002b  linux-firmware-ayaneo-7b0d4a031ee9a20f48a7749af0ea61c781bd9af4.tar.gz
+"

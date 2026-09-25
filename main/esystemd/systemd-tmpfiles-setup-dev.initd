@@ -1,0 +1,16 @@
+#!/sbin/openrc-run
+
+descriptions="Create static device nodes in /dev"
+
+depend() {
+	after systemd-tmpfiles-setup-dev-early
+	use dev-mount
+}
+
+start() {
+	if [ -x /usr/lib/tmpfiles.d ]; then
+		ebegin "Populating /dev from tmpfiles.d"
+		/usr/bin/systemd-tmpfiles --prefix=/dev --create --boot
+		eend $?
+	fi
+}

@@ -1,0 +1,22 @@
+maintainer="Lycheer Gu <christine.ellenvia@mail.ru>"
+pkgname=firmware-xiaomi-mocha-brcm
+pkgver=1
+pkgrel=0
+pkgdesc="Broadcom firmware for the Xiaomi Mi Pad"
+url="https://github.com/MiPadLinux/firmware-xiaomi-mocha-brcm"
+arch="armv7"
+license="custom:proprietary"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+
+_commit="0d2c0585c9bac743933af953a065d75efe040b77"
+source="$pkgname-$_commit.tar.gz::$url/archive/$_commit.tar.gz"
+builddir="$srcdir/firmware-xiaomi-mocha-brcm-$_commit"
+
+package() {
+	install -Dm644 brcmfmac4354-sdio.txt -t "$pkgdir"/usr/lib/firmware/brcm
+	install -Dm644 BCM4354.hcd -t "$pkgdir"/usr/lib/firmware/brcm
+}
+
+sha512sums="
+62b5f2ea8156c7845380b682a4f3f6fa09904e03561de07e528e73e74caa4f3849f62d8fe044c200fce40633cc15c66f15a6d47a83a26c793c7a94f074aa6e6a  firmware-xiaomi-mocha-brcm-0d2c0585c9bac743933af953a065d75efe040b77.tar.gz
+"

@@ -1,0 +1,66 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Luca Weiss <luca@lucaweiss.eu>"
+pkgname=device-fairphone-fp5
+pkgdesc="Fairphone 5"
+pkgver=18
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf-qcom-sc7280
+	firmware-fairphone-fp5-adreno
+	firmware-fairphone-fp5-adsp
+	firmware-fairphone-fp5-audio
+	firmware-fairphone-fp5-bluetooth
+	firmware-fairphone-fp5-cdsp
+	firmware-fairphone-fp5-hexagonfs
+	firmware-fairphone-fp5-ipa
+	firmware-fairphone-fp5-modem
+	firmware-fairphone-fp5-venus
+	firmware-fairphone-fp5-wpss
+	firmware-qcom-adreno-a660
+	hexagonrpcd>=0.3.2-r3
+	linux-firmware-ath11k
+	linux-postmarketos-qcom-sc7280
+	make-dynpart-mappings
+	mkbootimg
+	postmarketos-base
+	soc-qcom
+	soc-qcom-modem
+	soc-qcom-qbootctl
+	systemd-boot
+	unl0kr-fbforcerefresh
+"
+makedepends="devicepkg-dev"
+subpackages="$pkgname-openrc"
+install="$pkgname-openrc.post-install $pkgname-openrc.post-upgrade"
+source="
+	81-libssc-fairphone-fp5.rules
+	deviceinfo
+	modules-initfs
+	"
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -Dm644 "$srcdir"/81-libssc-fairphone-fp5.rules \
+		"$pkgdir"/usr/lib/udev/rules.d/81-libssc-fairphone-fp5.rules
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	depends="hexagonrpcd-openrc openrc"
+
+	mkdir -p "$subpkgdir"
+}
+
+sha512sums="
+2c16ba75e0077b2b1eaefa4c73b287475505a1aeb291ec29316d41cc094277320f9d2aaabfd91eb1dc0f488ab2d61a94faef16e7afe0f1e226779113761b9a37  81-libssc-fairphone-fp5.rules
+d6b5bbd3a69cef32608d1109aeba6ba1fee79c1e58cf8b8036781d8bc54d34ab8be7d035c83fd17dc0e744709d519b787fac63718fca8b91c02d41a93ede8c57  deviceinfo
+6280b66b9d4843ef78d0029c31d267b0bf59ea669bc3f2c268edfddf4edb3cec62d40b97c8204c85d1350759ad56e1ac2a5ba8ddc691f73c35c7385350ef12ee  modules-initfs
+"

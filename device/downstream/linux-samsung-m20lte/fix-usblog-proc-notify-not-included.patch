@@ -1,0 +1,13 @@
+diff --git a/drivers/usb/gadget/configfs.c b/drivers/usb/gadget/configfs.c
+index 83cbae2d..5f376388 100755
+--- a/drivers/usb/gadget/configfs.c
++++ b/drivers/usb/gadget/configfs.c
+@@ -10,6 +10,8 @@
+ #include "u_os_desc.h"
+ #include <linux/soc/samsung/exynos-soc.h>
+ 
++#include <linux/usblog_proc_notify.h>
++
+ #ifdef CONFIG_USB_CONFIGFS_UEVENT
+ #include <linux/platform_device.h>
+ #include <linux/kdev_t.h>

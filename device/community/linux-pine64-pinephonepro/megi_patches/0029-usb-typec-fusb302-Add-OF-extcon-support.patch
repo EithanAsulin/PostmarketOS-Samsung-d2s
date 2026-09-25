@@ -1,0 +1,44 @@
+From 27bdf849a02dd4f438ab42c472a7caa2bd704051 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Ond=C5=99ej=20Jirman?= <megi@xff.cz>
+Date: Sun, 14 Nov 2021 01:14:25 +0100
+Subject: [PATCH 29/90] usb: typec: fusb302: Add OF extcon support
+
+Look the extcon provider up by phandle, so a device tree can point at the
+USB2 PHY that runs BC1.2 charger detection. Until now it could only be
+named through linux,extcon-name, which probe reserves for ACPI platforms,
+leaving a DT board on a dedicated charger stuck on whatever the Type-C
+resistors advertise.
+
+Resolve it on first use rather than in probe, because the provider can sit
+behind a driver that waits on this one and resolving it during probe would
+close that cycle.
+
+Signed-off-by: Ondrej Jirman <megi@xff.cz>
+---
+ drivers/usb/typec/tcpm/fusb302.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/drivers/usb/typec/tcpm/fusb302.c b/drivers/usb/typec/tcpm/fusb302.c
+index 69f2bacec4da..9c46d1e53e98 100644
+--- a/drivers/usb/typec/tcpm/fusb302.c
++++ b/drivers/usb/typec/tcpm/fusb302.c
+@@ -443,6 +443,16 @@ static int tcpm_get_current_limit(struct tcpc_dev *dev)
+ 	int current_limit = 0;
+ 	unsigned long timeout;
+ 
++	/*
++	 * To avoid cycles in OF dependencies, we get extcon when necessary
++	 * outside of probe function.
++	 */
++	if (of_property_present(chip->dev->of_node, "extcon") && !chip->extcon) {
++		chip->extcon = extcon_get_edev_by_phandle(chip->dev, 0);
++		if (IS_ERR(chip->extcon))
++			chip->extcon = NULL;
++	}
++
+ 	if (!chip->extcon)
+ 		return 0;
+ 
+-- 
+2.55.0
+

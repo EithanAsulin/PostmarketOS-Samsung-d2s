@@ -1,0 +1,87 @@
+maintainer="Jack 'Kekzoz' Knightly <J__A__K@hotmail.com>"
+pkgname=linux-postmarketos-mediatek-mt6771
+pkgver=7.3_rc3
+pkgrel=0
+pkgdesc="Upstream kernel for MT6771-based devices"
+arch="aarch64"
+url="https://git.kernel.org"
+license="GPL-2.0-only"
+makedepends="
+	android-tools-mkdtboimg
+	bison
+	clang
+	elfutils-dev
+	findutils
+	flex
+	linux-headers
+	lld
+	llvm
+	openssl-dev
+	pahole
+	perl
+	postmarketos-installkernel
+	python3
+	zstd
+"
+source="https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/snapshot/linux-${pkgver/_/-}.tar.gz
+	0001-add-mt6771-gigaset-gs4.patch
+	config-${pkgname#linux-}.$arch
+"
+options="
+	!strip
+	!check
+	!tracedeps
+	pmb:cross-native
+"
+builddir="$srcdir"/linux-${pkgver/_/-}
+
+# Used internally by pmbootstrap. Don't touch.
+# TODO: Remove once minimum default pmbootstrap version supports
+# kernel packages without '_flavor' and '_config'.
+_config="config-${pkgname#linux-}.$arch"
+_flavor="${pkgname#linux-}"
+
+_carch="arm64"
+
+prepare() {
+	default_prepare
+	cp "$srcdir"/config-${pkgname#linux-}.$arch .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1))-${pkgname#linux-}"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+
+	make zinstall modules_install dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_MOD_PATH="$pkgdir"/usr \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+
+	rm -f "$pkgdir"/usr/lib/modules/*/build "$pkgdir"/usr/lib/modules/*/source
+
+	install -Dm644 "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/${pkgname#linux-}/kernel.release
+
+	dtbodir="$builddir"/arch/arm64/boot/dts/mediatek
+
+	mkdtboimg create "$pkgdir"/boot/mt6771-gigaset-gs4-minimal-dtbo.img \
+		"$dtbodir"/mt6771-gigaset-gs4-minimal-dtbo.dtb
+
+	# If multiple devices with dtbos start using the same linux package,
+	# the below line ought to be removed and a deviceinfo variable created for dtbos.
+	cp "$pkgdir"/boot/mt6771-gigaset-gs4-minimal-dtbo.img "$pkgdir"/boot/dtbo.img
+}
+
+sha512sums="
+d8ba9027742e20fe2568b9231616077837a51160c0361373ee8fa50afa746133bd9c5cfd198f364a4919113dbb135b7c16f2c90c33ab41f83c750c2f92a88611  linux-7.3-rc3.tar.gz
+3475d9ed86d01961722e49b1bf16a2cb881129888d6c34eb729b0f77cca44ee0b61ad00994c79da54080d1f20d3f3e3caca800f3c365f688936899418273ca2a  0001-add-mt6771-gigaset-gs4.patch
+fe92d4049a89630092dc892612dce645e4d62d0d6cccfe0980d002f95795236818a296b4209bb87929df5e3445350a3cb7d2590ed427e99de3264507e9504a17  config-postmarketos-mediatek-mt6771.aarch64
+"

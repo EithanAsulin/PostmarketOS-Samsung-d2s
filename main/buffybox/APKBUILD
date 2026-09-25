@@ -1,0 +1,118 @@
+# Co-Maintainer: Clayton Craft <clayton@craftyguy.net>
+maintainer="Johannes Marbach <n0-0ne+gitlab@mailbox.org>"
+pkgname=buffybox
+pkgver=3.5.1
+pkgrel=2
+_commit_lvgl=85aa60d18b3d5e5588d7b247abf90198f07c8a63
+pkgdesc="Framebuffer-based disk unlocker for the initramfs based on LVGL"
+url="https://gitlab.postmarketos.org/postmarketOS/buffybox"
+arch="all"
+license="GPL-3.0-or-later"
+makedepends="
+	eudev-dev
+	inih-dev
+	libdrm-dev
+	libevdev-dev
+	libinput-dev
+	libxkbcommon-dev
+	linux-headers
+	meson
+	scdoc
+	"
+source="
+	https://gitlab.postmarketos.org/postmarketOS/buffybox/-/archive/$pkgver/buffybox-$pkgver.tar.gz
+	lvgl-$_commit_lvgl.tar.gz::https://github.com/lvgl/lvgl/archive/$_commit_lvgl.tar.gz
+	0001-uinput-remove-initialization-of-.time.-in-static-inp.patch
+	"
+# check: no tests
+options="!check"
+subpackages="
+	$pkgname-doc
+	buffyboard
+	f0rmz
+	iskey
+	unl0kr
+	unl0kr-agent:unl0kr_agent
+	unl0kr-agent-systemd
+	"
+
+prepare() {
+	default_prepare
+	mkdir -p "$builddir/lvgl"
+	mv "$srcdir/lvgl-$_commit_lvgl"/* "$builddir/lvgl"
+}
+
+build() {
+	abuild-meson \
+		-Dsystemd=true \
+		. output
+	meson compile -C output
+
+	# iskey is built separately
+	abuild-meson "$builddir"/iskey iskey_output
+	meson compile -C iskey_output
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install --no-rebuild -C output
+	DESTDIR="$pkgdir" meson install --no-rebuild -C iskey_output
+
+	install -Dm755 "$builddir"/iskey_output/iskey \
+		"$pkgdir"/usr/bin/iskey
+
+	# install configs to distro directory
+	mkdir -p "$pkgdir"/usr/share/unl0kr/
+	mv "$pkgdir"/etc/unl0kr.conf \
+		"$pkgdir"/usr/share/unl0kr/
+	mkdir -p "$pkgdir"/usr/share/buffyboard/
+	mv "$pkgdir"/etc/buffyboard.conf \
+		"$pkgdir"/usr/share/buffyboard/
+}
+
+buffyboard() {
+	pkgdesc="Touch-enabled framebuffer keyboard (not only) for vampire slayers"
+
+	amove usr/bin/buffyboard
+	amove usr/share/buffyboard/buffyboard.conf
+}
+
+f0rmz() {
+	pkgdesc="Framebuffer-based form wizard for the initramfs based on LVGL"
+
+	amove usr/bin/f0rmz
+}
+
+iskey() {
+	pkgdesc="Tiny tool to check if a key is pressed"
+
+	amove usr/bin/iskey
+}
+
+unl0kr() {
+	pkgdesc="Framebuffer-based disk unlocker for the initramfs based on LVGL"
+	depends="
+		cryptsetup
+		eudev-libs
+		inih
+		libdrm
+		libevdev
+		libinput-libs
+		libxkbcommon
+		"
+
+	amove usr/bin/unl0kr
+	amove usr/share/unl0kr/unl0kr.conf
+}
+
+unl0kr_agent() {
+	description="Password agent for unl0kr"
+	depends="unl0kr=$pkgver-r$pkgrel"
+
+	amove usr/libexec/unl0kr-agent
+}
+
+sha512sums="
+4558edf2d4f43adcee1d12da359ad5c4b9a3f65eadabc354b945c46a08f51f06e0323e0825953b2f9cf08aeefef3161e32dc359a1733cdc2f033c2d60c2c9b50  buffybox-3.5.1.tar.gz
+b2a7c72e81cb60c9eb059bb7fb1f4a3765586941222591addc8f493af0bd45b5412fa24fb875a9878b2a8e8c16486b20c6d1715a6cd3ae26c9825eb9ad1f86c6  lvgl-85aa60d18b3d5e5588d7b247abf90198f07c8a63.tar.gz
+c83555dd9105ddff4f1925ae34470877478d83eeb2cf605d679a30e9703ca8a52fb5661b7000796fe77fca954589c997d838008d2c8fc939b388aa2365628637  0001-uinput-remove-initialization-of-.time.-in-static-inp.patch
+"

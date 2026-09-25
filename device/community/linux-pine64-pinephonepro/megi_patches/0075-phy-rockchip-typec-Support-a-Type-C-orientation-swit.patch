@@ -1,0 +1,149 @@
+From 202d000ca349e0b89d686acb6b783c3a741f8503 Mon Sep 17 00:00:00 2001
+From: Ondrej Jirman <megi@xff.cz>
+Date: Mon, 20 Jul 2026 23:39:05 +0200
+Subject: [PATCH 75/90] phy: rockchip-typec: Support a Type-C orientation
+ switch
+
+Register a typec_switch when the DT node is marked as one, and take the
+plug orientation from it rather than the extcon polarity property.
+
+The property can only be read at power_on() time, and only once the
+extcon provider has published it; a switch lets the port manager hand the
+orientation over whenever it knows it. This is the API RK3588's
+phy-rockchip-usbdp.c already uses. Boards that do not mark the node keep
+reading the extcon property.
+
+Keep the last orientation on TYPEC_ORIENTATION_NONE, which only says the
+cable is gone: the PHY is powered off through phy_power_off() then, so
+there is no reason to clear it to a value nothing should read.
+
+Signed-off-by: Ondrej Jirman <megi@xff.cz>
+---
+ drivers/phy/rockchip/phy-rockchip-typec.c | 80 +++++++++++++++++++++--
+ 1 file changed, 73 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/phy/rockchip/phy-rockchip-typec.c b/drivers/phy/rockchip/phy-rockchip-typec.c
+index d9701b6106d5..717015f33364 100644
+--- a/drivers/phy/rockchip/phy-rockchip-typec.c
++++ b/drivers/phy/rockchip/phy-rockchip-typec.c
+@@ -49,11 +49,13 @@
+ #include <linux/of_address.h>
+ #include <linux/of_platform.h>
+ #include <linux/platform_device.h>
++#include <linux/property.h>
+ #include <linux/regmap.h>
+ #include <linux/reset.h>
+ 
+ #include <linux/mfd/syscon.h>
+ #include <linux/phy/phy.h>
++#include <linux/usb/typec_mux.h>
+ 
+ #define CMN_SSM_BANDGAP			(0x21 << 2)
+ #define CMN_SSM_BIAS			(0x22 << 2)
+@@ -384,6 +386,14 @@ struct rockchip_typec_phy {
+ 
+ 	bool flip;
+ 	u8 mode;
++
++	/*
++	 * Optional Type-C orientation switch. When one is registered the plug
++	 * orientation is taken from it instead of from the extcon polarity
++	 * property, so that it no longer has to be re-read on every power_on.
++	 */
++	struct typec_switch_dev *sw;
++	bool sw_flip;
+ };
+ 
+ struct phy_reg {
+@@ -838,18 +848,68 @@ static int tcphy_get_mode(struct rockchip_typec_phy *tcphy)
+ 			mode |= MODE_DFP_USB;
+ 	}
+ 
+-	ret = extcon_get_property(edev, id, EXTCON_PROP_USB_TYPEC_POLARITY,
+-				  &property);
+-	if (ret) {
+-		dev_err(tcphy->dev, "get polarity property failed\n");
+-		return ret;
+-	}
++	if (tcphy->sw) {
++		tcphy->flip = tcphy->sw_flip;
++	} else {
++		ret = extcon_get_property(edev, id,
++					  EXTCON_PROP_USB_TYPEC_POLARITY,
++					  &property);
++		if (ret) {
++			dev_err(tcphy->dev, "get polarity property failed\n");
++			return ret;
++		}
+ 
+-	tcphy->flip = property.intval ? 1 : 0;
++		tcphy->flip = property.intval ? 1 : 0;
++	}
+ 
+ 	return mode;
+ }
+ 
++static int tcphy_orien_sw_set(struct typec_switch_dev *sw,
++			      enum typec_orientation orien)
++{
++	struct rockchip_typec_phy *tcphy = typec_switch_get_drvdata(sw);
++
++	mutex_lock(&tcphy->lock);
++
++	/*
++	 * TYPEC_ORIENTATION_NONE only means the cable is gone. The PHY is
++	 * powered off through phy_power_off() in that case, and the last
++	 * orientation is kept so that nothing reads a stale value from a
++	 * half-updated state.
++	 */
++	if (orien != TYPEC_ORIENTATION_NONE)
++		tcphy->sw_flip = orien == TYPEC_ORIENTATION_REVERSE;
++
++	mutex_unlock(&tcphy->lock);
++
++	return 0;
++}
++
++static void tcphy_orien_switch_unregister(void *data)
++{
++	struct rockchip_typec_phy *tcphy = data;
++
++	typec_switch_unregister(tcphy->sw);
++}
++
++static int tcphy_setup_orien_switch(struct rockchip_typec_phy *tcphy)
++{
++	struct typec_switch_desc sw_desc = { };
++
++	sw_desc.drvdata = tcphy;
++	sw_desc.fwnode = dev_fwnode(tcphy->dev);
++	sw_desc.set = tcphy_orien_sw_set;
++
++	tcphy->sw = typec_switch_register(tcphy->dev, &sw_desc);
++	if (IS_ERR(tcphy->sw))
++		return dev_err_probe(tcphy->dev, PTR_ERR(tcphy->sw),
++				     "failed to register orientation switch\n");
++
++	return devm_add_action_or_reset(tcphy->dev,
++					tcphy_orien_switch_unregister, tcphy);
++}
++
+ static int tcphy_cfg_usb3_to_usb2_only(struct rockchip_typec_phy *tcphy,
+ 				       bool value)
+ {
+@@ -1158,6 +1218,12 @@ static int rockchip_typec_phy_probe(struct platform_device *pdev)
+ 		}
+ 	}
+ 
++	if (device_property_present(dev, "orientation-switch")) {
++		ret = tcphy_setup_orien_switch(tcphy);
++		if (ret)
++			return ret;
++	}
++
+ 	pm_runtime_enable(dev);
+ 
+ 	for_each_available_child_of_node(np, child_np) {
+-- 
+2.55.0
+

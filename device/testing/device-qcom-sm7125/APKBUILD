@@ -1,0 +1,36 @@
+# Reference: <https://postmarketos.org/devicepkg>
+# Co-Maintainer: Erikas Bitovtas <xerikasxx@gmail.com>
+maintainer="Stefan Hansson <newbyte@postmarketos.org>"
+pkgname=device-qcom-sm7125
+pkgver=1
+pkgrel=1
+pkgdesc="Generic device package for Qualcomm SM7125 devices"
+url="https://postmarketos.org"
+arch="aarch64"
+license="MIT"
+depends="
+	alsa-ucm-conf-qcom-sm7125
+	firmware-samsung-a72q
+	hexagonrpcd
+	linux-postmarketos-qcom-sm7125
+	make-dynpart-mappings
+	postmarketos-base
+	swclock-offset
+	systemd-boot
+"
+makedepends="devicepkg-dev"
+source="deviceinfo modules-initfs"
+options="!archcheck !check"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+f88a8a8c66cb1284f3efad49db362ba205292dbe13196e29a8d3b1e4a47bc3c5fbc0672f044608c7dd7dd60b77e3ddd67dd5ac8366a3f1deadbec7ae56c6c901  deviceinfo
+c056217e34e0411ae7a780fb5e0a3a7721afdd6c0bf2c926768dd07695690f47fb145ac076d8ca0db4647d82494ddd0668af730eeb57e9846ab5e53bee8f1123  modules-initfs
+"

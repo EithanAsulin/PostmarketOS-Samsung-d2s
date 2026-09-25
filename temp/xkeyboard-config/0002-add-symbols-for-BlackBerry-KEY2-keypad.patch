@@ -1,0 +1,121 @@
+From f05f728327f30037567cb79725120a498cb0848b Mon Sep 17 00:00:00 2001
+From: Paul Sajna <hello@paulsajna.com>
+Date: Tue, 29 Jul 2025 19:14:33 -0700
+Subject: [PATCH] Added BlackBerry KEY2 model and its US English layout
+
+Added [BlackBerry KEY2] model and its corresponding vendor-specific US English layout.
+
+Sources:
+- Phone:
+  - https://en.wikipedia.org/wiki/BlackBerry_Key2
+  - https://wiki.postmarketos.org/wiki/BlackBerry_KEY2_Generic_(blackberry-key2-generic)
+- Keyboard:
+  - Photo of keypad: https://wiki.postmarketos.org/images/thumb/f/f0/BlackBerry_KEY2_keyboard.jpg/600px-BlackBerry_KEY2_keyboard.jpg
+  - Layer 5 on "sym" key, mapped as ralt: https://wiki.postmarketos.org/images/thumb/a/af/BlackBerry_KEY2_SYM_Keys.png/600px-BlackBerry_KEY2_SYM_Keys.png
+
+Part-of: <https://gitlab.freedesktop.org/xkeyboard-config/xkeyboard-config/-/merge_requests/856>
+---
+ changes/models/+856-blackberry-key2.md |  4 +++
+ rules/base.xml                         |  7 ++++
+ rules/rules.in                         |  1 +
+ symbols/blackberry_vndr/key2/us        | 47 ++++++++++++++++++++++++++
+ 4 files changed, 59 insertions(+)
+ create mode 100644 changes/models/+856-blackberry-key2.md
+ create mode 100644 symbols/blackberry_vndr/key2/us
+
+diff --git a/changes/models/+856-blackberry-key2.md b/changes/models/+856-blackberry-key2.md
+new file mode 100644
+index 00000000..5eef3da4
+--- /dev/null
++++ b/changes/models/+856-blackberry-key2.md
+@@ -0,0 +1,4 @@
++Added [BlackBerry KEY2](https://en.wikipedia.org/wiki/BlackBerry_Key2)
++model and its corresponding vendor-specific US English layout.
++
++Contributed by Paul Sajna !856
+diff --git a/rules/base.xml b/rules/base.xml
+index 3cd33b8f..51140ca2 100644
+--- a/rules/base.xml
++++ b/rules/base.xml
+@@ -171,6 +171,13 @@
+         <vendor>Generic</vendor>
+       </configItem>
+     </model>
++    <model>
++        <configItem>
++            <name>blackberry-key2</name>
++            <description>BlackBerry KEY2</description>
++            <vendor>BlackBerry</vendor>
++        </configItem>
++    </model>
+     <model>
+       <configItem>
+         <name>brother</name>
+diff --git a/rules/rules.in b/rules/rules.in
+index d17b1071..610820f4 100644
+--- a/rules/rules.in
++++ b/rules/rules.in
+@@ -219,6 +219,7 @@
+ # endfor
+   ataritt	 *			=	xfree68_vndr/ataritt(us)+%l%(v)
+   amiga		 *			=	xfree68_vndr/amiga(usa1)+%l%(v)
++  blackberry-key2	us	        =	pc+blackberry_vndr/key2/us
+   empty		 *			=	empty(basic)
+   *		 empty			=	empty(basic)
+   jollasbj	 *			=	jolla_vndr/sbj(common)+%l%(v)
+diff --git a/symbols/blackberry_vndr/key2/us b/symbols/blackberry_vndr/key2/us
+new file mode 100644
+index 00000000..ba0a62e0
+--- /dev/null
++++ b/symbols/blackberry_vndr/key2/us
+@@ -0,0 +1,47 @@
++// https://en.wikipedia.org/wiki/BlackBerry_Key2
++
++partial alphanumeric_keys
++
++xkb_symbols "key2" {
++	key.type = "EIGHT_LEVEL";
++	// 1st row
++	key <AD01>	{ [	q,		Q,		numbersign,	none,		asciitilde] };
++	key <AD02>	{ [	w,		W,		1,		none,		grave] };
++	key <AD03>	{ [	e,		E,		2,		none,		braceleft] };
++	key <AD04>	{ [	r,		R,		3,		none,		braceright] };
++	key <AD05>	{ [	t,		T,		parenleft,	none,		bracketleft] };
++	key <AD06>	{ [	y,		Y,		parenright,	none,		bracketright] };
++	key <AD07>	{ [	u,		U,		underscore,	none,		less] };
++	key <AD08>	{ [	i,		I,		minus,          none,	        greater] };
++	key <AD09>	{ [	o,		O,		plus,           none,	        asciicircum] };
++	key <AD10>	{ [	p,		P,		at,		none,		percent] };
++
++	// 2nd row
++	key <AC01>	{ [	a,		A,		asterisk,	none,		equal] };
++	key <AC02>	{ [	s,		S,		4,		none,		division] };
++	key <AC03>	{ [	d,		D,		5,		none,		plusminus] };
++	key <AC04>	{ [	f,		F,		6,		none,		U2022] };
++	key <AC05>	{ [	g,		G,		slash,		none,		backslash] };
++	key <AC06>	{ [	h,		H,		colon,		none,		bar] };
++	key <AC07>	{ [	j,		J,		semicolon,	none,		ampersand] };
++	key <AC08>	{ [	k,		K,		apostrophe,	none,		leftdoublequotemark] };
++	key <AC09>	{ [	l,		L,		quotedbl,	none,		rightdoublequotemark] };
++
++	// 3rd row
++	key <AB01>	{ [	z,		Z,		7,		none,		U00AB] };
++	key <AB02>	{ [	x,		X,		8,		none,		U00BB] };
++	key <AB03>	{ [	c,		C,		9,		none,		trademark] };
++	key <AB04>	{ [	v,		V,		question,	none,		questiondown] };
++	key <AB05>	{ [	b,		B,		exclam,		none,		exclamdown] };
++	key <AB06>	{ [	n,		N,		comma,		none,		brokenbar] };
++	key <AB07>	{ [	m,		M,		period,		none,		U00A7] };
++	// This key has a speaker symbol on it.	 It doesn't do anything in Android AFAICT, but let's make it mute
++	key <I442>	{ [	dollar,		EuroSign,	XF86AudioMute,	none,		dollar] };
++
++	// 4th row
++	key <SPCE>	{ [	space,		space,		space,		space,		space] };
++	key <I594>	{ [	XF86Dictate,	none,		0] };
++
++	include "level3(lalt_switch)"
++	include "level5(ralt_switch)"
++};
+-- 
+GitLab
+

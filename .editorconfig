@@ -1,0 +1,31 @@
+; This file is for unifying the coding style for different editors and IDEs.
+; Plugins are available for notepad++, emacs, vim, gedit,
+; textmate, visual studio, and more.
+;
+; See http://editorconfig.org for details.
+
+# Top-most EditorConfig file.
+root = true
+
+[*]
+end_of_line = lf
+insert_final_newline = true
+
+# Ignore .git and blobs
+[{.git/**,**.{cer,kwl,rle,salt}}]
+end_of_line = unset
+insert_final_newline = unset
+
+[{**.{ini,sh,rules,nft},**/APKBUILD,CODEOWNERS}]
+indent_style = tab
+trim_trailing_whitespace = true
+
+[**.md]
+# No indent_size since space size has meaning in markdown
+indent_style = space
+trim_trailing_whitespace = true
+
+# Forked from Alpine
+[extra-repos/systemd/networkmanager/networkmanager.rules]
+indent_style = space
+indent_size = 4

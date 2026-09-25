@@ -1,0 +1,6 @@
+# The size at which /tmp will be mounted from memory as tmpfs. If set to 0,
+# no mounting will happen. This value is passed directly to the tmpfs size=
+# param, e.g., 50% and 2g. See `man 5 tmpfs` for more info.
+# If unset, the size will be 50% and /tmp will be mounted only on devices with
+# more than 2 GB of RAM.
+#tmpfs_size=50%

@@ -1,0 +1,40 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Rudraksha Gupta <guptarud@gmail.com>"
+pkgname=device-microsoft-surface-rt
+pkgdesc="Microsoft Surface RT"
+pkgver=11
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf
+	linux-firmware-mrvl
+	linux-postmarketos-grate
+	postmarketos-base
+	systemd-boot
+"
+makedepends="devicepkg-dev"
+subpackages="$pkgname-x11"
+source="deviceinfo kernel-cmdline.conf modules-initfs"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+x11() {
+	install_if="$pkgname xorg-server"
+	depends="xf86-video-opentegra libvdpau-tegra"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+bb50d6a36205d2105b6168c48dbf745a9ec04bc90df04dca5b2988780c21592fbb83cde9448bca8bc424b92d3009244fce424dbf952747d16b112c510c1a4671  deviceinfo
+97ba87687ec3bbe2d8473d310f17b6771e7a8758f2585e77915025b1f211120dca615946e13fb561771a557081984a4f6f74cf8686d3bd822f614876498b0328  kernel-cmdline.conf
+67ff4306270b7e6e292ddb48ac5fcb1472840d8eaa412f9cd989442fb20139ee3c844fd1ca5c5b923c7980403d945999a77fc6617127059e56e22bdc8dca2bf8  modules-initfs
+"

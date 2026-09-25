@@ -1,0 +1,36 @@
+# New pipewire subpackages pipewire-spa-libcamera and pipewire-webrtc have
+# been added. We need to depend on those in postmarketos-base-ui to fix:
+# https://gitlab.postmarketos.org/postmarketOS/pmaports/-/work_items/4709
+# However the packages are not built for riscv64 yet in edge, and there are
+# discussions to remove the subpackages again. This dummy package covers both
+# scenarios, so we can build without having them for riscv64 and so installs
+# don't break if they get removed again. This package can be removed from edge
+# again once the riscv64 pipewire binary package is up-to-date. Do not remove
+# from v26.06.
+maintainer="Oliver Smith <ollieparanoid@postmarketos.org>"
+pkgname=pipewire-dummy-subpackages
+pkgver=0
+pkgrel=0
+pkgdesc="dummy package for riscv64"
+url="https://postmarketos.org"
+arch="all"
+license="MIT"
+options="!check"
+subpackages="
+	pipewire-spa-libcamera:subpkg
+	pipewire-webrtc:subpkg
+"
+
+build() {
+	:
+}
+
+package() {
+	mkdir -p "$pkgdir"
+}
+
+subpkg() {
+	mkdir -p "$subpkgdir"
+}
+
+sha512sums=""

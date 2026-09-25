@@ -1,0 +1,8 @@
+#!/bin/sh
+
+if [ -d /run/systemd/system ]; then
+	systemctl daemon-reexec
+	journalctl --update-catalog
+fi
+
+exit 0

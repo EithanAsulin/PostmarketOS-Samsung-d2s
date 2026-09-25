@@ -1,0 +1,32 @@
+maintainer="Diego Stocco <diegostocco.2008@gmail.com>"
+pkgname=firmware-samsung-m20lte
+pkgver=1
+pkgrel=0
+_commit="340fa274fefee4dc4ef9973fc0837ec557ac9736"
+pkgdesc="Firmware for the Samsung Galaxy M20"
+url="https://github.com/DiegoStocco/vendor_samsung-m20lte"
+arch="aarch64"
+license="proprietary"
+options="!archcheck !check !spdx !strip !tracedeps pmb:cross-native"
+builddir="$srcdir/vendor_samsung-m20lte-$_commit/vendor/etc/wifi/"
+# Source
+source="$pkgname-$_commit.tar.gz::https://github.com/DiegoStocco/vendor_samsung-m20lte/archive/$_commit.tar.gz"
+
+package() {
+	#WIFI FIRMWARE
+	install -Dm644 mx \
+		-t "$pkgdir"/usr/lib/firmware/postmarketos/mx140/
+	install -Dm644 mx140.bin \
+		-t "$pkgdir"/usr/lib/firmware/postmarketos/mx140/
+	install -Dm644 mx140_bt.hcf \
+		-t "$pkgdir"/usr/lib/firmware/postmarketos/mx140/
+	install -Dm644 mx140_wlan.hcf \
+		-t "$pkgdir"/usr/lib/firmware/postmarketos/mx140/
+	install -Dm644 mx140_wlan_t.hcf \
+		-t "$pkgdir"/usr/lib/firmware/postmarketos/mx140/
+}
+
+sha512sums="
+615f75855936a71e9b9761f7a51a716da35e3cc7ce584b7961895f3c597fbfc83ecfc41449131d8cdb40acb0b888f97cf3900c7a0245bb9e7069318c84c2e6db  firmware-samsung-m20lte-340fa274fefee4dc4ef9973fc0837ec557ac9736.tar.gz
+"
+

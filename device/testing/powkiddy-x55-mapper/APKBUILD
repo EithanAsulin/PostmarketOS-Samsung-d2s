@@ -1,0 +1,36 @@
+maintainer="Vitaliy Ognev <vitaliy.ognev@gmail.com>"
+pkgname=powkiddy-x55-mapper
+pkgver=1.0.2
+pkgrel=0
+pkgdesc="Powkiddy X55 gamepad joiner/mapper"
+url="https://github.com/vognev/x55-mapper"
+arch="aarch64"
+license="MIT"
+options="!check"
+makedepends="cargo"
+source="powkiddy-x55-mapper-$pkgver.tar.gz::https://github.com/vognev/x55-mapper/archive/refs/tags/v$pkgver.tar.gz"
+builddir="$srcdir/x55-mapper-$pkgver"
+subpackages="$pkgname-openrc $pkgname-systemd $pkgname-udev"
+install="
+	$pkgname-openrc.post-install
+	$pkgname-openrc.pre-deinstall
+"
+
+build() {
+	cargo build --release --locked
+}
+
+package() {
+	install -Dm644 contrib/postmarketos/99-disable-real-gamepad.rules \
+		-t "$pkgdir"/usr/lib/udev/rules.d/
+	install -Dm755 target/release/x55-mapper \
+		-t "$pkgdir"/usr/bin/
+	install -Dm644 contrib/postmarketos/powkiddy-x55-mapper.service \
+		-t "$pkgdir"/usr/lib/systemd/system/
+	install -Dm755 contrib/postmarketos/powkiddy-x55-mapper.initd \
+		"$pkgdir"/etc/init.d/powkiddy-x55-mapper
+}
+
+sha512sums="
+cf03fc0c9809724932400497cea581678cee70671c55d1450ebfac5dd1f7b5b03b047cdf388e21a391a4b526f51c9f2efa56789a185689c9f1f8e6464a86c62d  powkiddy-x55-mapper-1.0.2.tar.gz
+"

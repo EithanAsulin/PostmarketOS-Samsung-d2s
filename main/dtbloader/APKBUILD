@@ -1,0 +1,39 @@
+maintainer="Nikita Travkin <nikita@trvn.ru>"
+pkgname=dtbloader
+pkgver=1.5.5
+pkgrel=0
+pkgdesc="EFI driver that finds and installs DeviceTree into the UEFI configuration table"
+url="https://github.com/TravMurav/dtbloader"
+arch="aarch64"
+license="BSD-3-Clause"
+makedepends="clang cmd:llvm-ar lld"
+options="!check"
+subpackages="$pkgname-boot-deploy:boot_deploy"
+source="https://github.com/TravMurav/dtbloader/releases/download/$pkgver/dtbloader-$pkgver.tar.gz"
+
+build() {
+	make \
+		ABORT_IF_UNSUPPORTED=1 \
+		O=build
+
+	./scripts/get_supported_dtbs.sh > "$builddir"/build/dtbs.txt
+}
+
+package() {
+	install -Dt "$pkgdir"/usr/share/dtbloader \
+		"$builddir"/build/dtbloader.efi \
+		"$builddir"/build/dtbs.txt
+}
+
+boot_deploy() {
+	pkgdesc="boot-deploy integration for dtbloader"
+	install_if="$pkgname=$pkgver-r$pkgrel boot-deploy"
+
+	mkdir -p "$subpkgdir"/usr/share/boot-deploy/efi-drivers/
+	ln -s /usr/share/dtbloader/dtbloader.efi \
+		"$subpkgdir"/usr/share/boot-deploy/efi-drivers/dtbloaderaa64.efi
+}
+
+sha512sums="
+b182a1bafaf6e1ae60eada8abea04a9855b7c619743a4991443ef66e5b07e1e9ba0c6a705808975a6d4ebda73610f8fbef7d8d8f4d94b930327a1929536f3fc4  dtbloader-1.5.5.tar.gz
+"

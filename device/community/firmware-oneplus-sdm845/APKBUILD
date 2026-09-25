@@ -1,0 +1,66 @@
+maintainer="Casey Connolly <kcxt@postmarketos.org>"
+pkgname=firmware-oneplus-sdm845
+pkgver=18
+pkgrel=0
+_commit="3e31a0c3e5a061645c09f805387b49fa9d35acbf"
+pkgdesc="Firmware for OnePlus 6 / 6T"
+url="https://gitlab.com/sdm845-mainline/firmware-oneplus-sdm845"
+arch="aarch64"
+depends="linux-firmware-qcom linux-firmware-ath10k"
+license="proprietary"
+subpackages="
+	$pkgname-pmtest
+	$pkgname-sensors:firmware_sensors
+	"
+source="$pkgname-$_commit.tar.gz::https://gitlab.com/sdm845-mainline/firmware-oneplus-sdm845/-/archive/$_commit/firmware-oneplus-sdm845-$_commit.tar.gz
+	0001-oneplus6-set-mount-matrix.patch
+	30-oneplus-sdm845-firmware-ci.files
+	firmware.files
+	firmware-initramfs.files
+	sensor.files
+	"
+options="!archcheck !check !strip !tracedeps pmb:cross-native textrels"
+builddir="$srcdir/$pkgname-$_commit"
+
+package() {
+	while IFS="" read -r _i || [ -n "$_i" ]; do
+		local _u="${_i/usr\/lib/\/lib}"
+		[ ! -d $(dirname $_i) ] && mkdir -p $(dirname "$pkgdir"/$_i)
+		install -Dm644 .$_u "$pkgdir/$_i"
+	done < "$srcdir/firmware.files"
+
+	install -Dm644 "$srcdir"/firmware-initramfs.files \
+		"$pkgdir"/usr/share/mkinitfs/files/"$pkgname".files
+}
+
+pmtest() {
+	install_if="$pkgname=$pkgver-r$pkgrel postmarketos-mkinitfs-hook-ci"
+
+	install -Dm644 "$srcdir/30-oneplus-sdm845-firmware-ci.files" \
+		"$subpkgdir/usr/share/mkinitfs/files/30-oneplus-sdm845-firmware-ci.files"
+}
+
+firmware_sensors() {
+	pkgdesc="Files to be included to add sensor support"
+	depends="$pkgname=$pkgver-r$pkgrel"
+	mkdir "$subpkgdir"
+
+	cd "$builddir"
+	while IFS="" read -r _i || [ -n "$_i" ]; do
+		local _u="${_i/usr\/lib/\/lib}"
+		[ ! -d $(dirname $_i) ] && mkdir -p $(dirname "$subpkgdir"/$_i)
+		install -Dm644 .$_u "$subpkgdir/$_i"
+	done < "$srcdir/sensor.files"
+
+	ln -s oneplus6 "$subpkgdir"/usr/share/qcom/sdm845/OnePlus/enchilada
+	ln -s oneplus6 "$subpkgdir"/usr/share/qcom/sdm845/OnePlus/fajita
+}
+
+sha512sums="
+56604c46ad0f30f1f715af4b83bd2686d96723024063c7ef6baa5c73cd52b375478e3d65b886ff08efc95ce129fc789b8509efcdf9f0d46cf7229f4ec1afa513  firmware-oneplus-sdm845-3e31a0c3e5a061645c09f805387b49fa9d35acbf.tar.gz
+3f5b04afd8ccd08e676cee2d290c08c3b5e0f0c0b85ddf6e94f86730615ea174a2cc57452dc8455f68675fc173bf0fb79c0505819c3e0203ad5a7acb5ebf4b10  0001-oneplus6-set-mount-matrix.patch
+ed8e0c4437c4f9b1ad34337d57eb3fbcc66dbcd520864642ff704e48b1656e6b2970f61c4f7ea264bd7aefedc07d8b7f7fb12569b0218a6f56ab5daf6946d9e9  30-oneplus-sdm845-firmware-ci.files
+aefc540de7d67df936108750ea4ad95101eacf5cbc0243d849d7267932fa0d3ef602f9e461ba003d3953f5e81b77b798df0a5c43d179269ceb5c71f73ab23c0a  firmware.files
+36233430bb992ef878bb17796bb31e98c13209e2bf594dbd934c95249338bb6f26e4a0d5e6e722aec9248009a21927d5f0ca736cae96aa5c71ed2223b7d5cc9d  firmware-initramfs.files
+f3e4e1ca689400492d9860fbe478d781bcf3d0b7d1b018bc23309d4a0458dc693554c198d79a4048436e0a04e1ea9d07b004c63d297a4eb423a7ea355fc21f95  sensor.files
+"

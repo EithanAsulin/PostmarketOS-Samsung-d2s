@@ -1,0 +1,14 @@
+diff --git a/tools/fip_create/Makefile b/tools/fip_create/Makefile
+index a065e469e7..b2e7ae8f2c 100644
+--- a/tools/fip_create/Makefile
++++ b/tools/fip_create/Makefile
+@@ -31,7 +31,7 @@
+ PROJECT = fip_create
+ OBJECTS = fip_create.o
+ 
+-CFLAGS = -Wall -Werror -pedantic -std=c99
++CFLAGS = -Wall -pedantic -std=c99
+ ifeq (${DEBUG},1)
+   CFLAGS += -g -O0 -DDEBUG
+ else
+

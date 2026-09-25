@@ -1,0 +1,74 @@
+maintainer="Duje Mihanović <duje@dujemihanovic.xyz>"
+_flavor=samsung-coreprimevelte
+pkgname=linux-$_flavor
+pkgver=7.2_rc3
+pkgrel=0
+pkgdesc="Samsung Galaxy Core Prime VE LTE mainline kernel"
+arch="aarch64"
+_carch="arm64"
+url="https://codeberg.org/pxa1908-mainline/linux"
+license="GPL-2.0-only"
+options="
+	!check
+	!strip
+	!tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-community
+	pmb:kconfigcheck-uefi
+"
+makedepends="
+	bc
+	bison
+	clang
+	dtc
+	elfutils-dev
+	findutils
+	flex
+	linux-headers
+	lld
+	llvm
+	openssl-dev
+	pahole
+	perl
+	postmarketos-installkernel
+	python3
+	zstd
+"
+
+_tag=v${pkgver/_/-}-pxa1908-pmaports
+source="
+	$pkgname-$pkgver.tar.gz::https://codeberg.org/pxa1908-mainline/linux/archive/$_tag.tar.gz
+	config-$_flavor.$arch
+"
+builddir="$srcdir"/linux
+
+prepare() {
+	default_prepare
+	cp "$srcdir"/config-$_flavor.$arch "$builddir"/.config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))"-$_flavor
+}
+
+package() {
+	make zinstall modules_install dtbs_install \
+		ARCH=$_carch \
+		LLVM=1 \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_MOD_PATH="$pkgdir"/usr \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+
+	rm -f "$pkgdir"/usr/lib/modules/*/build "$pkgdir"/usr/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+50792ff5644a0941e4c8ceb6cc6de7192d7f147fa8a2f7a9963ccf0007c7b08624ed4543d913d266d8f08da639e78d3dd759bdcc67a5df95211c0b71c9f9d51c  linux-samsung-coreprimevelte-7.2_rc3.tar.gz
+665174a345a8fb844f510945670013e17eb641a1ae1c9256294155fbd829aaadc0e8fc6e8605c8985fc2aa30ca24e20d293c54a09a6793ca9f58fca12e62a544  config-samsung-coreprimevelte.aarch64
+"

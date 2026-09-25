@@ -1,0 +1,25 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="knuxify <knuxify@gmail.com>"
+pkgname=device-samsung-baffinlite
+pkgdesc="Samsung Galaxy Grand Neo"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="postmarketos-base linux-postmarketos-brcm-kona mkbootimg firmware-samsung-baffinlite"
+makedepends="devicepkg-dev"
+source="deviceinfo"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+695f8fac1eb576320c0ce990a4a07acf59ee123ffcc7fa8ba0d0c73a85f1414b0a78c0e8cc6633531a6998635d92bbe18cc03a44c933b96670be8c90dabf5631  deviceinfo
+"

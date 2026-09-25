@@ -1,0 +1,45 @@
+From 2c72bce471a5098f7bd3a23997e03bd163b89093 Mon Sep 17 00:00:00 2001
+From: Robert Mader <robert.mader@collabora.com>
+Date: Fri, 28 Aug 2026 18:26:58 +0200
+Subject: [PATCH 5/8] debayer: Further demote 'Unsupported input format' log
+
+On some platforms such as the PinePhone these logs clutter the output of
+tools and the journal a lot. Let's silence them for normal usage.
+
+Signed-off-by: Robert Mader <robert.mader@collabora.com>
+---
+ src/libcamera/software_isp/debayer_cpu.cpp | 4 ++--
+ src/libcamera/software_isp/debayer_egl.cpp | 2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/src/libcamera/software_isp/debayer_cpu.cpp b/src/libcamera/software_isp/debayer_cpu.cpp
+index 49382b4c2719..2c2c1dd4912d 100644
+--- a/src/libcamera/software_isp/debayer_cpu.cpp
++++ b/src/libcamera/software_isp/debayer_cpu.cpp
+@@ -469,8 +469,8 @@ int DebayerCpu::getInputConfig(PixelFormat inputFormat, DebayerInputConfig &conf
+ 		return 0;
+ 	}
+ 
+-	LOG(Debayer, Info)
+-		<< "Unsupported input format " << inputFormat.toString();
++	LOG(Debayer, Debug)
++		<< "Unsupported input format " << inputFormat;
+ 	return -EINVAL;
+ }
+ 
+diff --git a/src/libcamera/software_isp/debayer_egl.cpp b/src/libcamera/software_isp/debayer_egl.cpp
+index 09ab5a58c994..5c0508239f9c 100644
+--- a/src/libcamera/software_isp/debayer_egl.cpp
++++ b/src/libcamera/software_isp/debayer_egl.cpp
+@@ -90,7 +90,7 @@ int DebayerEGL::getInputConfig(PixelFormat inputFormat, DebayerInputConfig &conf
+ 		return 0;
+ 	}
+ 
+-	LOG(Debayer, Info)
++	LOG(Debayer, Debug)
+ 		<< "Unsupported input format " << inputFormat;
+ 
+ 	return -EINVAL;
+-- 
+2.55.0
+

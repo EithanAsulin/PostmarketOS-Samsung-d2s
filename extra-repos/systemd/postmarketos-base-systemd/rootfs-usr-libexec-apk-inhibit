@@ -1,0 +1,14 @@
+#!/bin/sh
+
+while true; do
+    # wait for something to open apk's lock file
+    inotifywait -q -e open /usr/lib/apk/db/lock
+
+    # Take an inhibitor lock and make it conditional on flock, which is trying
+    # to lock apk's lock file. flock will block until it can take a lock (i.e.
+    # if apk is doing operations), so the inhibitor lock is held until apk is
+    # done.
+    systemd-inhibit --what=sleep --who=apk \
+        --why="Package transaction in progress" \
+        flock /usr/lib/apk/db/lock true
+done

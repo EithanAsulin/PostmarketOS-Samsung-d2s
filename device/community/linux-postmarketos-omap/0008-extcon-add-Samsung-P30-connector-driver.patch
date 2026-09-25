@@ -1,0 +1,290 @@
+From 05e405f2e5198e700a128f8f8dbaf61d373dabc3 Mon Sep 17 00:00:00 2001
+From: Nuke <retuhmadam2010@proton.me>
+Date: Thu, 13 Aug 2026 18:41:54 +0400
+Subject: [PATCH 08/11] extcon: add Samsung P30 connector driver
+
+---
+ drivers/extcon/Kconfig         |  11 ++
+ drivers/extcon/Makefile        |   1 +
+ drivers/extcon/extcon-p30con.c | 235 +++++++++++++++++++++++++++++++++
+ 3 files changed, 247 insertions(+)
+ create mode 100644 drivers/extcon/extcon-p30con.c
+
+diff --git a/drivers/extcon/Kconfig b/drivers/extcon/Kconfig
+index 68d9df7d2..5d055817c 100644
+--- a/drivers/extcon/Kconfig
++++ b/drivers/extcon/Kconfig
+@@ -105,6 +105,17 @@ config EXTCON_MAX3355
+ 	  enable a system with an integrated USB OTG dual-role transceiver to
+ 	  function as an USB OTG dual-role device.
+ 
++config EXTCON_P30CON
++	tristate "Samsung 30-pin connector EXTCON support"
++	depends on GPIOLIB || COMPILE_TEST
++	depends on IIO
++	help
++	  If you say yes here you get support for accessory detection on
++	  the Samsung 30-pin dock connector as found on the Galaxy Tab
++	  series of tablets. Accessories are identified by the resistance
++	  on the ACCESSORY_ID pin, measured through an ADC. The USB OTG
++	  adapter is reported as EXTCON_USB_HOST.
++
+ config EXTCON_MAX77693
+ 	tristate "Maxim MAX77693 EXTCON Support"
+ 	depends on MFD_MAX77693 && INPUT
+diff --git a/drivers/extcon/Makefile b/drivers/extcon/Makefile
+index 6482f2bfd..ad82ded1f 100644
+--- a/drivers/extcon/Makefile
++++ b/drivers/extcon/Makefile
+@@ -15,6 +15,7 @@ obj-$(CONFIG_EXTCON_INTEL_MRFLD) += extcon-intel-mrfld.o
+ obj-$(CONFIG_EXTCON_LC824206XA)	+= extcon-lc824206xa.o
+ obj-$(CONFIG_EXTCON_MAX14577)	+= extcon-max14577.o
+ obj-$(CONFIG_EXTCON_MAX3355)	+= extcon-max3355.o
++obj-$(CONFIG_EXTCON_P30CON)	+= extcon-p30con.o
+ obj-$(CONFIG_EXTCON_MAX77693)	+= extcon-max77693.o
+ obj-$(CONFIG_EXTCON_MAX77843)	+= extcon-max77843.o
+ obj-$(CONFIG_EXTCON_MAX8997)	+= extcon-max8997.o
+diff --git a/drivers/extcon/extcon-p30con.c b/drivers/extcon/extcon-p30con.c
+new file mode 100644
+index 000000000..72f656a17
+--- /dev/null
++++ b/drivers/extcon/extcon-p30con.c
+@@ -0,0 +1,235 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * extcon-p30con.c - Samsung 30-pin ("P30") connector accessory detection
++ *
++ * The Samsung 30-pin dock connector found on Galaxy Tab (espresso and
++ * friends) tablets identifies analog accessories by the resistance on
++ * the ACCESSORY_ID pin, measured with an external ADC (STMPE811).
++ * A dedicated detect line (DOCK_INT in the schematics) goes low while
++ * any such accessory is attached.
++ *
++ * The USB OTG adapter ("Camera Connection Kit", ID pulled to ~2.2 V)
++ * is reported as EXTCON_USB_HOST so that the USB PHY driver can switch
++ * the MUSB controller to host mode.
++ *
++ * Voltage thresholds follow the vendor kernel (board-espresso-connector.c
++ * and drivers/misc/30pin_con.c of the GT-P31xx/P51xx source drop).
++ */
++
++#include <linux/delay.h>
++#include <linux/extcon-provider.h>
++#include <linux/gpio/consumer.h>
++#include <linux/iio/consumer.h>
++#include <linux/interrupt.h>
++#include <linux/limits.h>
++#include <linux/mod_devicetable.h>
++#include <linux/module.h>
++#include <linux/platform_device.h>
++#include <linux/workqueue.h>
++
++/*
++ * P30 accessory ID levels, 12-bit ADC counts at 3.3 V full scale:
++ *
++ * Accessory		Vacc [V]		counts
++ * OTG adapter		2.2 (2.1..2.3)		2731 (2606..2855)
++ * Analog TV cable	1.8 (1.7..1.9)		2234 (2110..2359)
++ * Car mount		1.38 (1.28..1.48)	1715 (1590..1839)
++ * 3-pole earjack	0.99 (0.89..1.09)	1232 (1107..1356)
++ */
++#define P30_ADC_OTG_MIN		2600
++#define P30_ADC_OTG_MAX		2860
++
++/*
++ * "HQRL Standard": voltage on ACCESSORY_ID is specified to be stable
++ * no earlier than 400 ms after VBUS detection; the vendor kernel waits
++ * 420 ms before sampling.
++ */
++#define P30_SETTLE_MS		420
++#define P30_NUM_SAMPLES		5
++
++struct p30con {
++	struct device *dev;
++	struct extcon_dev *edev;
++	struct gpio_desc *detect_gpiod;
++	struct iio_channel *acc_id_chan;
++	struct delayed_work work;
++	int irq;
++	bool attached;
++};
++
++static const unsigned int p30con_cables[] = {
++	EXTCON_USB_HOST,
++	EXTCON_NONE,
++};
++
++static int p30con_read_acc_id(struct p30con *con)
++{
++	int i, ret, val;
++	int lowest = INT_MAX, highest = INT_MIN, sum = 0;
++
++	/*
++	 * Average five samples after discarding the lowest and highest values,
++	 * matching the vendor driver.
++	 */
++	for (i = 0; i < P30_NUM_SAMPLES; i++) {
++		ret = iio_read_channel_raw(con->acc_id_chan, &val);
++		if (ret < 0)
++			return ret;
++
++		sum += val;
++		lowest = min(lowest, val);
++		highest = max(highest, val);
++		msleep(20);
++	}
++
++	return (sum - lowest - highest) / (P30_NUM_SAMPLES - 2);
++}
++
++static void p30con_detect_work(struct work_struct *work)
++{
++	struct p30con *con = container_of(work, struct p30con, work.work);
++	bool attached = gpiod_get_value_cansleep(con->detect_gpiod);
++	int adc;
++
++	if (attached == con->attached)
++		return;
++
++	if (!attached) {
++		con->attached = false;
++		extcon_set_state_sync(con->edev, EXTCON_USB_HOST, false);
++		dev_dbg(con->dev, "accessory detached\n");
++		return;
++	}
++
++	msleep(P30_SETTLE_MS);
++
++	/* Re-check: the cable may already be gone again */
++	if (!gpiod_get_value_cansleep(con->detect_gpiod))
++		return;
++
++	adc = p30con_read_acc_id(con);
++	if (adc < 0) {
++		dev_err(con->dev, "failed to read ACCESSORY_ID: %d\n", adc);
++		return;
++	}
++
++	con->attached = true;
++
++	dev_dbg(con->dev, "accessory attached, ACCESSORY_ID = %d\n", adc);
++
++	if (adc > P30_ADC_OTG_MIN && adc < P30_ADC_OTG_MAX)
++		extcon_set_state_sync(con->edev, EXTCON_USB_HOST, true);
++	else
++		dev_info(con->dev, "unhandled accessory, ACCESSORY_ID = %d\n",
++			 adc);
++}
++
++static irqreturn_t p30con_irq_handler(int irq, void *data)
++{
++	struct p30con *con = data;
++
++	mod_delayed_work(system_wq, &con->work, msecs_to_jiffies(50));
++
++	return IRQ_HANDLED;
++}
++
++static int p30con_probe(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct p30con *con;
++	int ret;
++
++	con = devm_kzalloc(dev, sizeof(*con), GFP_KERNEL);
++	if (!con)
++		return -ENOMEM;
++
++	con->dev = dev;
++	platform_set_drvdata(pdev, con);
++	INIT_DELAYED_WORK(&con->work, p30con_detect_work);
++
++	con->detect_gpiod = devm_gpiod_get(dev, "detect", GPIOD_IN);
++	if (IS_ERR(con->detect_gpiod))
++		return dev_err_probe(dev, PTR_ERR(con->detect_gpiod),
++				     "failed to get detect gpio\n");
++
++	con->acc_id_chan = devm_iio_channel_get(dev, "accessory-id");
++	if (IS_ERR(con->acc_id_chan))
++		return dev_err_probe(dev, PTR_ERR(con->acc_id_chan),
++				     "failed to get ACCESSORY_ID channel\n");
++
++	con->edev = devm_extcon_dev_allocate(dev, p30con_cables);
++	if (IS_ERR(con->edev))
++		return PTR_ERR(con->edev);
++
++	ret = devm_extcon_dev_register(dev, con->edev);
++	if (ret)
++		return dev_err_probe(dev, ret, "failed to register extcon\n");
++
++	con->irq = gpiod_to_irq(con->detect_gpiod);
++	if (con->irq < 0)
++		return dev_err_probe(dev, con->irq,
++				     "failed to get detect irq\n");
++
++	ret = devm_request_irq(dev, con->irq, p30con_irq_handler,
++			       IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING,
++			       dev_name(dev), con);
++	if (ret)
++		return dev_err_probe(dev, ret, "failed to request irq\n");
++
++	device_init_wakeup(dev, true);
++
++	/* Pick up an accessory that is attached at boot */
++	queue_delayed_work(system_wq, &con->work, msecs_to_jiffies(100));
++
++	return 0;
++}
++
++static void p30con_remove(struct platform_device *pdev)
++{
++	struct p30con *con = platform_get_drvdata(pdev);
++
++	devm_free_irq(&pdev->dev, con->irq, con);
++	cancel_delayed_work_sync(&con->work);
++}
++
++static int __maybe_unused p30con_suspend(struct device *dev)
++{
++	struct p30con *con = dev_get_drvdata(dev);
++
++	if (device_may_wakeup(dev))
++		enable_irq_wake(con->irq);
++
++	return 0;
++}
++
++static int __maybe_unused p30con_resume(struct device *dev)
++{
++	struct p30con *con = dev_get_drvdata(dev);
++
++	if (device_may_wakeup(dev))
++		disable_irq_wake(con->irq);
++
++	return 0;
++}
++
++static SIMPLE_DEV_PM_OPS(p30con_pm_ops, p30con_suspend, p30con_resume);
++
++static const struct of_device_id p30con_of_match[] = {
++	{ .compatible = "samsung,p30-connector" },
++	{ },
++};
++MODULE_DEVICE_TABLE(of, p30con_of_match);
++
++static struct platform_driver p30con_driver = {
++	.probe = p30con_probe,
++	.remove = p30con_remove,
++	.driver = {
++		.name = "extcon-p30con",
++		.pm = &p30con_pm_ops,
++		.of_match_table = p30con_of_match,
++	},
++};
++module_platform_driver(p30con_driver);
++
++MODULE_DESCRIPTION("Samsung 30-pin connector accessory detection driver");
++MODULE_LICENSE("GPL");
+-- 
+2.55.0
+

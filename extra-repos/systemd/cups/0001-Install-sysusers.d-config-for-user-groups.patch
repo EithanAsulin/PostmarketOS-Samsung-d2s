@@ -1,0 +1,188 @@
+From 2752c054e6fa37779a9706d43aa0e883264ad30d Mon Sep 17 00:00:00 2001
+From: Aster Boese <asterboese@mailbox.org>
+Date: Fri, 24 Jul 2026 19:59:42 +0200
+Subject: [PATCH] Install sysusers.d config for user/groups
+
+Backport of 5be4a9b316a511128d7bae2e0172e7f8eca04074
+---
+ Makedefs.in                        |  3 +++
+ Makefile                           |  2 +-
+ conf/Makefile                      | 13 +++++++++
+ conf/cups-sysusers-groups.conf.in  |  3 +++
+ conf/cups-sysusers.conf.in         |  4 +++
+ config-scripts/cups-defaults.m4    | 43 ++++++++++++++++++++++++++++++
+ config-scripts/cups-directories.m4 | 17 ++++++++++++
+ configure.ac                       |  2 ++
+ 9 files changed, 88 insertions(+), 1 deletion(-)
+ create mode 100644 conf/cups-sysusers-groups.conf.in
+ create mode 100644 conf/cups-sysusers.conf.in
+
+diff --git a/Makedefs.in b/Makedefs.in
+index 6158e61d9..4eb04ada9 100644
+--- a/Makedefs.in
++++ b/Makedefs.in
+@@ -250,6 +250,9 @@ INITDDIR	=	@INITDDIR@
+ LAUNCHD_DIR	=	@LAUNCHD_DIR@
+ SMFMANIFESTDIR	= 	@SMFMANIFESTDIR@
+ SYSTEMD_DIR	=	@SYSTEMD_DIR@
++SYSUSERS_DIR	=	@SYSUSERS_DIR@
++INSTALL_SYSUSERS =	@INSTALL_SYSUSERS@
++INSTALL_SYSUSERS_GROUPS =	@INSTALL_SYSUSERS_GROUPS@
+ XINETD		=	@XINETD@
+ 
+ USBQUIRKS	=	@USBQUIRKS@
+diff --git a/Makefile b/Makefile
+index 01321d526..a8efdc072 100644
+--- a/Makefile
++++ b/Makefile
+@@ -101,7 +101,7 @@ clean:
+ 
+ distclean:	clean
+ 	$(RM) Makedefs config.h config.log config.status
+-	$(RM) conf/cups-files.conf conf/cupsd.conf conf/mime.convs conf/pam.std conf/snmp.conf
++	$(RM) conf/cups-files.conf conf/cups-sysusers.conf conf/cupsd.conf conf/mime.convs conf/pam.std conf/snmp.conf
+ 	$(RM) cups-config
+ 	$(RM) cups.pc
+ 	$(RM) desktop/cups.desktop
+diff --git a/conf/Makefile b/conf/Makefile
+index 62aa0c6fd..c773139f9 100644
+--- a/conf/Makefile
++++ b/conf/Makefile
+@@ -92,6 +92,14 @@ install-data:
+ 		fi ; \
+ 	fi
+ 
++	-if test x$(SYSUSERS_DIR) != x -a x$(INSTALL_SYSUSERS) != x; then \
++		$(INSTALL_DIR) -m 755 $(BUILDROOT)$(SYSUSERS_DIR); \
++		$(INSTALL_DATA) cups-sysusers.conf $(BUILDROOT)$(SYSUSERS_DIR)/cups.conf; \
++	fi
++	-if test x$(SYSUSERS_DIR) != x -a x$(INSTALL_SYSUSERS_GROUPS) != x; then \
++		$(INSTALL_DIR) -m 755 $(BUILDROOT)$(SYSUSERS_DIR); \
++		$(INSTALL_DATA) cups-sysusers-groups.conf $(BUILDROOT)$(SYSUSERS_DIR)/cups-groups.conf; \
++	fi
+ 
+ #
+ # Install programs...
+@@ -131,3 +139,8 @@ uninstall:
+ 		$(RM) $(BUILDROOT)$(PAMDIR)/cups; \
+ 		$(RMDIR) $(BUILDROOT)$(PAMDIR); \
+ 	fi
++	-if test x$(SYSUSERS_DIR) != x; then \
++		$(RM) $(BUILDROOT)$(SYSUSERS_DIR)/cups.conf; \
++		$(RM) $(BUILDROOT)$(SYSUSERS_DIR)/cups-groups.conf; \
++		$(RMDIR) $(BUILDROOT)$(SYSUSERS_DIR); \
++	fi
+diff --git a/conf/cups-sysusers-groups.conf.in b/conf/cups-sysusers-groups.conf.in
+new file mode 100644
+index 000000000..68223df4e
+--- /dev/null
++++ b/conf/cups-sysusers-groups.conf.in
+@@ -0,0 +1,3 @@
++# sysusers.d(5) config file for the CUPS administrative group(s).
++
++@CUPS_SYSUSERS_SYSTEM_GROUPS@
+diff --git a/conf/cups-sysusers.conf.in b/conf/cups-sysusers.conf.in
+new file mode 100644
+index 000000000..fdc81a954
+--- /dev/null
++++ b/conf/cups-sysusers.conf.in
+@@ -0,0 +1,4 @@
++# sysusers.d(5) config file for the CUPS user and group.
++
++@CUPS_SYSUSERS_GROUP@
++@CUPS_SYSUSERS_USER@
+diff --git a/config-scripts/cups-defaults.m4 b/config-scripts/cups-defaults.m4
+index fc9ba4a02..2c6f020cc 100644
+--- a/config-scripts/cups-defaults.m4
++++ b/config-scripts/cups-defaults.m4
+@@ -298,6 +298,49 @@ AC_DEFINE_UNQUOTED([CUPS_DEFAULT_USER], ["$CUPS_USER"], [Default User value.])
+ AC_DEFINE_UNQUOTED([CUPS_DEFAULT_GROUP], ["$CUPS_GROUP"], [Default Group value.])
+ AC_DEFINE_UNQUOTED([CUPS_DEFAULT_SYSTEM_GROUPS], ["$CUPS_SYSTEM_GROUPS"], [Default SystemGroup value(s).])
+ 
++dnl sysusers.d entries for CUPS user and group...
++CUPS_SYSUSERS_GROUP=""
++CUPS_SYSUSERS_USER=""
++AS_IF([test "x$CUPS_USER" != "xroot" -a "x$CUPS_USER" != "xnobody"], [
++    AS_IF([test "x$CUPS_GROUP" != "xroot" -a "x$CUPS_GROUP" != "xnobody" -a "x$CUPS_GROUP" != "xnogroup"], [
++	CUPS_SYSUSERS_USER="u $CUPS_USER -:$CUPS_GROUP \"CUPS printing service\""
++    ], [
++	CUPS_SYSUSERS_USER="u $CUPS_USER - \"CUPS printing service\""
++    ])
++], [
++    AS_IF([test "x$CUPS_GROUP" != "xroot" -a "x$CUPS_GROUP" != "xnobody" -a "x$CUPS_GROUP" != "xnogroup"], [
++	CUPS_SYSUSERS_GROUP="g $CUPS_GROUP"
++    ])
++])
++AC_SUBST([CUPS_SYSUSERS_GROUP])
++AC_SUBST([CUPS_SYSUSERS_USER])
++
++AS_IF([test "x$CUPS_SYSUSERS_USER" != x -o "x$CUPS_SYSUSERS_GROUP" != x], [
++    INSTALL_SYSUSERS="install-sysusers"
++], [
++    INSTALL_SYSUSERS=""
++])
++AC_SUBST([INSTALL_SYSUSERS])
++
++CUPS_SYSUSERS_SYSTEM_GROUPS=""
++for group in $CUPS_SYSTEM_GROUPS; do
++    AS_IF([test "x$group" != "xroot" -a "x$group" != "xnobody" -a "x$group" != "xnogroup"], [
++	AS_IF([test "x$CUPS_SYSUSERS_SYSTEM_GROUPS" = x], [
++	    CUPS_SYSUSERS_SYSTEM_GROUPS="g $group"
++	], [
++	    CUPS_SYSUSERS_SYSTEM_GROUPS="$CUPS_SYSUSERS_SYSTEM_GROUPS
++g $group"
++	])
++    ])
++done
++AC_SUBST([CUPS_SYSUSERS_SYSTEM_GROUPS])
++
++AS_IF([test "x$CUPS_SYSUSERS_SYSTEM_GROUPS" != x], [
++    INSTALL_SYSUSERS_GROUPS="install-sysusers-groups"
++], [
++    INSTALL_SYSUSERS_GROUPS=""
++])
++AC_SUBST([INSTALL_SYSUSERS_GROUPS])
+ 
+ dnl Default printcap file...
+ AC_ARG_WITH([printcap], AS_HELP_STRING([--with-printcap], [set default printcap file]), [
+diff --git a/config-scripts/cups-directories.m4 b/config-scripts/cups-directories.m4
+index 069ee7bab..b4c5749a5 100644
+--- a/config-scripts/cups-directories.m4
++++ b/config-scripts/cups-directories.m4
+@@ -279,3 +279,20 @@ AC_ARG_WITH([rundir], AS_HELP_STRING([--with-rundir], [set transient run-time st
+ ])
+ AC_DEFINE_UNQUOTED([CUPS_STATEDIR], ["$CUPS_STATEDIR"], [Location of transient state files.])
+ AC_SUBST([CUPS_STATEDIR])
++
++dnl sysusers.d directory...
++AC_ARG_WITH([sysusersdir], AS_HELP_STRING([--with-sysusersdir], [set directory for sysusers.d config file]), [
++    SYSUSERS_DIR="$withval"
++], [
++    SYSUSERS_DIR=""
++    AS_IF([test "x$PKGCONFIG" != x], [
++	AS_IF([$PKGCONFIG --exists systemd], [
++	    SYSUSERS_DIR="$($PKGCONFIG --variable=sysusersdir systemd)"
++	])
++    ])
++])
++
++AS_IF([test "x$SYSUSERS_DIR" = xno], [
++    SYSUSERS_DIR=""
++])
++AC_SUBST([SYSUSERS_DIR])
+diff --git a/configure.ac b/configure.ac
+index 444b9d1e7..1ad29db83 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -59,6 +59,8 @@ dnl Provide autoconf with a list of files to generate and output them...
+ AC_CONFIG_FILES([
+     Makedefs
+     conf/cups-files.conf
++    conf/cups-sysusers.conf
++    conf/cups-sysusers-groups.conf
+     conf/cupsd.conf
+     conf/mime.convs
+     conf/pam.std
+-- 
+2.55.0
+

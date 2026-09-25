@@ -1,0 +1,7 @@
+# Allow user session to read from gpio_keys and power button without elevated
+# privileges
+SUBSYSTEM=="input", KERNEL=="event*", SUBSYSTEMS=="input", ATTRS{name}=="gpio_keys", TAG+="uaccess"
+SUBSYSTEM=="input", ATTRS{name}=="twl4030_pwrbutton", TAG+="uaccess"
+
+# Touchscreen calibration
+SUBSYSTEM=="input", DRIVERS=="tsc2005", ENV{LIBINPUT_CALIBRATION_MATRIX}="1.109179 0.000000 -0.055283 0.000000 -1.192340 1.081266 0.000000 0.000000 1.000000"

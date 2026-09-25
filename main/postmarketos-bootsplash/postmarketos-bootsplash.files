@@ -1,0 +1,29 @@
+/etc/fonts/conf.avail/65-ttf-droid-sans.conf
+/etc/fonts/conf.d/65-ttf-droid-sans.conf
+/etc/plymouth
+/usr/bin/fc-match
+/usr/bin/plymouth
+/usr/lib/libfreetype.so.*
+/usr/lib/libply*
+/usr/lib/libpng16.so.*
+# NOTE: full /usr/lib/plymouth is **not** included to avoid adding
+# cairo/pango/gtk/X11 libs in the initramfs
+/usr/lib/plymouth/label-freetype.so
+/usr/lib/plymouth/renderers/drm.so
+/usr/lib/plymouth/renderers/frame-buffer.so
+/usr/lib/plymouth/script.so
+/usr/lib/udev/rules.d/60-seat-id-path.rules
+/usr/sbin/plymouthd
+/usr/share/fonts/droid/DroidSans.ttf
+/usr/share/plymouth
+
+# required xkb config for plymouth keys
+/usr/share/X11/xkb/compat/
+/usr/share/X11/xkb/keycodes/
+/usr/share/X11/xkb/types/
+/usr/share/X11/xkb/rules/evdev
+/usr/share/X11/xkb/symbols/inet
+/usr/share/X11/xkb/symbols/keypad
+/usr/share/X11/xkb/symbols/pc
+/usr/share/X11/xkb/symbols/srvr_ctrl
+/usr/share/X11/xkb/symbols/us

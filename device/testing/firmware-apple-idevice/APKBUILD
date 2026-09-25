@@ -1,0 +1,26 @@
+# Co-Maintainer: Nick Chan <towinchenmi@gmail.com>
+maintainer="Aster Boese <asterboese@mailbox.org>"
+pkgname=firmware-apple-idevice
+pkgver=0_git20260612
+pkgrel=0
+_commit="1241d49aab85ca2320bf58655b9426a021214ed0"
+pkgdesc="Firmware for Apple iDevices"
+url="https://github.com/Fruit-Firmware/Fruit-Firmware"
+arch="aarch64"
+license="proprietary"
+source="https://github.com/Fruit-Firmware/Fruit-Firmware/archive/$_commit.tar.gz"
+options="!archcheck !check !spdx !strip !tracedeps pmb:cross-native"
+builddir="$srcdir/Fruit-Firmware-$_commit"
+
+package() {
+	mkdir -p "$pkgdir"/usr/lib/firmware/apple
+
+	for i in "$builddir"/firmware/apple/*; do
+		install -Dm644 "$i" \
+			"$pkgdir"/usr/lib/firmware/apple/"$(basename "$i")"
+	done
+}
+
+sha512sums="
+93d9d641884b609757c4ef1fc079eb513fad6d0eb65e2bd096003c556185569e22eaf643afaeb0edcbf803725498a892ff8c01c1f37437e1e0b87c03618982f7  1241d49aab85ca2320bf58655b9426a021214ed0.tar.gz
+"

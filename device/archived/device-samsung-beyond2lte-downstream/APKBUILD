@@ -1,0 +1,34 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-samsung-beyond2lte-downstream
+pkgdesc="Samsung Galaxy S10+ (Downstream)"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	firmware-samsung-beyond2lte
+	linux-samsung-beyond2lte-downstream
+	mkbootimg
+	msm-fb-refresher
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf initfs-hook.sh"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+517fe53a461da976e3cba02bd387c2a1b1e8b0ecaeb309c93ab7d28bb6d3538595c6e41c80d218a6f2d2fad4995c883c102983b2485d5f5e719838906bae3222  deviceinfo
+f56828244a8ecd03ff810780a57cc92b269f0b63a2333a5fd242958567112ed53df187b2188a3b2e6f9e240fed5d7ed191bb248a365d30fcf2418ea1c2348338  kernel-cmdline.conf
+03deb65563f4b4421491643854927e88b2d5880b8b19ee6baa4d3fa1ec3f7d7a1c2977fd2c3c41270254efea6fa0c5fdae0a382e7c427d5a3bf6fad34c25375e  initfs-hook.sh
+"

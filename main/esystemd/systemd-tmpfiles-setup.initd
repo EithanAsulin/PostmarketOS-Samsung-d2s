@@ -1,0 +1,15 @@
+#!/sbin/openrc-run
+
+descriptions="Create temporary files and directories"
+
+depend() {
+	need localmount
+}
+
+start() {
+	if [ -x /usr/lib/tmpfiles.d ]; then
+		ebegin "Creating temporary files and directories from tmpfiles.d"
+		/usr/bin/systemd-tmpfiles --create --remove --boot --exclude-prefix=/dev
+		eend $?
+	fi
+}

@@ -1,0 +1,27 @@
+maintainer="Aelin <aelin@postmarketos.org>"
+pkgname=firmware-xiaomi-surya
+pkgver=5
+pkgrel=0
+pkgdesc="Firmware for Xiaomi POCO X3 NFC"
+url="https://github.com/sm7150-mainline/firmware-xiaomi-surya"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+_commit="971dfbf9dafb27a235eea04794cfcb501fa80655"
+source="
+	$pkgname-$_commit.tar.gz::$url/archive/$_commit/$pkgname-$_commit.tar.gz
+	30-initramfs-$pkgname.files
+"
+builddir="$srcdir/$pkgname-$_commit"
+
+package() {
+	find . -type f -exec install -Dm644 {} "$pkgdir"/{} \;
+
+	install -Dm644 "$srcdir/30-initramfs-$pkgname.files" -t \
+		"$pkgdir"/usr/share/mkinitfs/files
+}
+
+sha512sums="
+7c45f0ccd601ddd9224fd30b295434030d7f3f40773b9569a2178c8b5246c50d4586b5c3876e9ed5cd043bdfc5ef1dca57f3eca368ac9ee25224ef38bd9cfd66  firmware-xiaomi-surya-971dfbf9dafb27a235eea04794cfcb501fa80655.tar.gz
+45cfa2584bba0944e67bcab8e194dde5c2a7d9a74fa8851e6bc961493b10329d9a1a760bbcc7f0e54d98462e2deaeb72dc40607ebf0ecda7db55acb86b3f0bab  30-initramfs-firmware-xiaomi-surya.files
+"

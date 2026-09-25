@@ -1,0 +1,20 @@
+maintainer="Aster Boese <asterboese@mailbox.org>"
+pkgname=postmarketos-mkinitfs-hook-maximum-attention
+pkgver=0.2.0
+pkgrel=2
+pkgdesc="Script to activate all user-visible outputs from the initramfs (to confirm working kernel, for debugging only)"
+url="https://postmarketos.org"
+depends="postmarketos-mkinitfs"
+source="00-maximum-attention.sh"
+arch="noarch"
+license="GPL-3.0-or-later"
+# no tests
+options="!check"
+
+package() {
+	install -Dm644 "$srcdir"/00-maximum-attention.sh \
+		-t "$pkgdir"/usr/share/mkinitfs/hooks/
+}
+sha512sums="
+ca3ef48e76e21fdb67fdf7477fb4739e329ce6ea04a52ac14e9365adb92058b21e08fcbc4020519c61ba20cd3c91d254118ece3d1818cb46f86e86f5ffa1b90a  00-maximum-attention.sh
+"

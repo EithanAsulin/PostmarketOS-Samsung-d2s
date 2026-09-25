@@ -1,0 +1,27 @@
+maintainer="Aelin <aelin@postmarketos.org>"
+pkgname=firmware-xiaomi-sweet
+pkgver=3
+pkgrel=0
+pkgdesc="Firmware for Xiaomi Redmi Note 10 Pro"
+url="https://github.com/sm7150-mainline/firmware-xiaomi-sweet"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+_commit="5a42e6546fc748a12a59d3f9e72be4a53e8dd931"
+source="
+	$pkgname-$_commit.tar.gz::$url/archive/$_commit/$pkgname-$_commit.tar.gz
+	30-initramfs-$pkgname.files
+"
+builddir="$srcdir/$pkgname-$_commit"
+
+package() {
+	find . -type f -exec install -Dm644 {} "$pkgdir"/{} \;
+
+	install -Dm644 "$srcdir/30-initramfs-$pkgname.files" -t \
+		"$pkgdir"/usr/share/mkinitfs/files
+}
+
+sha512sums="
+5adecf0c316741e1621489a8e219d0377b74d5a5ca4479afd37ecc1b28ab94153c9085b820c063976be2cc92f49c3c570c9b7685ae3af218561641d789af0718  firmware-xiaomi-sweet-5a42e6546fc748a12a59d3f9e72be4a53e8dd931.tar.gz
+4f533bb18e70fd8480275b3bec9f4262cc75ef92a3cfb617284781d53ade4edf70b78c4872d51bc0e48cb4ec8f2186f319df541bd12703ea6f881a9897688319  30-initramfs-firmware-xiaomi-sweet.files
+"

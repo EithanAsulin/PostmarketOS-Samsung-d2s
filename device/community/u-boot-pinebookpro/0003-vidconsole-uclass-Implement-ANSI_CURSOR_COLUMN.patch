@@ -1,0 +1,35 @@
+From 1b9016041a69a8aa5e8502c9f867c8d3ee5b67fe Mon Sep 17 00:00:00 2001
+From: Samuel Dionne-Riel <samuel@dionne-riel.com>
+Date: Tue, 7 Jul 2020 05:04:53 -0400
+Subject: [PATCH 3/8] vidconsole-uclass: Implement ANSI_CURSOR_COLUMN
+
+---
+ drivers/video/vidconsole-uclass.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/drivers/video/vidconsole-uclass.c b/drivers/video/vidconsole-uclass.c
+index f1b2d61bd8f..f277328675e 100644
+--- a/drivers/video/vidconsole-uclass.c
++++ b/drivers/video/vidconsole-uclass.c
+@@ -264,6 +264,18 @@ static void vidconsole_escape_char(struct udevice *dev, char ch)
+ 		set_cursor_position(dev, row, col);
+ 		break;
+ 	}
++	case 'G': {
++		int row, col;
++		get_cursor_position(priv, &row, &col);
++		char *s = priv->escape_buf;
++		s++;    /* [ */
++		s = parsenum(s, &col);
++		col = col-1;
++		if (col < 0)
++			col = 0;
++		set_cursor_position(dev, row, col);
++		break;
++	}
+ 	case 'H':
+ 	case 'f': {
+ 		int row, col;
+-- 
+2.54.0
+

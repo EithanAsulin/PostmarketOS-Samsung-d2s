@@ -1,0 +1,11 @@
+#!/bin/sh
+# Prevent accidental use of apk against the the Duranium rootfs by requiring
+# --root to invoke the real apk at /usr/sbin/apk
+
+case "$*" in
+	*--root*) exec /usr/sbin/apk "$@" ;;
+esac
+
+echo "ERROR: apk cannot manage packages on an immutable system." >&2
+echo "Use --root=<path> to manage a different rootfs." >&2
+exit 1

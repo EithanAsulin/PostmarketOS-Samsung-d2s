@@ -1,0 +1,100 @@
+# Forked from Alpine to add systemd!
+# Co-Maintainer: Pablo Correa Gomez <pabloyoyoista@postmarketos.org>
+# Co-Maintainer: Achill Gilgenast <achill@achill.org>
+maintainer="Stefan Hansson <newbyte@postmarketos.org>"
+pkgname=gnome-desktop
+_pkgver=51.0
+pkgver=9999$_pkgver
+pkgrel=0
+pkgdesc="GNOME desktop core libraries"
+url="https://gitlab.gnome.org/GNOME/gnome-desktop"
+# armhf: pmb#2618
+arch="all !armhf"
+license="GPL-2.0-or-later AND LGPL-2.1-or-later"
+depends_dev="gobject-introspection-dev gsettings-desktop-schemas-dev"
+makedepends="$depends_dev
+	fontconfig-dev
+	gdk-pixbuf-dev
+	glib-dev
+	gtk-doc
+	gtk+3.0-dev
+	gtk4.0-dev
+	iso-codes-dev
+	itstool
+	libseccomp-dev
+	libxml2-utils
+	meson
+	systemd-dev
+	xkeyboard-config-dev
+	"
+options="!check" # Can't find its own GSettings schemas
+subpackages="
+	$pkgname-dev
+	$pkgname-doc
+	$pkgname-lang
+	$pkgname-dbg
+	$pkgname-debug
+	libgnome-bg-4:bg_four
+	libgnome-desktop-3:three
+	libgnome-desktop-4:four
+	libgnome-qr-4:qr
+	"
+source="https://download.gnome.org/sources/gnome-desktop/${_pkgver%.*}/gnome-desktop-$_pkgver.tar.xz
+	"
+builddir="$srcdir/$pkgname-$_pkgver"
+
+build() {
+	abuild-meson \
+		-Db_lto=true \
+		-Dudev=enabled \
+		-Dbuild_gtk4=true \
+		-Dsystemd=enabled \
+		-Dlegacy_library=true \
+		. output
+	meson compile -C output
+}
+
+check() {
+	meson test --print-errorlogs -C output
+}
+
+package() {
+	depends="
+		libgnome-bg-4=$pkgver-r$pkgrel
+		libgnome-desktop-3=$pkgver-r$pkgrel
+		libgnome-desktop-4=$pkgver-r$pkgrel
+		"
+	DESTDIR="$pkgdir" meson install --no-rebuild -C output
+}
+
+bg_four() {
+	amove usr/lib/girepository-*/GnomeBG-4.0.typelib
+	amove usr/lib/libgnome-bg-4.so.*
+}
+
+three() {
+	depends="bubblewrap"
+	amove usr/lib/girepository-*/GnomeDesktop-3.0.typelib
+	amove usr/lib/libgnome-desktop-3.so.*
+}
+
+four() {
+	depends="bubblewrap"
+	amove usr/lib/girepository-*/GnomeDesktop-4.0.typelib
+	amove usr/lib/libgnome-desktop-4.so.*
+}
+
+qr() {
+	amove usr/lib/girepository-1.0/GnomeQR-4.0.typelib
+	amove usr/lib/girepository-1.0/GnomeQRGtk-4.0.typelib
+	amove usr/lib/libgnome-qr-4.so.*
+	amove usr/lib/libgnome-qr-gtk-4.so.*
+}
+
+debug() {
+	amove usr/libexec/gnome-desktop-debug
+}
+
+sha512sums="
+0f8cc0546ad5922068a262d8bd6ffe83fb74f7e5736f66c1cbf02f6af91136415ee24bef0674a26270859cdf8569c0522501615240a52d0c2cb0b5855d1c39ff  gnome-desktop-51.0.tar.xz
+"

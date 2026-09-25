@@ -1,0 +1,7 @@
+#!/bin/sh
+
+rc-update add nvme-powersave boot
+rc-update add sysfsconf default
+rc-update add wlan-powersave-off boot
+
+exit 0

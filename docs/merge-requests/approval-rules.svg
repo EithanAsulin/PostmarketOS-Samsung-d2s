@@ -1,0 +1,834 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="210mm"
+   height="297mm"
+   viewBox="0 0 210 297"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.4.2 (ebf0e940d0, 2025-05-08)"
+   sodipodi:docname="approval-rules.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     inkscape:zoom="2.1173454"
+     inkscape:cx="157.2724"
+     inkscape:cy="83.122952"
+     inkscape:window-width="1800"
+     inkscape:window-height="1051"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs1">
+    <rect
+       x="70.843425"
+       y="31.643397"
+       width="215.58615"
+       height="51.500399"
+       id="rect3" />
+    <inkscape:path-effect
+       effect="fillet_chamfer"
+       id="path-effect17"
+       is_visible="true"
+       lpeversion="1"
+       nodesatellites_param="F,0,0,1,0,0,0,1 @ F,0,0,1,0,10.411607,0,1 @ F,0,0,1,0,0,0,1"
+       radius="0"
+       unit="px"
+       method="auto"
+       mode="F"
+       chamfer_steps="1"
+       flexible="false"
+       use_knot_distance="true"
+       apply_no_radius="true"
+       apply_with_radius="true"
+       only_selected="false"
+       hide_knots="false" />
+    <inkscape:path-effect
+       effect="fillet_chamfer"
+       id="path-effect15"
+       is_visible="true"
+       lpeversion="1"
+       nodesatellites_param="F,0,0,1,0,0,0,1 @ F,0,0,1,0,15.400889,0,1 @ F,0,0,1,0,0,0,1"
+       radius="0"
+       unit="px"
+       method="auto"
+       mode="F"
+       chamfer_steps="1"
+       flexible="false"
+       use_knot_distance="true"
+       apply_no_radius="true"
+       apply_with_radius="true"
+       only_selected="false"
+       hide_knots="false" />
+    <marker
+       style="overflow:visible"
+       id="Triangle"
+       refX="3"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Triangle arrow"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         transform="scale(0.5)"
+         style="fill:context-stroke;fill-rule:evenodd;stroke:context-stroke;stroke-width:1pt"
+         d="M 5.77,0 -2.88,5 V -5 Z"
+         id="path135" />
+    </marker>
+    <rect
+       x="270.49543"
+       y="225.41286"
+       width="289.40103"
+       height="68.350996"
+       id="rect2" />
+    <rect
+       x="270.49542"
+       y="225.41286"
+       width="289.40103"
+       height="68.350998"
+       id="rect2-0" />
+    <rect
+       x="270.49542"
+       y="225.41286"
+       width="289.40103"
+       height="68.350998"
+       id="rect2-1" />
+    <rect
+       x="270.49542"
+       y="225.41286"
+       width="289.40103"
+       height="68.350998"
+       id="rect2-7" />
+    <rect
+       x="270.49542"
+       y="225.41286"
+       width="289.40103"
+       height="68.350998"
+       id="rect2-7-5" />
+    <rect
+       x="270.49542"
+       y="225.41286"
+       width="289.40103"
+       height="68.350998"
+       id="rect2-7-1" />
+    <rect
+       x="270.49542"
+       y="225.41286"
+       width="289.40103"
+       height="68.350998"
+       id="rect2-1-8" />
+    <rect
+       x="270.49542"
+       y="225.41286"
+       width="289.40103"
+       height="68.350998"
+       id="rect2-7-3" />
+    <rect
+       x="270.49542"
+       y="225.41286"
+       width="289.40103"
+       height="68.350998"
+       id="rect2-0-6" />
+    <rect
+       x="270.49542"
+       y="225.41286"
+       width="289.40103"
+       height="68.350998"
+       id="rect2-7-3-8" />
+    <rect
+       x="270.49542"
+       y="225.41286"
+       width="289.40103"
+       height="68.350998"
+       id="rect2-1-8-2" />
+    <rect
+       x="270.49542"
+       y="225.41286"
+       width="289.40103"
+       height="68.350998"
+       id="rect2-7-1-8" />
+    <rect
+       x="270.49542"
+       y="225.41286"
+       width="289.40103"
+       height="68.350998"
+       id="rect2-1-8-2-0" />
+    <rect
+       x="270.49542"
+       y="225.41286"
+       width="289.40103"
+       height="68.350998"
+       id="rect2-7-3-8-3" />
+    <rect
+       x="270.49542"
+       y="225.41286"
+       width="289.40103"
+       height="68.350998"
+       id="rect2-1-8-2-3" />
+    <rect
+       x="270.49542"
+       y="225.41286"
+       width="289.40103"
+       height="68.350998"
+       id="rect2-1-8-2-0-8" />
+    <rect
+       x="270.49542"
+       y="225.41286"
+       width="289.40103"
+       height="68.350998"
+       id="rect2-7-3-8-3-4" />
+    <rect
+       x="270.49542"
+       y="225.41286"
+       width="289.40103"
+       height="68.350998"
+       id="rect2-1-8-2-0-7" />
+    <rect
+       x="270.49542"
+       y="225.41286"
+       width="289.40103"
+       height="68.350998"
+       id="rect2-7-3-8-3-2" />
+    <rect
+       x="270.49542"
+       y="225.41286"
+       width="289.40103"
+       height="68.350998"
+       id="rect2-1-8-2-3-4" />
+    <rect
+       x="270.49542"
+       y="225.41286"
+       width="289.40103"
+       height="68.350998"
+       id="rect2-7-3-8-3-4-6" />
+    <rect
+       x="270.49542"
+       y="225.41286"
+       width="129.76718"
+       height="74.889896"
+       id="rect2-0-9" />
+    <rect
+       x="270.49542"
+       y="225.41286"
+       width="289.40103"
+       height="68.350998"
+       id="rect2-7-3-8-3-4-8" />
+    <rect
+       x="270.49542"
+       y="225.41286"
+       width="289.40103"
+       height="68.350998"
+       id="rect2-7-3-8-3-2-8" />
+    <rect
+       x="270.49542"
+       y="225.41286"
+       width="289.40103"
+       height="68.350998"
+       id="rect2-7-3-8-3-2-8-4" />
+    <rect
+       x="270.49542"
+       y="225.41286"
+       width="289.40103"
+       height="68.350998"
+       id="rect2-7-3-8-3-2-8-2" />
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <rect
+       style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:0.265;stroke-dasharray:none;stroke-opacity:1"
+       id="rect1"
+       width="58.87093"
+       height="23.279028"
+       x="9.152874"
+       y="20.373983"
+       ry="11.639514" />
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,-59.104316,-29.899551)"
+       id="text2"
+       style="font-size:16px;text-align:start;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect2);display:inline;fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.00157;stroke-dasharray:none;stroke-opacity:1"><tspan
+         x="270.49609"
+         y="239.97011"
+         id="tspan2"><tspan
+           style="font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans';fill:#000000;stroke:none"
+           id="tspan1">Is the MR critical or trivial?</tspan></tspan></text>
+    <rect
+       style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:0.265;stroke-dasharray:none;stroke-opacity:1"
+       id="rect1-8"
+       width="58.87093"
+       height="23.279028"
+       x="136.92209"
+       y="20.240831"
+       ry="0" />
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,80.224008,-30.51107)"
+       id="text2-9"
+       style="font-size:16px;text-align:start;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect2-0);display:inline;fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.00157;stroke-dasharray:none;stroke-opacity:1"><tspan
+         x="270.49609"
+         y="239.97011"
+         id="tspan5"><tspan
+           style="font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans';fill:#000000;stroke:none"
+           id="tspan4">1 any approval</tspan></tspan></text>
+    <rect
+       style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:0.265;stroke-dasharray:none;stroke-opacity:1"
+       id="rect1-0"
+       width="58.87093"
+       height="23.279028"
+       x="8.8637495"
+       y="71.305428"
+       ry="11.639514" />
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,-71.679686,17.907679)"
+       id="text2-5"
+       style="font-size:16px;text-align:center;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect2-1);display:inline;fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.00157;stroke-dasharray:none;stroke-opacity:1"
+       x="101.73599"
+       y="0"><tspan
+         x="334.9883"
+         y="239.97011"
+         id="tspan7"><tspan
+           style="font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans';fill:#000000;stroke:none"
+           id="tspan6">Is the author the sole
+</tspan></tspan><tspan
+         x="312.9323"
+         y="259.97011"
+         id="tspan83"><tspan
+           style="font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans';fill:#000000;stroke:none"
+           id="tspan8">maintainer of the package?</tspan></tspan></text>
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.466759;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#Triangle)"
+       d="m 68.038367,31.983576 68.703313,-0.07255"
+       id="path2"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0" />
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.463;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#Triangle)"
+       d="M 38.522264,43.653011 38.365289,71.305428"
+       id="path3"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0"
+       inkscape:connection-start="#rect1"
+       inkscape:connection-end="#rect1-0" />
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,27.745119,-34.03884)"
+       id="text2-4"
+       style="font-size:16px;text-align:start;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect2-7);display:inline;fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.00157;stroke-dasharray:none;stroke-opacity:1"><tspan
+         x="270.49609"
+         y="239.97011"
+         id="tspan85"><tspan
+           style="font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans';fill:#000000;stroke:none"
+           id="tspan84">Yes</tspan></tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,-31.087509,-4.906985)"
+       id="text2-4-6"
+       style="font-size:16px;text-align:start;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect2-7-5);display:inline;fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.00157;stroke-dasharray:none;stroke-opacity:1"><tspan
+         x="270.49609"
+         y="239.97011"
+         id="tspan87"><tspan
+           style="font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans';fill:#000000;stroke:none"
+           id="tspan86">No</tspan></tspan></text>
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.463;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#Triangle)"
+       d="M 62.576276,73.26421 137.16831,43.519859"
+       id="path4"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0"
+       inkscape:connection-start="#rect1-0"
+       inkscape:connection-end="#rect1-8" />
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,18.329374,-6.7598871)"
+       id="text2-4-0"
+       style="font-size:16px;text-align:start;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect2-7-1);display:inline;fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.00157;stroke-dasharray:none;stroke-opacity:1"><tspan
+         x="270.49609"
+         y="239.97011"
+         id="tspan89"><tspan
+           style="font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans';fill:#000000;stroke:none"
+           id="tspan88">Yes</tspan></tspan></text>
+    <rect
+       style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:0.265;stroke-dasharray:none;stroke-opacity:1"
+       id="rect1-0-9"
+       width="58.87093"
+       height="23.279028"
+       x="136.14722"
+       y="71.538025"
+       ry="11.639514" />
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,55.523348,18.618647)"
+       id="text2-5-5"
+       style="font-size:16px;text-align:center;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect2-1-8);display:inline;fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.00157;stroke-dasharray:none;stroke-opacity:1"
+       x="92.944"
+       y="0"><tspan
+         x="321.5723"
+         y="239.97011"
+         id="tspan91"><tspan
+           style="font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans';fill:#000000;stroke:none"
+           id="tspan90">Does the package have a
+</tspan></tspan><tspan
+         x="370.54829"
+         y="259.97011"
+         id="tspan93"><tspan
+           style="font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans';fill:#000000;stroke:none"
+           id="tspan92">maintainer?</tspan></tspan></text>
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.463;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#Triangle)"
+       d="m 67.734559,82.998732 68.412781,0.125017"
+       id="path5"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0"
+       inkscape:connection-start="#rect1-0"
+       inkscape:connection-end="#rect1-0-9" />
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,27.519284,17.056713)"
+       id="text2-4-1"
+       style="font-size:16px;text-align:start;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect2-7-3);display:inline;fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.00157;stroke-dasharray:none;stroke-opacity:1"><tspan
+         x="270.49609"
+         y="239.97011"
+         id="tspan95"><tspan
+           style="font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans';fill:#000000;stroke:none"
+           id="tspan94">No</tspan></tspan></text>
+    <rect
+       style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:0.265;stroke-dasharray:none;stroke-opacity:1"
+       id="rect1-8-9"
+       width="58.87093"
+       height="23.279028"
+       x="136.11981"
+       y="121.06742"
+       ry="0" />
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,55.69491,70.31553)"
+       id="text2-9-4"
+       style="font-size:16px;text-align:center;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect2-0-6);display:inline;fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.00157;stroke-dasharray:none;stroke-opacity:1"
+       x="58.104004"
+       y="0"><tspan
+         x="356.34828"
+         y="239.97011"
+         id="tspan97"><tspan
+           style="font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans';fill:#000000;stroke:none"
+           id="tspan96">2 any approvals</tspan></tspan></text>
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.463;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#Triangle)"
+       d="m 165.57624,94.817053 -0.0145,26.250367"
+       id="path6"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0"
+       inkscape:connection-start="#rect1-0-9"
+       inkscape:connection-end="#rect1-8-9" />
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,97.089357,46.067799)"
+       id="text2-4-1-8"
+       style="font-size:16px;text-align:start;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect2-7-3-8);display:inline;fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.00157;stroke-dasharray:none;stroke-opacity:1"><tspan
+         x="270.49609"
+         y="239.97011"
+         id="tspan99"><tspan
+           style="font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans';fill:#000000;stroke:none"
+           id="tspan98">No</tspan></tspan></text>
+    <rect
+       style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:0.265;stroke-dasharray:none;stroke-opacity:1"
+       id="rect1-0-9-8"
+       width="58.87093"
+       height="23.279028"
+       x="8.5375357"
+       y="120.96214"
+       ry="11.639514" />
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,-71.965685,67.564434)"
+       id="text2-5-5-1"
+       style="font-size:16px;text-align:center;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect2-1-8-2);display:inline;fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.00157;stroke-dasharray:none;stroke-opacity:1"
+       x="97.960007"
+       y="0"><tspan
+         x="316.91628"
+         y="239.97011"
+         id="tspan101"><tspan
+           style="font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans';fill:#000000;stroke:none"
+           id="tspan100">Is the author a maintainer
+</tspan></tspan><tspan
+         x="356.18829"
+         y="259.97011"
+         id="tspan103"><tspan
+           style="font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans';fill:#000000;stroke:none"
+           id="tspan102">of the package?</tspan></tspan></text>
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.463;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#Triangle)"
+       d="M 141.04725,92.680283 62.508435,123.09891"
+       id="path7"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0"
+       inkscape:connection-start="#rect1-0-9"
+       inkscape:connection-end="#rect1-0-9-8" />
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,22.396031,41.924269)"
+       id="text2-4-0-5"
+       style="font-size:16px;text-align:start;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect2-7-1-8);display:inline;fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.00157;stroke-dasharray:none;stroke-opacity:1"><tspan
+         x="270.49609"
+         y="239.97011"
+         id="tspan105"><tspan
+           style="font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans';fill:#000000;stroke:none"
+           id="tspan104">Yes</tspan></tspan></text>
+    <path
+       id="rect1-0-9-8-0"
+       style="fill:#ffffff;stroke:#000000;stroke-width:0.291217"
+       d="m 104.23395,147.77608 30.93398,17.8419 -31.12861,16.01076 -31.112455,-16.01076 z"
+       sodipodi:nodetypes="ccccc" />
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,-5.8411943,97.45536)"
+       id="text2-5-5-1-9"
+       style="font-size:16px;text-align:center;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect2-1-8-2-0);display:inline;fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.00157;stroke-dasharray:none;stroke-opacity:1"
+       x="68.76799"
+       y="0"><tspan
+         x="386.53229"
+         y="239.97011"
+         id="tspan107"><tspan
+           style="font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans';fill:#000000;stroke:none"
+           id="tspan106">Wait up
+</tspan></tspan><tspan
+         x="346.33231"
+         y="259.97011"
+         id="tspan109"><tspan
+           style="font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans';fill:#000000;stroke:none"
+           id="tspan108">to two weeks for a
+</tspan></tspan><tspan
+         x="347.67633"
+         y="279.97011"
+         id="tspan111"><tspan
+           style="font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans';fill:#000000;stroke:none"
+           id="tspan110">maintainer review</tspan></tspan></text>
+    <path
+       id="rect1-0-9-8-0-6"
+       style="fill:#ffffff;stroke:#000000;stroke-width:0.305083"
+       d="m 166.60438,167.40428 30.14941,16.61338 -29.75285,16.79371 -32.41329,-16.85182 z"
+       sodipodi:nodetypes="ccccc" />
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,55.642491,116.35094)"
+       id="text2-5-5-1-9-8"
+       style="font-size:16px;text-align:center;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect2-1-8-2-0-8);display:inline;fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.00157;stroke-dasharray:none;stroke-opacity:1"
+       x="68.76799"
+       y="0"><tspan
+         x="370.3403"
+         y="239.97011"
+         id="tspan113"><tspan
+           style="font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans';fill:#000000;stroke:none"
+           id="tspan112">Open a new
+</tspan></tspan><tspan
+         x="327.6123"
+         y="259.97011"
+         id="tspan115"><tspan
+           style="font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans';fill:#000000;stroke:none"
+           id="tspan114">issue about it using the
+</tspan></tspan><tspan
+         x="381.44431"
+         y="279.97011"
+         id="tspan117"><tspan
+           style="font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans';fill:#000000;stroke:none"
+           id="tspan116">template</tspan></tspan></text>
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.463;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#Triangle)"
+       d="m 60.171591,143.38577 27.944872,13.57566"
+       id="path8"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0"
+       inkscape:connection-start="#rect1-0-9-8"
+       inkscape:connection-end="#rect1-0-9-8-0" />
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,0.30313788,84.073749)"
+       id="text2-4-1-8-3"
+       style="font-size:16px;text-align:start;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect2-7-3-8-3);display:inline;fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.00157;stroke-dasharray:none;stroke-opacity:1"><tspan
+         x="270.49609"
+         y="239.97011"
+         id="tspan119"><tspan
+           style="font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans';fill:#000000;stroke:none"
+           id="tspan118">No</tspan></tspan></text>
+    <rect
+       style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:0.265;stroke-dasharray:none;stroke-opacity:1"
+       id="rect1-0-9-8-4"
+       width="58.87093"
+       height="23.279028"
+       x="74.606819"
+       y="192.34834"
+       ry="11.639514" />
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,-6.0170526,138.95083)"
+       id="text2-5-5-1-8"
+       style="font-size:16px;text-align:center;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect2-1-8-2-3);display:inline;fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.00157;stroke-dasharray:none;stroke-opacity:1"
+       x="97.960007"
+       y="0"><tspan
+         x="352.54829"
+         y="239.97011"
+         id="tspan121"><tspan
+           style="font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans';fill:#000000;stroke:none"
+           id="tspan120">Did a maintainer
+</tspan></tspan><tspan
+         x="392.8443"
+         y="259.97011"
+         id="tspan123"><tspan
+           style="font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans';fill:#000000;stroke:none"
+           id="tspan122">reply?</tspan></tspan></text>
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.463;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#Triangle)"
+       d="m 104.04479,181.62592 -0.001,10.72242"
+       id="path9"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0"
+       inkscape:connection-start="#rect1-0-9-8-0"
+       inkscape:connection-end="#rect1-0-9-8-4" />
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.463;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#Triangle)"
+       id="path10"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0"
+       inkscape:connection-start="#rect1-0-9-8-4"
+       inkscape:connection-end="#rect1-0-9-8-0-6"
+       d="m 129.95284,195.62854 16.71004,-5.39102" />
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,65.736802,135.69116)"
+       id="text2-4-1-8-3-4"
+       style="font-size:16px;text-align:start;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect2-7-3-8-3-4);display:inline;fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.00157;stroke-dasharray:none;stroke-opacity:1"><tspan
+         x="270.49609"
+         y="239.97011"
+         id="tspan125"><tspan
+           style="font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans';fill:#000000;stroke:none"
+           id="tspan124">No</tspan></tspan></text>
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.463;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#Triangle)"
+       d="m 165.6281,167.9091 -0.0487,-23.56265"
+       id="path11"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0"
+       inkscape:connection-start="#rect1-0-9-8-0-6"
+       inkscape:connection-end="#rect1-8-9"
+       sodipodi:nodetypes="cc" />
+    <path
+       id="rect1-0-9-8-0-2"
+       style="fill:#ffffff;stroke:#000000;stroke-width:0.291217"
+       d="M 38.7066,168.41896 69.64058,186.26086 38.51197,202.27162 7.3995149,186.26086 Z"
+       sodipodi:nodetypes="ccccc" />
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,-71.36854,118.0983)"
+       id="text2-5-5-1-9-9"
+       style="font-size:16px;text-align:center;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect2-1-8-2-0-7);display:inline;fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.00157;stroke-dasharray:none;stroke-opacity:1"
+       x="68.76799"
+       y="0"><tspan
+         x="365.49228"
+         y="239.97011"
+         id="tspan127"><tspan
+           style="font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans';fill:#000000;stroke:none"
+           id="tspan126">Wait up to 48
+</tspan></tspan><tspan
+         x="322.0123"
+         y="259.97011"
+         id="tspan129"><tspan
+           style="font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans';fill:#000000;stroke:none"
+           id="tspan128">hours for co-maintainers
+</tspan></tspan><tspan
+         x="381.12433"
+         y="279.97011"
+         id="tspan131"><tspan
+           style="font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans';fill:#000000;stroke:none"
+           id="tspan130">to review</tspan></tspan></text>
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.463;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#Triangle)"
+       d="m 38.093572,144.24117 0.252582,24.38321"
+       id="path12"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0"
+       inkscape:connection-start="#rect1-0-9-8"
+       inkscape:connection-end="#rect1-0-9-8-0-2" />
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,-29.854364,94.557171)"
+       id="text2-4-1-8-3-7"
+       style="font-size:16px;text-align:start;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect2-7-3-8-3-2);display:inline;fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.00157;stroke-dasharray:none;stroke-opacity:1"><tspan
+         x="270.49609"
+         y="239.97011"
+         id="tspan133"><tspan
+           style="font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans';fill:#000000;stroke:none"
+           id="tspan132">Yes</tspan></tspan></text>
+    <rect
+       style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:0.265;stroke-dasharray:none;stroke-opacity:1"
+       id="rect1-0-9-8-4-8"
+       width="58.87093"
+       height="23.279028"
+       x="8.5375357"
+       y="223.53033"
+       ry="11.639514" />
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,-72.086337,170.13283)"
+       id="text2-5-5-1-8-2"
+       style="font-size:16px;text-align:center;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect2-1-8-2-3-4);display:inline;fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.00157;stroke-dasharray:none;stroke-opacity:1"
+       x="97.960007"
+       y="0"><tspan
+         x="341.2923"
+         y="239.97011"
+         id="tspan135"><tspan
+           style="font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans';fill:#000000;stroke:none"
+           id="tspan134">Did a co-maintainer
+</tspan></tspan><tspan
+         x="392.8443"
+         y="259.97011"
+         id="tspan137"><tspan
+           style="font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans';fill:#000000;stroke:none"
+           id="tspan136">reply?</tspan></tspan></text>
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.463;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#Triangle)"
+       d="m 38.334725,202.18041 -0.234099,21.34992"
+       id="path13"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0"
+       inkscape:connection-start="#rect1-0-9-8-0-2"
+       inkscape:connection-end="#rect1-0-9-8-4-8" />
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.463;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#Triangle)"
+       d="m 67.408463,235.17007 127.415617,-22.0206 a 12.042936,12.042936 0 0 0 8.97153,-16.71863 l -22.86698,-51.95181"
+       id="path14"
+       sodipodi:nodetypes="ccc" />
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,126.81962,153.75813)"
+       id="text2-4-1-8-3-4-5"
+       style="font-size:16px;text-align:start;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect2-7-3-8-3-4-6);display:inline;fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.00157;stroke-dasharray:none;stroke-opacity:1"><tspan
+         x="270.49609"
+         y="239.97011"
+         id="tspan139"><tspan
+           style="font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans';fill:#000000;stroke:none"
+           id="tspan138">No</tspan></tspan></text>
+    <rect
+       style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:0.265;stroke-dasharray:none;stroke-opacity:1"
+       id="rect1-8-91"
+       width="58.87093"
+       height="23.279028"
+       x="104.82079"
+       y="254.13062"
+       ry="0" />
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,45.332205,198.08704)"
+       id="text2-9-2"
+       style="font-size:16px;text-align:center;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect2-0-9);display:inline;fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.00157;stroke-dasharray:none;stroke-opacity:1"
+       x="113.58402"
+       y="0"><tspan
+         x="278.2189"
+         y="239.97011"
+         id="tspan141"><tspan
+           style="font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans';fill:#000000;stroke:none"
+           id="tspan140">1 any approval,
+</tspan></tspan><tspan
+         x="287.54691"
+         y="259.97011"
+         id="tspan143"><tspan
+           style="font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans';fill:#000000;stroke:none"
+           id="tspan142">1 maintainer
+</tspan></tspan><tspan
+         x="302.61092"
+         y="279.97011"
+         id="tspan145"><tspan
+           style="font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans';fill:#000000;stroke:none"
+           id="tspan144">approval</tspan></tspan></text>
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.463;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#Triangle)"
+       d="m 63.979373,243.43507 40.841417,12.98002"
+       id="path15"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0"
+       inkscape:connection-start="#rect1-0-9-8-4-8"
+       inkscape:connection-end="#rect1-8-91" />
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,2.6484081,191.99638)"
+       id="text2-4-1-8-3-7-8"
+       style="font-size:16px;text-align:start;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect2-7-3-8-3-2-8);display:inline;fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.00157;stroke-dasharray:none;stroke-opacity:1"><tspan
+         x="270.49609"
+         y="239.97011"
+         id="tspan147"><tspan
+           style="font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans';fill:#000000;stroke:none"
+           id="tspan146">Yes</tspan></tspan></text>
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.463;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#Triangle)"
+       d="m 109.73447,215.62737 18.82961,38.50325"
+       id="path16"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0"
+       inkscape:connection-start="#rect1-0-9-8-4"
+       inkscape:connection-end="#rect1-8-91" />
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,54.007035,179.4631)"
+       id="text2-4-1-8-3-7-8-7"
+       style="font-size:16px;text-align:start;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect2-7-3-8-3-2-8-4);display:inline;fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.00157;stroke-dasharray:none;stroke-opacity:1"><tspan
+         x="270.49609"
+         y="239.97011"
+         id="tspan149"><tspan
+           style="font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans';fill:#000000;stroke:none"
+           id="tspan148">Yes</tspan></tspan></text>
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.463;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:0.926, 0.926;stroke-dashoffset:0;stroke-opacity:1;marker-end:url(#Triangle)"
+       d="M 104.82079,265.77035 15.007514,258.00123 A 11.000045,11.000045 0 0 1 4.9608664,246.69745 l 3.5766693,-114.0957"
+       id="path17"
+       sodipodi:nodetypes="ccc" />
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,-72.046118,204.66683)"
+       id="text2-4-1-8-3-7-8-5"
+       style="font-size:16px;text-align:center;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect2-7-3-8-3-2-8-2);display:inline;fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.00157;stroke-dasharray:none;stroke-opacity:1"
+       x="116.70392"
+       y="0"><tspan
+         x="298.12437"
+         y="239.97011"
+         id="tspan151"><tspan
+           style="font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans';fill:#000000;stroke:none"
+           id="tspan150">if review comments were made
+</tspan></tspan><tspan
+         x="359.6843"
+         y="259.97011"
+         id="tspan153"><tspan
+           style="font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans';fill:#000000;stroke:none"
+           id="tspan152">and addressed</tspan></tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,-7.7606878,-1.6244791)"
+       id="text1"
+       style="font-size:40px;text-align:center;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect3);shape-padding:0;display:inline;fill:#000000"
+       x="92.999886"
+       y="0"><tspan
+         x="131.10344"
+         y="68.037585"
+         id="tspan155"><tspan
+           style="font-size:33.3333px;font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans'"
+           id="tspan154">START</tspan></tspan></text>
+  </g>
+</svg>

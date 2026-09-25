@@ -1,0 +1,29 @@
+From b7e98e6e8ec9b37334b4313a86c5daf20caae450 Mon Sep 17 00:00:00 2001
+From: Ondrej Jirman <megi@xff.cz>
+Date: Sun, 11 Jun 2023 19:39:10 +0200
+Subject: [PATCH 49/90] arm64: dts: rockchip: rk3399-pinephone-pro: Add
+ light/proximity sensor support
+
+Pinephone Pro uses STK3311
+
+Signed-off-by: Ondrej Jirman <megi@xff.cz>
+---
+ arch/arm64/boot/dts/rockchip/rk3399-pinephone-pro.dts | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/rockchip/rk3399-pinephone-pro.dts b/arch/arm64/boot/dts/rockchip/rk3399-pinephone-pro.dts
+index 7eed48fa1a7e..564cbe307d0c 100644
+--- a/arch/arm64/boot/dts/rockchip/rk3399-pinephone-pro.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3399-pinephone-pro.dts
+@@ -846,6 +846,8 @@ light-sensor@48 {
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&light_int_l>;
+ 		proximity-near-level = <300>;
++		vdd-supply = <&vcc_3v0>;
++		leda-supply = <&vcc_3v0>;
+ 	};
+ };
+ 
+-- 
+2.55.0
+

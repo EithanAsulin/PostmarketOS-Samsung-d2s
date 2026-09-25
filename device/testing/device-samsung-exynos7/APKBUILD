@@ -1,0 +1,87 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="methanal <kauschluss+methanal@disroot.org>"
+pkgname=device-samsung-exynos7
+pkgdesc="Samsung Exynos 7 generic device"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-firmware-brcm
+	postmarketos-base
+	systemd-boot
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+"
+subpackages="
+	$pkgname-kernel-stable:kernel_stable
+	$pkgname-kernel-lts:kernel_lts
+	$pkgname-kernel-mainline:kernel_mainline
+	$pkgname-kernel-exynos7870:kernel_exynos7870
+"
+provides="
+	device-samsung-a2corelte=$pkgver-r$pkgrel
+	device-samsung-j6lte=$pkgver-r$pkgrel
+	device-samsung-j7xelte=$pkgver-r$pkgrel
+	device-samsung-on7xelte=$pkgver-r$pkgrel
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	# linux-firmware-brcm doesn't have all the files needed for Wi-Fi
+	# to work, so let's symlink them.
+	mkdir -p "$pkgdir/usr/lib/firmware/brcm"
+
+	# for j7xelte
+	ln -s brcmfmac43430-sdio.txt.zst \
+		"$pkgdir/usr/lib/firmware/brcm/brcmfmac43430a0-sdio.txt.zst"
+
+	# for a2corelte and j6lte
+	ln -s brcmfmac43436-sdio.bin.zst \
+		"$pkgdir/usr/lib/firmware/brcm/brcmfmac43430b0-sdio.bin.zst"
+	ln -s brcmfmac43436-sdio.clm_blob.zst \
+		"$pkgdir/usr/lib/firmware/brcm/brcmfmac43430b0-sdio.clm_blob.zst"
+	ln -s brcmfmac43436-sdio.txt.zst \
+		"$pkgdir/usr/lib/firmware/brcm/brcmfmac43430b0-sdio.txt.zst"
+}
+
+kernel_stable() {
+	pkgdesc="Stable kernel (recommended, best balance between stability and features)"
+	depends="linux-postmarketos-stable"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_lts() {
+	pkgdesc="Long-term maintenance kernel (most stability, not all security fixes & new features)"
+	depends="linux-postmarketos-lts"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_mainline() {
+	pkgdesc="Upstream development kernel (regular breakage, latest features)"
+	depends="linux-postmarketos-mainline"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_exynos7870() {
+	pkgdesc="Close-to-mainline kernel (more working features, see the wiki page for details)"
+	depends="linux-postmarketos-exynos7870"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+sha512sums="
+2a3fa6cffee719ed15745bc2bbaed9cfe50c9779241e37a7e28706e878a21477a307514983a59320324dcbdbeeff1226b538057f81ad4fdb09785348a3e6f934  deviceinfo
+d67b144c72e8d999b0913407a22b5c1e418a263cc87ae0aed0b5d5afbba0e027eb2504b034630cf6011a4f81d3e4a10790b23fce23a6a2b1b02f88271df59374  kernel-cmdline.conf
+09bcb90ee9544bf0f26503a3a54b7ac0f457c256d5b8a946877830a258c977b79b05d255f3a794e32be0cec85b79bce03e5c0767feae52730f1381d15deae40d  modules-initfs
+"

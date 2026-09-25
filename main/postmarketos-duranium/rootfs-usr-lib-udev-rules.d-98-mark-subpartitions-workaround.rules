@@ -1,0 +1,5 @@
+# FIXME: systemd@d8a6258 restricts the boot-disk loop device
+# trigger to optical drives only, breaking subpartition discovery on Android
+# devices. Restore the trigger for non-optical devices until upstream is fixed.
+# https://github.com/systemd/systemd/issues/42667
+SUBSYSTEM=="block", ENV{ID_CDROM}!="1", ENV{ID_PART_GPT_AUTO_ROOT_DISK_NEEDS_LOOP}=="1", ENV{SYSTEMD_WANTS}+="systemd-loop@.service"

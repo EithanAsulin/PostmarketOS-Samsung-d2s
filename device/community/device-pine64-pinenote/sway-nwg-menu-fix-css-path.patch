@@ -1,0 +1,9 @@
+diff --git a/./pinenote-config/sway/scripts/toggle_menu.sh.orig b/./pinenote-config/sway/scripts/toggle_menu.sh
+index abc29a5..1755dca 100755
+--- a/./pinenote-config/sway/scripts/toggle_menu.sh.orig
++++ b/./pinenote-config/sway/scripts/toggle_menu.sh
+@@ -1,3 +1,3 @@
+ #!/bin/sh
+ 
+-nwg-menu -fm thunar -term foot -va top -isl 64 -iss 64 -s /usr/share/nwg-menu/menu-start.css &
++nwg-menu -fm thunar -term foot -va top -isl 64 -iss 64 &

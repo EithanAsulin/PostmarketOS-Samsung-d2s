@@ -1,0 +1,10 @@
+[Unit]
+Description=Reload RMI touch driver on I2C errors
+
+[Service]
+ExecStart=/usr/lib/device-google-sargo/reload-rmi-touch
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

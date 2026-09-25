@@ -1,0 +1,42 @@
+From a285560a29a910bb51bd8d392ccb4be2f6bf2d7e Mon Sep 17 00:00:00 2001
+From: Hendra Manudinata <manoedinata@daunscape.tech>
+Date: Wed, 11 Mar 2026 11:31:11 +0700
+Subject: [PATCH] [HACK] loop: Force disable Direct I/O operations
+
+This somehow fixes kernel crash during boot, while initramfs performs
+e2fsck. Still unknown what's the reason of the crash, but for now,
+bypassing direct I/O operation seems to work.
+
+Signed-off-by: Hendra Manudinata <manoedinata@daunscape.tech>
+---
+ drivers/block/loop.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/drivers/block/loop.c b/drivers/block/loop.c
+index 15157a3ea..2d2b752ac 100644
+--- a/drivers/block/loop.c
++++ b/drivers/block/loop.c
+@@ -687,6 +687,11 @@ static int loop_change_fd(struct loop_device *lo, struct block_device *bdev,
+ 	if (!file)
+ 		goto out;
+ 
++	/* POSTMARKETOS:
++	 * Disable Direct I/O to prevent kernel panics during e2fsck
++	 */
++	file->f_flags &= ~O_DIRECT;
++
+ 	error = loop_validate_file(file, bdev);
+ 	if (error)
+ 		goto out_putf;
+@@ -864,6 +869,11 @@ static int loop_set_fd(struct loop_device *lo, fmode_t mode,
+ 	if (!file)
+ 		goto out;
+ 
++	/* POSTMARKETOS:
++	 * Disable Direct I/O to prevent kernel panics during e2fsck
++	 */
++	file->f_flags &= ~O_DIRECT;
++
+ 	error = -EBUSY;
+ 	if (lo->lo_state != Lo_unbound)
+ 		goto out_putf;

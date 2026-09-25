@@ -1,0 +1,86 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Scott Clark <sclark100+postmarketos@gmail.com>"
+pkgname=device-barnesnoble-encore
+pkgdesc="Barnes & Noble Nook Color"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-postmarketos-omap
+	postmarketos-base
+	u-boot-tools
+"
+_pmb_recommends="linux-firmware-ti-connectivity"
+makedepends="devicepkg-dev u-boot-tools"
+subpackages="
+	$pkgname-udev
+	$pkgname-wayland
+	$pkgname-weston
+	$pkgname-x11
+"
+source="
+	deviceinfo
+	etc-profile.d-25wlr-pixman.sh
+	modules-initfs
+	weston.ini
+	xorg-rotate-monitor.conf
+	90-device-barnesnoble-encore-touchscreen.rules
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -Dm644 "$srcdir"/90-device-barnesnoble-encore-touchscreen.rules \
+		-t "$pkgdir"/usr/lib/udev/rules.d/
+
+	# Wayland/ wlroots/ phosh:
+	install -Dm644 "$srcdir"/etc-profile.d-25wlr-pixman.sh \
+		-t "$pkgdir"/etc/profile.d/25wlr-pixman.sh
+
+	# Weston:
+	install -Dm644 "$srcdir"/weston.ini \
+		-t "$pkgdir"/etc/xdg/weston/
+
+	# X11:
+	install -Dm644 "$srcdir"/xorg-rotate-monitor.conf \
+		"$pkgdir"/usr/share/X11/xorg.conf.d/30-rotate-monitor.conf
+}
+
+wayland() {
+	# This section and file were copied from nokia-n900 to get phosh running
+	# on this device with similar hardware
+
+	# This is only useful on wlroots, but it has too many verions in Alpine
+	# at the moment to come up with a sane install_if
+	install_if="$pkgname=$pkgver-r$pkgrel wayland-libs-server"
+
+	amove etc/profile.d/25wlr-pixman.sh
+}
+
+weston() {
+	install_if="$pkgname=$pkgver-r$pkgrel postmarketos-ui-weston"
+
+	amove etc/xdg/weston/weston.ini
+}
+
+x11() {
+	install_if="$pkgname=$pkgver-r$pkgrel xorg-server"
+
+	amove usr/share/X11/xorg.conf.d/30-rotate-monitor.conf
+}
+
+sha512sums="
+0d3275e13534f5ba42db1cba95fb218e8f40d77f2329a3f7e143f78e550a81e37bedf9acd4b5a6fe028f9af6f2fc1ec4489974da595d7d52b808a4f3d1720766  deviceinfo
+1c7499eb84948eb5b73d58474b1b71a5f2f63116a2a3e1f9a4238064dcf6c152ccefa108bd4ab1074712a2319111c8fdd4bfcf0dbe4d26b5a319404def1b11d2  etc-profile.d-25wlr-pixman.sh
+01f46841cd1fe6ece237b76c9d6f43dae0e8b84890d2e15cb6a58c14bc23862b8219d39401428a4e26056473d20768c2b400941c9611fa627526c1c0bc0b4a21  modules-initfs
+6c912bd0bd6bba44bb6eb68d2a27981930e4f0a8e4ad34b054a15c66ba64ad59da197fbaa18653dc72576344926393ede49e1b68ee022b9ec3ac8efbca08f27a  weston.ini
+74123128f1f7254a2fa22f9aa719d9922514b6b8deef661291d50c544aa5c82c05b1910dc9e7db9037a3f00ceacec527ba6ab74df53c7815cbf21384f3e445c1  xorg-rotate-monitor.conf
+101661d7fc0857d41fb000d92f7bdc75dc8b950c458578cc342801f9b4fbfb4b2ccb294164257234a6dc0b35d0d84d8fce9da03e61196a62f50010e8e366b5e0  90-device-barnesnoble-encore-touchscreen.rules
+"

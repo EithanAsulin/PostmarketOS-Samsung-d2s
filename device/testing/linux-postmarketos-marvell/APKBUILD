@@ -1,0 +1,85 @@
+# Reference: https://github.com/archlinuxarm/PKGBUILDs/blob/d2ee78cab3c298583eb3f3bed4d75970f54885be/core/linux-armv7/config
+# Kernel config based on: ~2021 mainline kernel of the linux-armv7 package (5.x mainline) from archlinux arm
+# Co-Maintainer: exkc <exkc@exkc.moe>
+maintainer="Robert Eckelmann <longnoserob@postmarketos.org>"
+pkgname=linux-postmarketos-marvell
+pkgver=6.18.51
+pkgrel=0
+pkgdesc="mainline (stable) for Marvell SoC"
+arch="armv7"
+_carch="arm"
+_flavor="${pkgname#linux-}"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native pmb:kconfigcheck-community"
+makedepends="
+	bc
+	bison
+	clang
+	devicepkg-dev
+	elfutils-dev
+	findutils
+	flex
+	linux-headers
+	lld
+	llvm
+	openssl-dev
+	pahole
+	perl
+	python3
+	xz
+	zstd
+"
+replaces="linux-postmarketos-marvell-dove"
+
+# Source
+_config="config-$_flavor.$arch"
+source="
+	0001-dts-marvell-mmp3-merge-parts-from-linux-mmp.patch
+	0002-dts-marvell-mmp3-dell-ariel-merge-parts-from-linux-m.patch
+	0003-dts-marvell-mmp-dell-ariel-add-framebuffer.patch
+	0004-arm-boot-dts-marvell-mmp3.dtsi-fix-dma-interrupts.patch
+	wd-glacier.patch
+	$pkgname-$pkgver.tar.xz::https://cdn.kernel.org/pub/linux/kernel/v${pkgver%%.*}.x/linux-$pkgver.tar.xz
+	$_config
+"
+builddir="$srcdir/linux-$pkgver"
+
+prepare() {
+	default_prepare
+	cp -v "$srcdir"/$_config .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	install -Dm644 "$builddir/arch/$_carch/boot/zImage" \
+		"$pkgdir/boot/vmlinuz"
+
+	make modules_install dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_PATH="$pkgdir"/boot/ \
+		INSTALL_MOD_PATH="$pkgdir"/usr \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+	rm -f "$pkgdir"/usr/lib/modules/*/build "$pkgdir"/usr/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+
+sha512sums="
+3ebc58600a07e07fba681c497b36a7f21de9f9034dab70988ad54e606affa33c49ba3580f92b8343e42b6cfad3b23531ac133d97c2c998878d96bd21d738475d  0001-dts-marvell-mmp3-merge-parts-from-linux-mmp.patch
+ac8471bae424aa0e5835f8c6ed04834918ca665941910fe132353bc35735f1e848e3c34b11e3cd50a49487ba8b5e7cd2a22efb678f19aa85a584efa01d8b49b1  0002-dts-marvell-mmp3-dell-ariel-merge-parts-from-linux-m.patch
+107416ff25b85f1ae28cb44bbe859f854f075927437c0e6b1f6fe687baff68410ed7deac7b1d44bfca4f4868964105941800ee3887da8d12efd9d893c43d755d  0003-dts-marvell-mmp-dell-ariel-add-framebuffer.patch
+5ba185f8e3665189da7f06891e3ea99b68a215a6c568901106568f42d5f0decd156981632dc19553cb2c0862bb2f5c82836d6b02a85e246e3bb555a493396683  0004-arm-boot-dts-marvell-mmp3.dtsi-fix-dma-interrupts.patch
+6b5298ffabacbdfa454187114a2854b5e5873e718b3282115eda68fd151d37c064e574ac1d082cbbde96a6675f5a32ce8de9ed3f8daa9f8dac3038e288bd97bb  wd-glacier.patch
+482c68c483c8317db0266fcdce54bc7028ba2a2e0d410af5995258efa21d4f8246dcbded43c09da7cc0b272148ee34c422d840d66dbf7ebb9d57c295dc770bea  linux-postmarketos-marvell-6.18.51.tar.xz
+7fa14ca0fe579073d458d0c2c695fda0b5d13f05ea74f14412a96439a81861fb31ee262865654fc8a494f805e5e386e01922dd688cbbcf433e5957984f658abe  config-postmarketos-marvell.armv7
+"

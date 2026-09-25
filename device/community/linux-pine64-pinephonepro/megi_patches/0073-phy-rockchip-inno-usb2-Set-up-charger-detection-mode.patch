@@ -1,0 +1,180 @@
+From 43079543d0c30d35e5890a1df312beb60dce644d Mon Sep 17 00:00:00 2001
+From: Ondrej Jirman <megi@xff.cz>
+Date: Mon, 20 Jul 2026 22:59:13 +0200
+Subject: [PATCH 73/90] phy: rockchip-inno-usb2: Set up charger detection mode
+ on RK3399
+
+BC1.2 detection has to run with the transceiver held off the bus, or the
+data contact detection stage cannot see the host's D+ pull-down. On a
+PinePhone Pro with a gadget driver bound, DCD reads dp_det = 0 for all
+six polls, detection times out and reports a floating charger, and
+rockchip_usb2phy_otg_sm_work() powers the USB2 PHY off in response.
+USB 2.0 then does not enumerate at all: the host gets -32 on the
+descriptor read, then -71, then gives up. Unbind the gadget and the same
+cable is correctly detected as SDP on the first poll.
+
+The driver models 0xe454 as two overlapping narrow fields, phy_sus over
+bits 1:0 and chg_det.opmode over bits 3:0, and only ever writes opmode
+while VBUS is absent. Charger detection only runs while VBUS is present,
+so on RK3399 opmode is never written at all and non-driving mode is
+never entered.
+
+Rockchip's own driver describes the same register as one nine bit field
+and writes 0x1d7 to it for the duration of detection, which per its
+comment selects normal mode, non-driving opmode, full speed xcvrselect
+and termselect, and the DP/DM pull-downs. Do the same, and save and
+restore exactly the bits being overwritten so nothing has to be assumed
+about what the rest of them mean.
+
+SoCs without a chg_mode field keep poking opmode as before, including
+the VBUS condition from commit 7d8f725b79e3 ("phy: rockchip: inno-usb2:
+fix communication disruption in gadget mode"), so they are unaffected.
+
+Signed-off-by: Ondrej Jirman <megi@xff.cz>
+---
+ drivers/phy/rockchip/phy-rockchip-inno-usb2.c | 80 +++++++++++++++++--
+ 1 file changed, 73 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/phy/rockchip/phy-rockchip-inno-usb2.c b/drivers/phy/rockchip/phy-rockchip-inno-usb2.c
+index 5b65aabd10e4..5b62cc4cb607 100644
+--- a/drivers/phy/rockchip/phy-rockchip-inno-usb2.c
++++ b/drivers/phy/rockchip/phy-rockchip-inno-usb2.c
+@@ -100,6 +100,8 @@ struct usb2phy_reg {
+  * @vdm_src_en: open dm voltage source.
+  * @vdp_src_en: open dp voltage source.
+  * @opmode: utmi operational mode.
++ * @chg_mode: charger detection mode, covering everything that has to be set
++ *	      up for BC1.2 at once. Takes precedence over @opmode.
+  */
+ struct rockchip_chg_det_reg {
+ 	struct usb2phy_reg	cp_det;
+@@ -112,6 +114,7 @@ struct rockchip_chg_det_reg {
+ 	struct usb2phy_reg	vdm_src_en;
+ 	struct usb2phy_reg	vdp_src_en;
+ 	struct usb2phy_reg	opmode;
++	struct usb2phy_reg	chg_mode;
+ };
+ 
+ /**
+@@ -248,6 +251,8 @@ struct rockchip_usb2phy_port {
+  * @irq: muxed interrupt for single irq configuration
+  * @phy_cfg: phy register configuration, assigned by driver data.
+  * @ports: phy port instance.
++ * @chg_mode_cfg: saved contents of the charger detection mode field, so that
++ *		  it can be restored once detection is done.
+  */
+ struct rockchip_usb2phy {
+ 	struct device	*dev;
+@@ -261,6 +266,7 @@ struct rockchip_usb2phy {
+ 	enum usb_chg_state	chg_state;
+ 	enum power_supply_type	chg_type;
+ 	u8			dcd_retries;
++	unsigned int		chg_mode_cfg;
+ 	struct extcon_dev	*edev;
+ 	int			irq;
+ 	const struct rockchip_usb2phy_cfg	*phy_cfg;
+@@ -830,6 +836,68 @@ static void rockchip_chg_enable_secondary_det(struct rockchip_usb2phy *rphy,
+ 	property_enable(rphy->grf, &rphy->phy_cfg->chg_det.idp_sink_en, en);
+ }
+ 
++/*
++ * BC1.2 detection needs the transceiver held off the bus: utmi_opmode in
++ * non-driving mode, xcvrselect and termselect at full speed, and the DP/DM
++ * pull-down resistors enabled. On SoCs where that is described as a single
++ * chg_mode field, set it up in one go and put the register back afterwards.
++ *
++ * Otherwise only utmi_opmode can be poked, and only while nothing is
++ * connected: doing it with a cable attached kills an active gadget, see
++ * commit 7d8f725b79e3 ("phy: rockchip: inno-usb2: fix communication
++ * disruption in gadget mode"). That leaves detection running with the
++ * transceiver driving, which is unreliable, but it is not a regression.
++ */
++static bool rockchip_chg_has_chg_mode(struct rockchip_usb2phy *rphy)
++{
++	/* An unpopulated usb2phy_reg leaves nothing to write. */
++	return rphy->phy_cfg->chg_det.chg_mode.enable != 0;
++}
++
++static void rockchip_chg_enter_mode(struct rockchip_usb2phy *rphy,
++				    struct rockchip_usb2phy_port *rport,
++				    bool vbus_attach)
++{
++	const struct usb2phy_reg *chg_mode = &rphy->phy_cfg->chg_det.chg_mode;
++	struct regmap *base = rphy->grf;
++
++	if (!rockchip_chg_has_chg_mode(rphy)) {
++		if (!vbus_attach)
++			property_enable(base, &rphy->phy_cfg->chg_det.opmode,
++					false);
++		return;
++	}
++
++	/*
++	 * Save exactly the bits that are about to be overwritten, so they can
++	 * be put back afterwards without having to know what they mean.
++	 */
++	regmap_read(base, chg_mode->offset, &rphy->chg_mode_cfg);
++	rphy->chg_mode_cfg &= GENMASK(chg_mode->bitend, chg_mode->bitstart);
++
++	property_enable(base, chg_mode, true);
++}
++
++static void rockchip_chg_leave_mode(struct rockchip_usb2phy *rphy,
++				    struct rockchip_usb2phy_port *rport,
++				    bool vbus_attach)
++{
++	const struct usb2phy_reg *chg_mode = &rphy->phy_cfg->chg_det.chg_mode;
++	struct regmap *base = rphy->grf;
++	unsigned int mask;
++
++	if (!rockchip_chg_has_chg_mode(rphy)) {
++		if (!vbus_attach)
++			property_enable(base, &rphy->phy_cfg->chg_det.opmode,
++					true);
++		return;
++	}
++
++	mask = GENMASK(chg_mode->bitend, chg_mode->bitstart);
++	regmap_write(base, chg_mode->offset,
++		     rphy->chg_mode_cfg | (mask << BIT_WRITEABLE_SHIFT));
++}
++
+ #define CHG_DCD_POLL_TIME	(100 * HZ / 1000)
+ #define CHG_DCD_MAX_RETRIES	6
+ #define CHG_PRIMARY_DET_TIME	(40 * HZ / 1000)
+@@ -850,9 +918,8 @@ static void rockchip_chg_detect_work(struct work_struct *work)
+ 	case USB_CHG_STATE_UNDEFINED:
+ 		if (!rport->suspended && !vbus_attach)
+ 			rockchip_usb2phy_power_off(rport->phy);
+-		/* put the controller in non-driving mode */
+-		if (!vbus_attach)
+-			property_enable(rphy->grf, &rphy->phy_cfg->chg_det.opmode, false);
++		/* put the controller in charger detection mode */
++		rockchip_chg_enter_mode(rphy, rport, vbus_attach);
+ 		/* Start DCD processing stage 1 */
+ 		rockchip_chg_enable_dcd(rphy, true);
+ 		rphy->chg_state = USB_CHG_STATE_WAIT_FOR_DCD;
+@@ -914,9 +981,8 @@ static void rockchip_chg_detect_work(struct work_struct *work)
+ 		rphy->chg_state = USB_CHG_STATE_DETECTED;
+ 		fallthrough;
+ 	case USB_CHG_STATE_DETECTED:
+-		/* put the controller in normal mode */
+-		if (!vbus_attach)
+-			property_enable(rphy->grf, &rphy->phy_cfg->chg_det.opmode, true);
++		/* put the controller back in normal mode */
++		rockchip_chg_leave_mode(rphy, rport, vbus_attach);
+ 		rockchip_usb2phy_otg_sm_work(&rport->otg_sm_work.work);
+ 		dev_dbg(&rport->phy->dev, "charger = %s\n",
+ 			 chg_to_string(rphy->chg_type));
+@@ -2027,7 +2093,7 @@ static const struct rockchip_usb2phy_cfg rk3399_phy_cfgs[] = {
+ 			}
+ 		},
+ 		.chg_det = {
+-			.opmode		= { 0xe454, 3, 0, 5, 1 },
++			.chg_mode	= { 0xe454, 8, 0, 0, 0x1d7 },
+ 			.cp_det		= { 0xe2ac, 2, 2, 0, 1 },
+ 			.dcp_det	= { 0xe2ac, 1, 1, 0, 1 },
+ 			.dp_det		= { 0xe2ac, 0, 0, 0, 1 },
+-- 
+2.55.0
+

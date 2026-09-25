@@ -1,0 +1,5 @@
+#!/sbin/openrc-run
+
+command="/usr/sbin/iw"
+pidfile="/run/${RC_SVCNAME}.pid"
+command_args="dev wlan0 set power_save off"

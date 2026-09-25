@@ -1,0 +1,60 @@
+maintainer="Vitaliy Ognev <vitaliy.ognev@gmail.com>"
+pkgname=postmarketos-base-ui-cage
+pkgver=6
+pkgrel=1
+pkgdesc="Meta package for shared configuration for cage UIs"
+arch="all"
+url="https://postmarketos.org/"
+license="GPL-3.0-or-later"
+source="
+	cage-ui.desktop
+	cage-ui-session.sh
+	cage-ui-autorotate.sh
+"
+install="
+	$pkgname.post-install
+	$pkgname.post-upgrade
+	$pkgname-openrc.post-install
+	$pkgname-openrc.post-upgrade
+"
+options="!check"
+depends="
+	drm_info
+	postmarketos-base-ui
+	postmarketos-base-ui-audio
+	postmarketos-base-ui-networkmanager
+	wpa_supplicant
+	wireless-tools
+	wlr-randr
+	xwayland
+	cage
+	dbus
+	seatd
+	elogind
+	psmisc
+	tinydm
+	jq
+"
+depends_openrc="
+	elogind-openrc
+	seatd-openrc
+	tinydm-openrc
+"
+subpackages="$pkgname-openrc"
+
+package() {
+	install -Dm755 "$srcdir"/cage-ui-session.sh -t "$pkgdir"/usr/share/cage-ui/
+	install -Dm755 "$srcdir"/cage-ui-autorotate.sh -t "$pkgdir"/usr/share/cage-ui/
+	install -Dm644 "$srcdir"/cage-ui.desktop -t "$pkgdir"/usr/share/wayland-sessions/
+}
+
+openrc() {
+	mkdir -p "$subpkgdir"
+	default_openrc
+}
+
+sha512sums="
+f9ee9c447e930d1ec12faa20103f15fb14ea5d61e92f6c643a8343d56534d6ce6909d2dd9eaf99796cf8c9909fbfacd9b0d0fa925b71f48ace0113d7a189b39d  cage-ui.desktop
+a188643971a5bc8421a1d48b14393980cf18250df2afd6247e5fe5533dcccebb164172c080c0bf577621cadfb9f9cf6c7e28390ca6a952f161e4ea4467ac5dbd  cage-ui-session.sh
+5f88b49cd205118224e53f17456a0e6febd9d8ae42e41bed30cea3f400470bdc2ffc11a7ae884ab4a67ed4a4f72a850c887bd460613a087e8fce35a2d62a9d71  cage-ui-autorotate.sh
+"

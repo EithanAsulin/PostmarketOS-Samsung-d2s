@@ -1,0 +1,230 @@
+# Co-Maintainer: Ferass El Hafidi <funderscore@postmarketos.org>
+maintainer="Aster Boese <asterboese@mailbox.org>"
+pkgname=esystemd
+pkgver=261.2
+pkgrel=1
+_pkgname="systemd"
+_pkgver="${pkgver/_/-}"
+pkgdesc="systemd meta package for OpenRC-specific binaries and configs"
+url="https://github.com/systemd/systemd"
+arch="all"
+license="MIT AND GPL-2.0-only AND LGPL-2.1-or-later"
+makedepends_build="
+	meson
+	coreutils
+	gperf
+	py3-jinja2
+	bash
+	"
+makedepends_host="
+	dbus-dev<9990
+	libblkid
+	libcap
+	libcap-dev
+	libintl
+	libucontext-dev
+	musl-libintl
+	util-linux
+	util-linux-dev
+	"
+subpackages="
+	$pkgname-sysusers-openrc:standalone_sysusers_openrc
+	$pkgname-sysusers:standalone
+	$pkgname-tmpfiles-openrc:standalone_tmpfiles_openrc
+	$pkgname-tmpfiles:standalone
+	"
+source="systemd-$pkgver.tar.gz::https://github.com/systemd/systemd/archive/refs/tags/v$_pkgver.tar.gz
+	$_pkgname-sysusers.initd
+	$_pkgname-tmpfiles-clean.initd
+	$_pkgname-tmpfiles-setup-dev-early.initd
+	$_pkgname-tmpfiles-setup-dev.initd
+	$_pkgname-tmpfiles-setup.initd
+	"
+triggers="
+	$pkgname-sysusers.trigger=/usr/lib/sysusers.d
+	$pkgname-tmpfiles.trigger=/usr/lib/tmpfiles.d
+	"
+# Any libraries, if they are eventually added, should not conflict or provide
+# the main systemd package versions and cause esystemd to be installed instead
+sonameprefix="$pkgname:"
+options="!check pmb:cross-native2"
+builddir="$srcdir/$_pkgname-$_pkgver"
+
+build() {
+	abuild-meson \
+		-Dtests=false \
+		-Ddbuspolicydir=/usr/share/dbus-1/system.d \
+		-Ddbussessionservicedir=/usr/share/dbus-1/services \
+		-Ddbussystemservicedir=/usr/share/dbus-1/system-services \
+		-Dbashcompletiondir=no \
+		-Dzshcompletiondir=no \
+		\
+		-Dmode=release \
+		-Dsplit-bin=true \
+		-Dlibc=musl \
+		-Dstandalone-binaries=true \
+		\
+		-Dkmod-path=/bin/kmod \
+		-Dsulogin-path=/sbin/sulogin \
+		\
+		-Dwheel-group=false \
+		-Dadm-group=false \
+		-Ddebug-shell=/bin/ash \
+		\
+		-Dbootloader=disabled \
+		-Dukify=disabled \
+		-Dutmp=false \
+		-Dldconfig=false \
+		-Duserdb=false \
+		-Dhomed=disabled \
+		-Dnss-myhostname=false \
+		-Dnss-mymachines=disabled \
+		-Dnss-resolve=disabled \
+		-Dnss-systemd=false \
+		-Dsysext=false \
+		-Dsysusers=true \
+		-Dselinux=disabled \
+		-Dinstall-sysconfdir=false \
+		\
+		-Dsystem-alloc-uid-min=101 \
+		-Dsystem-alloc-gid-min=101 \
+		-Dsystem-uid-max=999 \
+		-Dsystem-gid-max=999 \
+		-Dnobody-user=nobody \
+		-Dnobody-group=nobody \
+		\
+		-Ddefault-kill-user-processes=true \
+		-Dgshadow=false \
+		-Ddefault-locale=en_US.UTF-8 \
+		\
+		-Didn=false \
+		-Dsysvinit-path="" \
+		\
+		-Dbacklight=false \
+		-Dbinfmt=false \
+		-Dcoredump=false \
+		-Dfirstboot=false \
+		-Dhibernate=false \
+		-Dhostnamed=false \
+		-Dhwdb=false \
+		-Dinitrd=false \
+		-Dkernel-install=false \
+		-Dlocaled=false \
+		-Dlogind=false \
+		-Dmachined=false \
+		-Dmountfsd=false \
+		-Dnetworkd=false \
+		-Dnspawn=disabled \
+		-Dnsresourced=false \
+		-Doomd=false \
+		-Dportabled=false \
+		-Dpstore=false \
+		-Dquotacheck=false \
+		-Drandomseed=false \
+		-Drepart=false \
+		-Dresolve=false \
+		-Drfkill=false \
+		-Dsysinstall=false \
+		-Dstoragetm=false \
+		-Dtimedated=false \
+		-Dtimesyncd=false \
+		-Dtmpfiles=true \
+		-Dvconsole=false \
+		-Dxdg-autostart=false \
+		-Dtpm=false \
+		build .
+	meson compile ${JOBS:+-j ${JOBS}} -C build
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install --no-rebuild -C build
+
+	# Save binaries from when files that cannot be disabled at build-time are
+	# deleted
+	mv "$pkgdir"/usr/bin/systemd-sysusers.standalone \
+		"$pkgdir"/
+	mv "$pkgdir"/usr/bin/systemd-tmpfiles.standalone \
+		"$pkgdir"/
+
+	# Only save basic.conf since the rest of the configs are systemd-
+	# specific
+	mv "$pkgdir"/usr/lib/sysusers.d/basic.conf \
+		"$pkgdir"/
+
+	# Save default configs that are relevant on OpenRC
+	local tmpfiles_configs="
+			credstore.conf
+			etc.conf
+			home.conf
+			provision.conf
+			root.conf
+			static-nodes-permissions.conf
+			tmp.conf
+			var.conf
+			x11.conf
+	"
+	for file in $tmpfiles_configs; do
+		mv "$pkgdir"/usr/lib/tmpfiles.d/"$file" \
+			"$pkgdir"/
+	done
+
+	rm -r "$pkgdir"/usr
+	rm -r "$pkgdir"/var
+
+	mkdir -p "$pkgdir"/usr/bin
+	mv "$pkgdir"/systemd* \
+		"$pkgdir"/usr/bin/
+
+	mkdir -p "$pkgdir"/usr/lib/sysusers.d
+	mv "$pkgdir"/basic.conf \
+		"$pkgdir"/usr/lib/sysusers.d/
+
+	mkdir -p "$pkgdir"/usr/lib/tmpfiles.d
+	for file in $tmpfiles_configs; do
+		mv "$pkgdir"/"$file" \
+			"$pkgdir"/usr/lib/tmpfiles.d/
+	done
+
+	# install OpenRC service files for standalone binaries
+	for i in clean setup-dev-early setup-dev setup; do
+		install -Dm755 "$srcdir"/systemd-tmpfiles-"$i".initd \
+			"$pkgdir"/etc/init.d/systemd-tmpfiles-"$i"
+	done
+	install -Dm755 "$srcdir"/systemd-sysusers.initd \
+		"$pkgdir"/etc/init.d/systemd-sysusers
+}
+
+standalone() {
+	local binary="${subpkgname##*-}"
+	pkgdesc="systemd-$binary (standalone)"
+	# shouldn't be installed with systemd proper
+	depends="!systemd $pkgname=$pkgver-r$pkgrel libucontext"
+
+	local install_dir="usr/bin"
+	amove "$install_dir"/systemd-"$binary".standalone
+	ln -s systemd-"$binary".standalone \
+		"$subpkgdir"/"$install_dir"/"$_pkgname"-"$binary"
+}
+
+standalone_sysusers_openrc() {
+	pkgdesc="systemd-sysusers (standalone) (OpenRC init scripts)"
+	install_if="$pkgname-sysusers=$pkgver-r$pkgrel openrc"
+
+	amove etc/init.d/systemd-sysusers
+}
+
+standalone_tmpfiles_openrc() {
+	pkgdesc="systemd-tmpfiles (standalone) (OpenRC init scripts)"
+	install_if="$pkgname-tmpfiles=$pkgver-r$pkgrel openrc"
+
+	amove etc/init.d/systemd-tmpfiles*
+}
+
+sha512sums="
+876f043970cb65b39ae15fba39f23bf94c7c3d80569503d6e8ea2c8013c30ee40ce43cb55cbcb1cf14d5c3021aafc09c0f67473bbf742d8964bf9fa30693b971  systemd-261.2.tar.gz
+89216553f97018c23c971b3f575021c7f0a2b4a3b654ffde064ad4c9bd9a1c4d5f09aea21d9b8dd7954927d9b584c3e53b2f867b4e3e1e8d8572a7de453c7f62  systemd-sysusers.initd
+6f82a990266b1e39955eab0f04be7a9ee25c0cf800d373a3c9814a81923137846ee4743388272547f68c9c0849be4ed192881418598ef846dc91d3049dc0985e  systemd-tmpfiles-clean.initd
+afc1d66f74818c13ddbb9db65446b82d1aa4e638cbe97f518b1da19b67e9d01ccbb109f13521dec75edc01594d4e930867df79ad5e52ee6bf261651ebf837d9e  systemd-tmpfiles-setup-dev-early.initd
+46169b0bb4d1e51b85126c546921821eb100a56074bfffeb1ba7467d868cba3093f025410c99696ee7e3bad814479dfcfd5379173c4e8dea380daaf204014d78  systemd-tmpfiles-setup-dev.initd
+e5e12fb3572ab4a1af4795cc0dbf9bb70567296b91b63551a2d3bf32ccacd7a33ee79c4e1c50b544ef025716f0d1d9f84ece4008904fd462fecee43b0c3a4104  systemd-tmpfiles-setup.initd
+"

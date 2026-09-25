@@ -1,0 +1,83 @@
+# Stable Linux kernel with patches for SDM670 devices
+# Kernel config based on: arch/arm64/configs/{defconfig,sdm{670,845}.config}
+maintainer="Richard Acayan <mailingradian@gmail.com>"
+_flavor="postmarketos-qcom-sdm670"
+pkgname=linux-$_flavor
+pkgver=7.1.3
+pkgrel=0
+pkgdesc="Mainline Kernel fork for SDM670/SDM710 devices"
+arch="aarch64"
+_carch="arm64"
+url="https://gitlab.com/sdm670-mainline/linux"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-community
+	pmb:kconfigcheck-uefi
+"
+makedepends="
+	bison
+	clang
+	elfutils-dev
+	findutils
+	flex
+	installkernel
+	linux-headers
+	lld
+	llvm
+	openssl-dev
+	pahole
+	perl
+	python3
+	zstd
+"
+
+_config="config-$_flavor.$arch"
+_tag="sdm670-v$pkgver"
+
+# Source
+source="
+	https://gitlab.com/sdm670-mainline/linux/-/archive/$_tag/linux-$_tag.tar.gz
+	0001-media-i2c-lc898219xi-auto-suspend-when-not-setting-f.patch
+	$_config
+"
+builddir="$srcdir/linux-$_tag"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$arch" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor"
+}
+
+package() {
+	# ZBOOT EFI decompressor for EFI booting
+	install -Dm644 "$builddir/arch/$_carch/boot/vmlinuz.efi" \
+		"$pkgdir/boot/linux.efi"
+
+	# Old GZIP'd kernel image for boot.img compatibility
+	install -Dm644 "$builddir/arch/$_carch/boot/vmlinuz" \
+		"$pkgdir/boot/vmlinuz"
+
+	make modules_install dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_PATH="$pkgdir"/boot/ \
+		INSTALL_MOD_PATH="$pkgdir"/usr \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+	rm -f "$pkgdir"/usr/lib/modules/*/build "$pkgdir"/usr/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+d9b99f4b5e41814a2b87a62ab080fc6de75f266fe6c17d4520be25151c2f5be784eb844e17f2703877dab375b4534e85a631fc3be47f36a82eb67bc867fd9aba  linux-sdm670-v7.1.3.tar.gz
+a8622691666aec1b55535e0764503e6cf38bbb4f43c9ba0b7232de93a96b4fb970551cf233edab7e656fc6daa6ef70bc0494f838163e01ce279467689f79615c  0001-media-i2c-lc898219xi-auto-suspend-when-not-setting-f.patch
+d1eff34c318450f0b8e3825a3c669b83d1fb8fb80bc0d94353835df3645a9e89756d014b4a2801c7398c3896538030cc4481a945e211854d84dfd25d5a405c16  config-postmarketos-qcom-sdm670.aarch64
+"

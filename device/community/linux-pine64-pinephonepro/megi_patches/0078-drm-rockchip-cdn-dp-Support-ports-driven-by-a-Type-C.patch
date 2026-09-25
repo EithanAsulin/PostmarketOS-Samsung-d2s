@@ -1,0 +1,168 @@
+From 4716c2344c86367d08fd0eba84a107785f3bdd64 Mon Sep 17 00:00:00 2001
+From: Ondrej Jirman <megi@xff.cz>
+Date: Tue, 21 Jul 2026 23:17:37 +0200
+Subject: [PATCH 78/90] drm/rockchip: cdn-dp: Support ports driven by a Type-C
+ PHY
+
+Support a Type-C port whose lanes reach the connector through a Type-C
+PHY. Take the lane count from the PHY with phy_get_bus_width(), where zero
+means nothing to drive, and take the alternate mode's HPD out of band
+through the bridge's hpd_notify, which drm_connector_oob_hotplug_event()
+feeds from the DP altmode driver. Orientation needs no handling: the PHY
+reverses the lanes itself, so the controller sees them in order.
+
+Nothing publishes extcon cables on such a port, which is all the driver
+otherwise reads a Type-C port from, so probe skipped it for want of an
+extcon and a board with no other port failed to bind with "missing extcon
+or phy".
+
+A port now needs a PHY and nothing else. Ports that have an extcon keep
+reading all of it from there.
+
+Signed-off-by: Ondrej Jirman <megi@xff.cz>
+---
+ drivers/gpu/drm/rockchip/cdn-dp-core.c | 69 ++++++++++++++++++++++----
+ 1 file changed, 60 insertions(+), 9 deletions(-)
+
+diff --git a/drivers/gpu/drm/rockchip/cdn-dp-core.c b/drivers/gpu/drm/rockchip/cdn-dp-core.c
+index 0c46224c0491..f58e3f579d86 100644
+--- a/drivers/gpu/drm/rockchip/cdn-dp-core.c
++++ b/drivers/gpu/drm/rockchip/cdn-dp-core.c
+@@ -157,6 +157,15 @@ static int cdn_dp_get_port_lanes(struct cdn_dp_port *port)
+ 	int dptx;
+ 	u8 lanes;
+ 
++	/*
++	 * A port that has no extcon is driven by a Type-C PHY, which publishes
++	 * how many lanes the alternate mode left for DP. Zero of them means
++	 * there is nothing to drive, either because the lanes carry USB or
++	 * because no sink has raised HPD.
++	 */
++	if (!edev)
++		return phy_get_bus_width(port->phy);
++
+ 	dptx = extcon_get_state(edev, EXTCON_DISP_DP);
+ 	if (dptx > 0) {
+ 		extcon_get_property(edev, EXTCON_DISP_DP,
+@@ -220,7 +229,7 @@ static bool cdn_dp_check_sink_connection(struct cdn_dp_device *dp)
+ 	 * some docks need more time to power up.
+ 	 */
+ 	while (time_before(jiffies, timeout)) {
+-		if (!extcon_get_state(port->extcon, EXTCON_DISP_DP))
++		if (!cdn_dp_get_port_lanes(port))
+ 			return false;
+ 
+ 		if (!cdn_dp_get_sink_count(dp, &sink_count))
+@@ -360,6 +369,7 @@ static int cdn_dp_get_sink_capability(struct cdn_dp_device *dp)
+ static int cdn_dp_enable_phy(struct cdn_dp_device *dp, struct cdn_dp_port *port)
+ {
+ 	union extcon_property_value property;
++	bool flip;
+ 	int ret;
+ 
+ 	if (!port->phy_enabled) {
+@@ -386,15 +396,26 @@ static int cdn_dp_enable_phy(struct cdn_dp_device *dp, struct cdn_dp_port *port)
+ 		goto err_power_on;
+ 	}
+ 
+-	ret = extcon_get_property(port->extcon, EXTCON_DISP_DP,
+-				  EXTCON_PROP_USB_TYPEC_POLARITY, &property);
+-	if (ret) {
+-		DRM_DEV_ERROR(dp->dev, "get property failed\n");
+-		goto err_power_on;
++	if (port->extcon) {
++		ret = extcon_get_property(port->extcon, EXTCON_DISP_DP,
++					  EXTCON_PROP_USB_TYPEC_POLARITY,
++					  &property);
++		if (ret) {
++			DRM_DEV_ERROR(dp->dev, "get property failed\n");
++			goto err_power_on;
++		}
++
++		flip = property.intval;
++	} else {
++		/*
++		 * A Type-C PHY reverses the lanes itself when the plug is
++		 * upside down, so the controller always sees them in order.
++		 */
++		flip = false;
+ 	}
+ 
+ 	port->lanes = cdn_dp_get_port_lanes(port);
+-	ret = cdn_dp_set_host_cap(dp, port->lanes, property.intval);
++	ret = cdn_dp_set_host_cap(dp, port->lanes, flip);
+ 	if (ret) {
+ 		DRM_DEV_ERROR(dp->dev, "set host capabilities failed: %d\n",
+ 			      ret);
+@@ -822,11 +843,34 @@ static int cdn_dp_audio_mute_stream(struct drm_bridge *bridge,
+ 	return ret;
+ }
+ 
++/*
++ * A port driven by a Type-C PHY has no extcon to notify us, so the alternate
++ * mode's HPD arrives out of band instead: the DP alt mode driver resolves the
++ * connector's displayport phandle to this bridge and reports it here.
++ *
++ * cdn_dp_pd_event_work() finishes by reporting the state it settled on, which
++ * comes back through this same path. Only act on a status that disagrees with
++ * what we already concluded, or the two would keep waking each other.
++ */
++static void cdn_dp_bridge_hpd_notify(struct drm_bridge *bridge,
++				     struct drm_connector *connector,
++				     enum drm_connector_status status)
++{
++	struct cdn_dp_device *dp = bridge_to_dp(bridge);
++	bool connected = status == connector_status_connected;
++
++	if (dp->connected == connected)
++		return;
++
++	schedule_work(&dp->event_work);
++}
++
+ static const struct drm_bridge_funcs cdn_dp_bridge_funcs = {
+ 	.atomic_duplicate_state = drm_atomic_helper_bridge_duplicate_state,
+ 	.atomic_destroy_state = drm_atomic_helper_bridge_destroy_state,
+ 	.atomic_reset = drm_atomic_helper_bridge_reset,
+ 	.detect = cdn_dp_bridge_detect,
++	.hpd_notify = cdn_dp_bridge_hpd_notify,
+ 	.edid_read = cdn_dp_bridge_edid_read,
+ 	.atomic_enable = cdn_dp_bridge_atomic_enable,
+ 	.atomic_disable = cdn_dp_bridge_atomic_disable,
+@@ -1028,6 +1072,9 @@ static int cdn_dp_bind(struct device *dev, struct device *master, void *data)
+ 	for (i = 0; i < dp->ports; i++) {
+ 		port = dp->port[i];
+ 
++		if (!port->extcon)
++			continue;
++
+ 		port->event_nb.notifier_call = cdn_dp_pd_event;
+ 		ret = devm_extcon_register_notifier(dp->dev, port->extcon,
+ 						    EXTCON_DISP_DP,
+@@ -1120,9 +1167,13 @@ static int cdn_dp_probe(struct platform_device *pdev)
+ 		    PTR_ERR(phy) == -EPROBE_DEFER)
+ 			return -EPROBE_DEFER;
+ 
+-		if (IS_ERR(extcon) || IS_ERR(phy))
++		if (IS_ERR(phy))
+ 			continue;
+ 
++		/* Type-C PHY driven ports have no extcon. */
++		if (IS_ERR(extcon))
++			extcon = NULL;
++
+ 		port = devm_kzalloc(dev, sizeof(*port), GFP_KERNEL);
+ 		if (!port)
+ 			return -ENOMEM;
+@@ -1135,7 +1186,7 @@ static int cdn_dp_probe(struct platform_device *pdev)
+ 	}
+ 
+ 	if (!dp->ports) {
+-		DRM_DEV_ERROR(dev, "missing extcon or phy\n");
++		DRM_DEV_ERROR(dev, "missing phy\n");
+ 		return -EINVAL;
+ 	}
+ 
+-- 
+2.55.0
+

@@ -1,0 +1,26 @@
+# Co-Maintainer: Maxim Schwalm <maxim.schwalm@gmail.com>
+# Co-Maintainer: Svyatoslav Ryhel <clamor95@gmail.com>
+maintainer="Robert Eckelmann <longnoserob@postmarketos.org>"
+pkgname=firmware-nvidia-tegra-armv7
+pkgver=6
+pkgrel=1
+pkgdesc="Firmware files for Tegra devices supported by GRATE project"
+url="https://codeberg.org/libre-tegra/firmware"
+arch="armv7"
+license="proprietary"
+makedepends="coreutils"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+# source
+_commit="00988ea994efa39550cc19f3b225874a32f1c3e0"
+_repo="firmware"
+source="$pkgname-$_commit.tar.gz::$url/archive/$_commit.tar.gz"
+
+builddir="$srcdir/$_repo"
+
+package() {
+	make DESTDIR="$pkgdir"/usr install
+}
+
+sha512sums="
+54fdf25f4c7cef12619979f9b5e894898c092445a787d79a8deb191c707c959ec4a91185875da105bcd9dd5b8df60637e3a0c8c747f6333b701ce189026e8d88  firmware-nvidia-tegra-armv7-00988ea994efa39550cc19f3b225874a32f1c3e0.tar.gz
+"

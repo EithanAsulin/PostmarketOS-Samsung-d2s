@@ -1,0 +1,32 @@
+From 2d71cebdf27c7b9e7e5c568837ebabfaddfd6bfa Mon Sep 17 00:00:00 2001
+From: Val Packett <val@packett.cool>
+Date: Sat, 25 Apr 2026 18:24:08 +0000
+Subject: [PATCH 12/12] HACK: ASoC: qcom: qdsp6: q6afe: pretend the AFE vote
+ didn't return an error
+
+Depending on the luck, AFE will fail to vote even though the correct configuration is used.
+Force the AFE vote to always succeed.
+---
+ sound/soc/qcom/qdsp6/q6afe.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/sound/soc/qcom/qdsp6/q6afe.c b/sound/soc/qcom/qdsp6/q6afe.c
+index 638ee42a1c67..b8ef41b28ac7 100644
+--- a/sound/soc/qcom/qdsp6/q6afe.c
++++ b/sound/soc/qcom/qdsp6/q6afe.c
+@@ -990,6 +990,12 @@ static int q6afe_callback(struct apr_device *adev, const struct apr_resp_pkt *da
+ 				wake_up(&afe->wait);
+ 			}
+ 			break;
++		case AFE_CMD_REMOTE_LPASS_CORE_HW_VOTE_REQUEST:
++			dev_err(afe->dev, "HACK(xiaomi-pipa): Pretending that the vote did not return an error\n");
++			afe->result.opcode = AFE_CMD_RSP_REMOTE_LPASS_CORE_HW_VOTE_REQUEST;
++			afe->result.status = 0;
++			wake_up(&afe->wait);
++			break;
+ 		default:
+ 			dev_err(afe->dev, "Unknown cmd 0x%x\n",	res->opcode);
+ 			break;
+-- 
+2.52.0
+

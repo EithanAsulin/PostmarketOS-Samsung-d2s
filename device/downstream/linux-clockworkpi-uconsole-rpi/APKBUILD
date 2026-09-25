@@ -1,0 +1,114 @@
+maintainer="Antoine Martin (ayakael) <dev@ayakael.net>"
+pkgname=linux-clockworkpi-uconsole-rpi
+pkgver=6.18.35
+_kernver=${pkgver%.*}
+pkgrel=1
+pkgdesc="Downstream kernel for raspberrypi devices with uConsole patches"
+arch="aarch64"
+_carch="arm64"
+_flavor="${pkgname#linux-}"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="
+	!check
+	!strip
+	!tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-community
+	pmb:kconfigcheck-nftables
+"
+makedepends="
+	bison
+	clang
+	findutils
+	flex
+	elfutils-dev
+	linux-headers
+	lld
+	llvm
+	openssl-dev
+	pahole
+	perl
+	postmarketos-installkernel
+	python3
+	zstd
+"
+replaces="linux-rpi"
+# Source
+_defconfig=bcm2712_defconfig
+_config="config-$_flavor.$arch"
+
+# get patch releases
+if [ "${pkgver/*.}" -ne 0 ]; then
+	source="$pkgname-$pkgver.patch.xz::https://cdn.kernel.org/pub/linux/kernel/v${pkgver%%.*}.x/patch-$pkgver.xz"
+fi
+source="
+	$source
+	https://cdn.kernel.org/pub/linux/kernel/v${pkgver%%.*}.x/linux-$_kernver.tar.xz
+	https://dev.alpinelinux.org/archive/rpi-patches/rpi-$pkgver-alpine.patch
+	0001-drm-panel-add-clockwork-cwu50.patch
+	0002-video-backlight-Add-OCP8178-backlight-driver.patch
+	0003-arch-configs-update-defconfig-for-uconsole.patch
+	0004-arch-overlays-add-uconsole-overlays.patch
+	0005-power-axp20x_battery-implement-calibration.patch
+	$_config
+"
+builddir="$srcdir"/linux-$_kernver
+
+prepare() {
+	default_prepare
+	cp "$srcdir"/$_config .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+
+	if [ -e "$builddir/arch/$_carch/boot/vmlinuz.efi" ]; then
+		# ZBOOT EFI decompressor for EFI booting
+		install -Dm644 "$builddir/arch/$_carch/boot/vmlinuz.efi" \
+			"$pkgdir/boot/linux.efi"
+
+		# Old GZIP'd kernel image for boot.img/crOS compatibility
+		install -Dm644 "$builddir/arch/$_carch/boot/vmlinuz" \
+			"$pkgdir/boot/vmlinuz"
+	else
+		echo "WARNING: CONFIG_EFI_ZBOOT not enabled!"
+		install -Dm644 "$builddir/arch/$_carch/boot/Image.gz" \
+			"$pkgdir/boot/vmlinuz"
+	fi
+
+	make modules_install dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot \
+		INSTALL_MOD_PATH="$pkgdir"/usr \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_PATH="$pkgdir"/boot/
+	rm -f "$pkgdir"/usr/lib/modules/*/build "$pkgdir"/usr/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+
+	# rpi boot expects dtbs to be root of boot partition
+	mv -f "$pkgdir"/boot/broadcom/*.dtb \
+		"$pkgdir"/boot
+	rmdir "$pkgdir"/boot/broadcom
+}
+
+sha512sums="
+e6ee5f39ac4205da637f1bce67eb96b59726a15ef3579ae3850ef73ecfbf6d24d4f622b3e74b04fd119f87cd8864152eba74a14fc753f716fec91f5e91015e96  linux-clockworkpi-uconsole-rpi-6.18.35.patch.xz
+88599ffdec96d150c1feb9b261ba93bb0301a9d0e1ad6bef7aeab1f5372cbfc57d8b43c7e902bd8f76921d1dbd8189663c142ea869e51d0e2b483b150ee00fe0  linux-6.18.tar.xz
+54dfa909c720a24fca6a0a20a414e77e291ef3e1e8a22f90e8326ed474bc526c098f7c31ec96a25000cbe3cb7442f0fdf353564678a225e90096b3f1c3be0e3d  rpi-6.18.35-alpine.patch
+689afe10d9247581a529a74481fb0c1352b25c68857b0a6b127330a5324f878bff0b7690c705a31eeeb45c39fef4e0fbd6642272f0dca73a8673713089c2a1c7  0001-drm-panel-add-clockwork-cwu50.patch
+79197b33f8d8bd0112d4c05859be871b4609ef706dd7597c42c55e54ce168a5a59cc6fd838a0554b02030324a126adbd379c33c8deb8ac0dff8014d05f22731e  0002-video-backlight-Add-OCP8178-backlight-driver.patch
+311b403c071420057ef9d0a23b22641913c8d6915447cfe451fec5bd64bdb6574ba9713e286123f70c1b4484f08c0ce909cd8abc77204741390a4d652fd9fa8e  0003-arch-configs-update-defconfig-for-uconsole.patch
+6cfa41639245564fd70cfa85b0da2d609c91f66fb513e9aee3d66ab124e0394b6f33ef263fa21f1d215140f5f6c7dd4a5e05ee7cc36348c565c7d05cbfcbcd77  0004-arch-overlays-add-uconsole-overlays.patch
+68b07d9d83074f1af13f1a8c86cb677333d7d9a2f26f47df6990d71d96ce49f53135425874fe2375b934d631ed9d8b7e754c5342d4387ae37f6572649b3b1e5f  0005-power-axp20x_battery-implement-calibration.patch
+cb9d498c030e8f869d5ce800daf4908fddd70489352573940ab11ccce8a1a7b83b5fb9900671cd063e452a48068c4894836419fdc3250afd1b0d5067d1c83e31  config-clockworkpi-uconsole-rpi.aarch64
+"

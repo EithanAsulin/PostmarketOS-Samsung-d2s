@@ -1,0 +1,125 @@
+maintainer="Oliver Smith <ollieparanoid@postmarketos.org>"
+pkgname=postmarketos-artwork
+pkgver=26.06
+pkgrel=2
+_commit="7ca32b82ec0c2269d5c5e15a32723798a26622c6"
+pkgdesc="Meta package for the postmarketOS artwork"
+url="https://postmarketos.org/"
+arch="noarch"
+license="CC-BY-SA-4.0"
+# Only pull the current wallpaper
+_year=2026
+_wallpaper="alpen"
+_resolution="2000x2000"
+source="$_wallpaper-light.png::https://gitlab.postmarketos.org/postmarketOS/artwork/-/raw/$_commit/wallpapers/$_year/$_wallpaper/contents/images/$_resolution.png
+	$_wallpaper-dark.png::https://gitlab.postmarketos.org/postmarketOS/artwork/-/raw/$_commit/wallpapers/$_year/$_wallpaper/contents/images_dark/$_resolution.png
+	$_wallpaper-metadata.json::https://gitlab.postmarketos.org/postmarketOS/artwork/-/raw/$_commit/wallpapers/$_year/$_wallpaper/metadata.json
+	https://gitlab.postmarketos.org/postmarketOS/artwork/-/raw/$_commit/logo/logo.svg
+	https://gitlab.postmarketos.org/postmarketOS/artwork/-/raw/$_commit/logo/logo-phone.svg
+	https://gitlab.postmarketos.org/postmarketOS/artwork/-/raw/$_commit/logo/logo_monochrome.svg
+	10_pmOS-wallpaper.gschema.override
+	postmarketos-gnome.xml
+	set-plasma-wallpaper.desktop
+	set-plasma-wallpaper.sh
+	"
+subpackages="
+	$pkgname-wallpapers
+	$pkgname-wallpapers-gnome:wallpapers_gnome
+	$pkgname-wallpapers-plasma:wallpapers_plasma
+	$pkgname-icons
+	"
+makedepends_build="
+	imagemagick
+	imagemagick-jpeg
+	"
+options="!check pmb:cross-native2"
+
+package() {
+	mkdir -p "$pkgdir"/usr/share/wallpapers/postmarketos/contents/images
+	mkdir -p "$pkgdir"/usr/share/wallpapers/postmarketos/contents/images_dark
+
+	# To avoid complexity, we only package the most recent wallpaper.
+	# Checklist for changing the wallpaper:
+	# - Add the new wallpaper here: https://postmarketos.org/wallpapers
+	# - Adjust the path in the "cp" line below
+	# - If paths inside the wallpaper dir (e.g. 2024/meadow) are different,
+	#   then adjust them here:
+	#     - postmarketos.jpg symlink/conversion below
+	#     - postmarketos-gnome.xml
+	#     - 10_pmOS-wallpaper.gschema.override
+	install -Dm644 "$srcdir"/"$_wallpaper"-light.png \
+		"$pkgdir"/usr/share/wallpapers/postmarketos/contents/images/"$_resolution".png
+	install -Dm644 "$srcdir"/"$_wallpaper"-dark.png \
+		"$pkgdir"/usr/share/wallpapers/postmarketos/contents/images_dark/"$_resolution".png
+	install -Dm644 "$srcdir"/"$_wallpaper"-metadata.json \
+		"$pkgdir"/usr/share/wallpapers/postmarketos/metadata.json
+
+	# /usr/share/wallpapers/postmarketos.jpg should always point to the
+	# current wallpaper so we don't break configs
+	magick "$pkgdir"/usr/share/wallpapers/postmarketos/contents/images/"$_resolution".png \
+		-format jpeg \
+		"$pkgdir"/usr/share/wallpapers/postmarketos.jpg
+
+	# GNOME configuration
+	install -Dm644 "$srcdir"/postmarketos-gnome.xml \
+		-t "$pkgdir"/usr/share/gnome-background-properties/
+	install -Dm644 "$srcdir"/10_pmOS-wallpaper.gschema.override \
+		-t "$pkgdir"/usr/share/glib-2.0/schemas
+
+	# Plasma configuration
+	install -Dm755 "$srcdir"/set-plasma-wallpaper.sh \
+		-t "$pkgdir"/usr/libexec/postmarketos
+
+	install -Dm644 "$srcdir"/set-plasma-wallpaper.desktop \
+		-t "$pkgdir"/etc/skel/.config/autostart
+
+	# icons
+	install -Dm644 "$srcdir"/logo.svg \
+		"$pkgdir"/usr/share/pixmaps/postmarketos-logo.svg
+	install -Dm644 "$srcdir"/logo-phone.svg \
+		"$pkgdir"/usr/share/pixmaps/postmarketos-logo-phone.svg
+	install -Dm644 "$srcdir"/logo_monochrome.svg \
+		"$pkgdir"/usr/share/pixmaps/postmarketos-logo-monochrome.svg
+}
+
+wallpapers() {
+	pkgdesc="Wallpapers for postmarketOS"
+
+	amove usr/share/wallpapers
+}
+
+wallpapers_gnome() {
+	pkgdesc="Wallpaper configuration for GNOME-based UIs"
+	replaces="postmarketos-base-ui-gnome-wallpaper-pmos"
+	install_if="postmarketos-artwork-wallpapers=$pkgver-r$pkgrel postmarketos-base-ui-gnome"
+
+	amove usr/share/gnome-background-properties
+	amove usr/share/glib-2.0/schemas
+}
+
+wallpapers_plasma() {
+	pkgdesc="Wallpaper configuration for Plasma-based UIs"
+	install_if="postmarketos-artwork-wallpapers=$pkgver-r$pkgrel postmarketos-base-ui-plasma"
+
+	amove usr/libexec/postmarketos
+	amove etc/skel/.config/autostart
+}
+
+icons() {
+	pkgdesc="Icons for postmarketOS"
+
+	amove usr/share/pixmaps
+}
+
+sha512sums="
+be822167a39e72a422a4291d927bdfa7c41da43432d4f7768582ac58af7ddc213cbed67230d0007dd5721777b94f8cc172e43cbfa539f540a1bbc5487bd0eae6  alpen-light.png
+a80b82b88ad4d2b0d400ed25e0132dda91a7ee9e84911b4fdcbb25b28f189f53f8e288f2d9fbfd3f46bc0d33125f9a9abde8874cabac5af7ce0386d9ddf8ce73  alpen-dark.png
+0198908b0399a331dd8f7a319fd4cec97f7621d7be53ea93d9f88c33702ebacd80cbe456b638e00e895d68b38663bd447350d316abdff7751caaf2c8f5a871d7  alpen-metadata.json
+98984fd67b99400d2b08422c4d314da558d3c94ee67dbc895e7bbfd6fdf22d4b2c9d35f48f4b73b383a054f535d4089fb705c5532f034cb2ee54eab2184e8e86  logo.svg
+7c7bc49cd58105b90181f0851882dc6635ba303831e35072d0edca442b23932f6485fc9329ced460b5cd69d18677d2c7e7dedbf5d8831f0b7fa86ad86fd94be4  logo-phone.svg
+91c95646d97f66d74dbdbfbaa170053d5b83f14d12374bd62d137d51abc51a936fea79ecfde48ed6834b82e376842562b6cbeabbee075f8873b51c8678a7dff0  logo_monochrome.svg
+a60a78f15604e349a187cd125f2fa9f9d368fbc056d564d1e9068303dc4e7bfd76ccd4f0a8e7ecac873745f0ac7905997ac568d7d639851bebb5e62fc5277e7f  10_pmOS-wallpaper.gschema.override
+802ba597568e054ae054ea69323146b5a88f2eefe9ccbcacff5151ee1c874876f94c225bea67d7f245546b518619c2725ab065f99aa4f70860807855c5f6c218  postmarketos-gnome.xml
+a2fe87907a0fc6eb2b18305c7f183ac57bae7223d9fdeb992c93947576480c6a2fdb073ea2746407e227531c84aaa0acd0c27abb7fb272bc58433b3a02c260f4  set-plasma-wallpaper.desktop
+770bf87c4629327b4c7b35ee42587cdcd6100103640cce1894be66d1346b7220df919371935f3288e00f99b652f223ad578f1e93c5d43556e7c4ddd50f87f739  set-plasma-wallpaper.sh
+"

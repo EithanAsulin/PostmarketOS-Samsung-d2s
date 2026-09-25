@@ -1,0 +1,31 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="DomHeadroom <domefemia@protonmail.com>"
+pkgname=device-xiaomi-gauguin
+pkgdesc="Xiaomi Mi 10T Lite 5G"
+pkgver=1
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-postmarketos-qcom-sm6350
+	mkbootimg
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+3720c0dff9aee47e0a57739d90e66d47ef27761ee4706aa171fc426c2639bbbf26c89d6290194ad55fc84467e46c4a91b48d137c55e288795b4e1e39643f6da7  deviceinfo
+"

@@ -1,0 +1,103 @@
+# Archived: -dev packages x86_64 binaries in aarch64 package which makes akms part of device-clockworkpi-uconsole-radxa-cm5 fail when built on aarch64
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/rockchip_linux_defconfig
+maintainer="Antoine Martin (ayakael) <dev@ayakael.net>"
+pkgname=linux-clockworkpi-uconsole-radxa-cm5
+pkgver=6.1.115
+pkgrel=3
+pkgdesc="Radxa kernel fork with uConsole drivers"
+arch="aarch64"
+_carch="arm64"
+_flavor="clockworkpi-uconsole-radxa-cm5"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bc
+	bison
+	devicepkg-dev
+	dtc
+	elfutils-dev
+	findutils
+	flex
+	gcc6
+	linux-firmware
+	linux-headers
+	openssl-dev
+	pahole
+	perl
+	postmarketos-installkernel
+	python3
+	zstd
+"
+
+# Source
+_repository="kernel"
+# from linux-6.1-stan-rkr5.1
+_commit="8582469f117fdfd5d1ab88fa7e4e15c3b714bf24"
+_dtso_commit="c2204834e1d7d0acfd64e1b7874d432bc142f1a4"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/radxa/$_repository/archive/$_commit.tar.gz
+	radxa-cm5-uconsole-$_dtso_commit.tar.gz::https://github.com/dev-null2019/radxa-cm5-uconsole/archive/$_dtso_commit.tar.gz
+	$_config
+	0001-video-backlight-Add-OCP8178-backlight-driver.patch
+	0002-drm-panel-add-clockwork-cwu50.patch
+	0003-power-axp20x_battery-implement-calibration.patch
+	postmarketos-defconfig.patch
+	extra-parentheses-broadcom-drop.patch
+"
+replaces="linux-radxa=$pkgver-r$pkgrel"
+builddir="$srcdir/$_repository-$_commit"
+_builddir="$srcdir"/build-$_flavor.$CARCH
+_dtsodir="$srcdir"/radxa-cm5-uconsole-$_dtso_commit/devicetree_overlays
+
+# Compiler: GCC 6 (doesn't compile with LLVM)
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$CARCH" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1))-postmarketOS"
+
+	# generate dtbo for uconsole
+	for dts in "$_dtsodir"/*.dts; do
+		cpp -nostdinc -I "$_dtsodir" -I arch -undef -x assembler-with-cpp $dts $dts.preprocessed
+		dtc -O dtb -o ${dts/.dts/.dtbo} $dts.preprocessed
+	done
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+
+	make modules_install dtbs_install \
+		ARCH="$_carch" \
+		INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_MOD_PATH="$pkgdir"/usr \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+	rm -f "$pkgdir"/usr/lib/modules/*/build "$pkgdir"/usr/lib/modules/*/source
+
+	# merge dtbos with soc dtb for uconsole
+	fdtoverlay -i "$builddir"/arch/arm64/boot/dts/rockchip/rk3588s-radxa-cm5-rpi-cm4-io.dtb "$_dtsodir"/*.dtbo -o "$pkgdir"/boot/dtbs/rockchip/rk3588s-radxa-cm5-uconsole.dtb
+}
+
+sha512sums="
+c59852f84aa505f85fd1bd30e36583aad506ae641072b2b8c69f5bb889e80d7fc6612411a912be07ae4d81b031aa3a2ede6b63121c69e0872807f8f6903abde9  linux-clockworkpi-uconsole-radxa-cm5-8582469f117fdfd5d1ab88fa7e4e15c3b714bf24.tar.gz
+a15eb74d9db9114022e96ba04542d18350cf6d637c5efa49f4a5a65c33c5fd20a7997095a049a561fb7aac767a299f367489c5a342138a5259cc32ebb6152384  radxa-cm5-uconsole-c2204834e1d7d0acfd64e1b7874d432bc142f1a4.tar.gz
+5fe5c6a48cd04704de662eddf83f9477a10c986a3a9c3d103f390fb6ed852d1054e2e155d0cc1067921192b31111ece21adb38afdc51d94a99896b729dd98a69  config-clockworkpi-uconsole-radxa-cm5.aarch64
+41ee267962fc9f5580997bfaabaafd782f42995599b127df30794a7b5147b5b7bf787de6206642480c07c7716fe494bc135f24a9bcf406ab57a73af6292fc915  0001-video-backlight-Add-OCP8178-backlight-driver.patch
+e9402b88083cc2d3af6c471e36e00e65e97d88cde447ce2f59c07bf29fc712bfdeae6d6d3b503115763b57ba2ac00e827654bc24a91b1cb85b575fdd0db8f5be  0002-drm-panel-add-clockwork-cwu50.patch
+f3ce23b013ed7bfbf51849ec683fad2f53ea5e7e5907bbd7f60f56c630dc3ec7d4c595fbb217019e100a053dcdbb731da1f376db5fc841562afa2059b24d7d0a  0003-power-axp20x_battery-implement-calibration.patch
+2c9c3649e621841ea067dba5df1deca721c0800ee465356d4f1d71825af081cdbfaa6e88e463a2c48682ac0f3e7ed3e9b8373ee87f5f00d6aa9484be0ab82a87  postmarketos-defconfig.patch
+9177849f91b773fc655e3ae797263c6a5ece6cb8835e52a60043cc8f2474116f8f014c47ae0d49a46e52ec4b508200bd03957778ed5396eb8c190773643166c8  extra-parentheses-broadcom-drop.patch
+"

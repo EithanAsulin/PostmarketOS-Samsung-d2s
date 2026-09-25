@@ -1,0 +1,33 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="hexaheximal <hexaheximal@proton.me>"
+pkgname=device-odroid-c4
+pkgdesc="ODROID C4"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-firmware-meson
+	linux-postmarketos-amlogic
+	postmarketos-base
+	soc-amlogic-aarch64
+	u-boot-amlogic-odroid-c4
+	"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf modules-initfs"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+ee6387a937d7f558c5489292a159a0e3b4329111b38b2df8dc1671c8a5bda0e86be8ad66594fd847d2f0239bb2d4e2b0f097dd7d19e3cb5e0de83c1383f9d901  deviceinfo
+8b6a07d15079b3884c65fcebfbc9b2e3fba822e5eb65d8c85198869edc357c3bdd456ec54f579a04de2a5bced62f32b7e251e61f571bb41a1768fb2dea9e3c9d  kernel-cmdline.conf
+b9f3e1902c17909de928c99868265a257ba5873f6ea6aa1097ad10721f59d68342d50ee51992472ecd23722f7664a13dd15f4e26071a40595c7c3e5161e533d7  modules-initfs
+"

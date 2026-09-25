@@ -1,0 +1,534 @@
+# "pmbootstrap kconfig generate" will use the config options from this file
+# for kernel packages that have "pmb:generic-kernel" set in options, such as
+# linux-postmarketos-mainline, linux-postmarketos-stable and other generic
+# kernels that are not restricted to a specific subset of devices.
+#
+# The categorization in this file is purely for compatibility reasons and
+# for grouping things together, there is no filtering performed on them.
+#
+# This file is maintained by the maintainers of the generic kernel packages:
+# Aelin <aelin@postmarketos.org>
+# Achill Gilgenast <achill@achill.org>
+
+# audio devices and codecs
+["category:audio".">=0.0.0"."all"]
+SND_DESIGNWARE_I2S = "m"
+SND_DESIGNWARE_PCM = "y"
+SND_DMAENGINE_PCM = "m"
+SND_HDA_CODEC_CIRRUS = "m"
+SND_HDA_CODEC_HDMI = "m"
+SND_HDA_CODEC_REALTEK = "m"
+SND_HDA_INTEL = "m"
+SND_SEQUENCER = "m"
+SND_SOC = "m"
+SND_SOC_AW88261 = "m"
+SND_SOC_CS35L36 = "m"
+SND_SOC_CS35L41_I2C = "m"
+SND_SOC_CS35L41_SPI = "m"
+SND_SOC_GENERIC_DMAENGINE_PCM = "y"
+SND_SOC_SOF_PCI = "m"
+SND_SOC_SOF_TOPLEVEL = "y"
+SND_SOC_TFA989X = "m"
+SOUNDWIRE = "m"
+["category:audio".">=0.0.0"."aarch64"]
+SND_SOC_WCD938X_SDW = "m"
+["category:audio".">=0.0.0"."x86_64"]
+SND_SOC_AMD_ACP5x = "m"
+SND_SOC_AMD_VANGOGH_MACH = "m"
+SND_SOC_INTEL_BDW_RT5650_MACH = "m"
+SND_SOC_INTEL_BDW_RT5677_MACH = "m"
+SND_SOC_INTEL_BROADWELL_MACH = "m"
+SND_SOC_INTEL_BYTCR_RT5640_MACH = "m"
+SND_SOC_INTEL_BYTCR_RT5651_MACH = "m"
+SND_SOC_INTEL_BYTCR_WM5102_MACH = "m"
+SND_SOC_INTEL_BYT_CHT_CX2072X_MACH = "m"
+SND_SOC_INTEL_BYT_CHT_DA7213_MACH = "m"
+SND_SOC_INTEL_BYT_CHT_ES8316_MACH = "m"
+SND_SOC_INTEL_CATPT = "m"
+SND_SOC_INTEL_CHT_BSW_MAX98090_TI_MACH = "m"
+SND_SOC_INTEL_CHT_BSW_NAU8824_MACH = "m"
+SND_SOC_INTEL_CHT_BSW_RT5645_MACH = "m"
+SND_SOC_INTEL_CHT_BSW_RT5672_MACH = "m"
+SND_SOC_INTEL_CML_LP_DA7219_MAX98357A_MACH = "m"
+SND_SOC_INTEL_EHL_RT5660_MACH = "m"
+SND_SOC_INTEL_GLK_DA7219_MAX98357A_MACH = "m"
+SND_SOC_INTEL_GLK_RT5682_MAX98357A_MACH = "m"
+SND_SOC_INTEL_HASWELL_MACH = "m"
+SND_SOC_INTEL_SKL_HDA_DSP_GENERIC_MACH = "m"
+SND_SOC_INTEL_SOF_CS42L42_MACH = "m"
+SND_SOC_INTEL_SOF_DA7219_MACH = "m"
+SND_SOC_INTEL_SOF_ES8336_MACH = "m"
+SND_SOC_INTEL_SOF_NAU8825_MACH = "m"
+SND_SOC_INTEL_SOF_PCM512x_MACH = "m"
+SND_SOC_INTEL_SOF_RT5682_MACH = "m"
+SND_SOC_INTEL_SOF_SSP_AMP_MACH = "m"
+SND_SOC_INTEL_SOF_WM8804_MACH = "m"
+SND_SOC_INTEL_SOUNDWIRE_SOF_MACH = "m"
+SND_SOC_INTEL_USER_FRIENDLY_LONG_NAMES = "y"
+SND_SOC_SOF_AMD_TOPLEVEL = "m"
+SND_SOC_SOF_AMD_VANGOGH = "m"
+SND_SOC_SOF_GEMINILAKE = "m"
+SND_SOC_SOF_HDA_AUDIO_CODEC = "y"
+SND_SOC_SOF_HDA_LINK = "y"
+SND_SOC_SOF_INTEL_TOPLEVEL = "y"
+SOUNDWIRE_AMD = "m"
+SOUNDWIRE_INTEL = "m"
+["category:audio".">=0.0.0"."aarch64 loongarch64 riscv64 x86 x86_64"]
+SND_HDA_SCODEC_CS35L41_I2C = "m"
+SND_HDA_SCODEC_CS35L41_SPI = "m"
+SND_HDA_SCODEC_CS35L56_I2C = "m"
+SND_HDA_SCODEC_CS35L56_SPI = "m"
+SND_HDA_SCODEC_TAS2781_I2C = "m"
+SND_HDA_SCODEC_TAS2781_SPI = "m"
+SND_SOC_SOF_ACPI = "m"
+
+["category:bluetooth".">=0.0.0"."all"]
+BT_ATH3K = "m"
+BT_HCIBCM203X = "m"
+BT_HCIBCM4377 = "m"
+BT_HCIBFUSB = "m"
+BT_HCIBPA10X = "m"
+BT_HCIBTUSB = "m"
+BT_HCIBTUSB_MTK = "y"
+BT_HCIBTSDIO = "m"
+BT_HCIUART = "m"
+BT_HCIUART_3WIRE = "y"
+BT_HCIUART_AG6XX = "y"
+BT_HCIUART_AML = "y"
+BT_HCIUART_ATH3K = "y"
+BT_HCIUART_BCM = "y"
+BT_HCIUART_BCSP = "y"
+BT_HCIUART_INTEL = "y"
+BT_HCIUART_LL = "y"
+BT_HCIUART_MRVL = "y"
+BT_HCIUART_NOKIA = "m"
+BT_HCIUART_QCA = "y"
+BT_HCIUART_RTL = "y"
+BT_HCIVHCI = "m"
+BT_MRVL = "m"
+BT_MRVL_SDIO = "m"
+BT_MTKSDIO = "m"
+BT_MTKUART = "m"
+BT_NXPUART = "m"
+BT_RFCOMM = "m"
+BT_VIRTIO = "m"
+["category:bluetooth".">=0.0.0"."aarch64 loongarch64 riscv64 x86 x86_64"]
+BT_INTEL_PCIE = "m"
+
+# clock controllers
+["category:clocks".">=0.0.0"."all"]
+COMMON_CLK = "y"
+PWM = "y"
+PWM_CLK = "m"
+["category:clocks".">=0.0.0"."aarch64"]
+SC_CAMCC_7180 = "m"
+SC_DISPCC_7180 = "m"
+SC_GPUCC_7180 = "m"
+SC_LPASS_CORECC_7180 = "m"
+SC_VIDEOCC_7180 = "m"
+SM_VIDEOCC_8250 = "m"
+SM_VIDEOCC_8350 = "m"
+["category:clocks".">=0.0.0"."armv7"]
+MSM_LCC_8960 = "m"
+
+# cryptography codecs and interfaces
+["category:crypto".">=0.0.0"."x86 x86_64"]
+CRYPTO_AES_NI_INTEL = "m"
+CRYPTO_DEV_CCP = "y"
+CRYPTO_DEV_CCP_DD = "y"
+["category:crypto"."<7.1.0"."x86_64"]
+CRYPTO_GHASH_CLMUL_NI_INTEL = "m"
+
+# ethernet controllers, etc.
+["category:ethernet".">=0.0.0"."all"]
+BT_BNEP = "m"
+IGB = "m"
+["category:ethernet".">=7.0_rc1"."loongarch64"]
+DWMAC_MOTORCOMM = "y"
+
+# display controllers, bridges, panels, etc.
+["category:graphics".">=0.0.0"."all"]
+BACKLIGHT_PWM = "y"
+BACKLIGHT_CLASS_DEVICE = "y"
+BACKLIGHT_GPIO = "y"
+DRM_AMDGPU = "m"
+DRM_AST = "m"
+# https://github.com/ClangBuiltLinux/linux/issues/2161
+["category:graphics".">=0.0.0"."x86_64"]
+FRAME_WARN = 4096
+["category:graphics".">=0.0.0"."aarch64 armv7"]
+EXYNOS_IOMMU = "y"
+NOUVEAU_PLATFORM_DRIVER = "y"
+["category:graphics".">=0.0.0"."aarch64"]
+BACKLIGHT_KTZ8866 = "m"
+DRM_PANEL_EBBG_FT8719 = "m"
+DRM_PANEL_INNOLUX_P079ZCA = "m"
+DRM_PANEL_KINGDISPLAY_KD097D04 = "m"
+DRM_PANEL_LG_SW43408 = "m"
+DRM_PANEL_NOVATEK_NT36523 = "m"
+DRM_PANEL_SAMSUNG_SOFEF00 = "m"
+DRM_PANEL_SAMSUNG_S6E3HA8 = "m"
+DRM_PANEL_VISIONOX_RM69299 = "m"
+# depends on 4k page sizes
+["category:graphics".">=0.0.0"."aarch64 armv7 riscv64 x86 x86_64"]
+DRM_NOUVEAU = "m"
+DRM_NOUVEAU_BACKLIGHT = "y"
+DRM_NOUVEAU_CH7006 = "m"
+DRM_NOUVEAU_SIL164 = "m"
+DRM_XE = "m"
+["category:graphics".">=0.0.0"."x86 x86_64"]
+DRM_I915 = "m"
+["category:graphics".">=6.19_rc1"."aarch64 armv7"]
+DRM_PANEL_SAMSUNG_S6E3FC2X01 = "m"
+DRM_PANEL_SAMSUNG_S6E8AA5X01_AMS561RA01 = "m"
+DRM_PANEL_SYNAPTICS_TDDI = "m"
+
+# input devices
+["category:input".">=0.0.0"."all"]
+BMC150_ACCEL = "m"
+IIO_ST_ACCEL_3AXIS = "m"
+IIO_ST_ACCEL_I2C_3AXIS = "m"
+IIO_ST_ACCEL_SPI_3AXIS = "m"
+INPUT_REGULATOR_HAPTIC = "m"
+INPUT_TOUCHSCREEN = "y"
+MOUSE_BCM5974 = "m"
+RMI4_CORE = "m"
+RMI4_I2C = "m"
+RMI4_SMB = "m"
+RMI4_SPI = "m"
+RMI4_F34 = "y"
+RMI4_F55 = "y"
+STK3310 = "m"
+TOUCHSCREEN_MELFAS_MIP4 = "m"
+TOUCHSCREEN_NOVATEK_NVT_TS = "m"
+TOUCHSCREEN_S6SY761 = "m"
+TOUCHSCREEN_ZINITIX = "m"
+TSL2772 = "m"
+YAMAHA_YAS530 = "m"
+["category:input".">=0.0.0"."armv7"]
+INPUT_PMIC8XXX_PWRKEY = "m"
+["category:input".">=0.0.0"."ppc64le x86 x86_64"]
+INPUT_PCSPKR = "m"
+["category:input".">=0.0.0"."aarch64"]
+INPUT_MAX77693_HAPTIC = "m"
+SURFACE_HID = "m"
+SURFACE_KBD = "m"
+["category:input".">=0.0.0"."aarch64 armv7"]
+HID_GOOGLE_HAMMER = "m"
+I2C_HID_OF_GOODIX = "m"
+["category:input".">=0.0.0"."aarch64 loongarch64 riscv64 x86 x86_64"]
+I2C_HID_ACPI = "m"
+["category:input".">=0.0.0"."x86_64"]
+STEAM_FF = "y"
+
+# led and light devices
+["category:led".">=0.0.0"."all"]
+LEDS_CLASS_FLASH = "m"
+LEDS_MAX77705 = "m"
+LEDS_RT8515 = "m"
+LTRF216A = "m"
+
+# various things that don't fit elsewhere
+["category:misc".">=0.0.0"."all"]
+LOCALVERSION_AUTO = "n"
+STAGING = "y"
+
+["category:misc".">=0.0.0"."aarch64"]
+# This is required for running armhf userspace on aarch64
+ARMV8_DEPRECATED = "y"
+CP15_BARRIER_EMULATION = "y"
+SENSORS_SURFACE_FAN = "m"
+SENSORS_SURFACE_TEMP = "m"
+SURFACE_AGGREGATOR = "m"
+SURFACE_AGGREGATOR_REGISTRY = "m"
+SWP_EMULATION = "y"
+["category:misc".">=7.2_rc1"."riscv64"]
+SPACEMIT_K1_TSENSOR = "m"
+
+# useful ppc64le configs, taken from Alpine
+["category:misc".">=0.0.0"."ppc64le"]
+OPAL_PRD = "y"
+POWER8_CPU = "y"
+PPC_SUBPAGE_PROT = "y"
+
+# enable all loongarch64 CPU features
+["category:misc".">=0.0.0"."loongarch64"]
+CPU_HAS_LBT = "y"
+
+# Network device drivers
+["category:network".">=0.0.0"."aarch64 armv7"]
+ATH10K_AHB = "y"
+ATH11K_AHB = "m"
+ATH12K_AHB = "y"
+["category:network".">=0.0.0"."all"]
+AQTION = "m"
+AR5523 = "m"
+ATH10K = "m"
+ATH10K_SDIO = "m"
+ATH10K_USB = "m"
+ATH10K_PCI = "m"
+ATH11K = "m"
+ATH11K_PCI = "m"
+ATH12K = "m"
+ATH5K = "m"
+ATH5K_PCI = "y"
+ATH6KL = "m"
+ATH6KL_SDIO = "m"
+ATH6KL_USB = "m"
+ATH9K = "m"
+ATH9K_HTC = "m"
+BRCMFMAC = "m"
+BRCMFMAC_PCIE = "y"
+BRCMFMAC_SDIO = "y"
+BRCMFMAC_USB = "y"
+BRCMSMAC = "m"
+CFG80211 = "m"
+IGC = "m"
+IWLDVM = "m"
+IWLMLD = "m"
+IWLMVM = "m"
+IWLWIFI = "m"
+MAC80211 = "m"
+MT7601U = "m"
+MT7603E = "m"
+MT7615E = "m"
+MT7663U = "m"
+MT7663S = "m"
+MT76x0E = "m"
+MT76x0U = "m"
+MT76x2E = "m"
+MT76x2U = "m"
+MT7915E = "m"
+MT7921E = "m"
+MT7921U = "m"
+MT7925E = "m"
+MT7925U = "m"
+MT7996E = "m"
+NET_VENDOR_AQUANTIA = "y"
+RT2400PCI = "m"
+RT2500PCI = "m"
+RT2500USB = "m"
+RT2800PCI = "m"
+RT2800USB = "m"
+RT2X00 = "m"
+RT61PCI = "m"
+RT73USB = "m"
+RTL8180 = "m"
+RTL8187 = "m"
+RTL8723BS = "m"
+RTL8XXXU = "m"
+RTW88 = "m"
+RTW88_8723DE = "m"
+RTW88_8723DU = "m"
+RTW88_8812AU = "m"
+RTW88_8814AE = "m"
+RTW88_8814AU = "m"
+RTW88_8821AU = "m"
+RTW88_8821CE = "m"
+RTW88_8821CU = "m"
+RTW88_8822BE = "m"
+RTW88_8822BU = "m"
+RTW88_8822CE = "m"
+RTW88_8822CU = "m"
+RTW89 = "m"
+RTW89_8851BE = "m"
+RTW89_8851BU = "m"
+RTW89_8852AE = "m"
+RTW89_8852BE = "m"
+RTW89_8852BTE = "m"
+RTW89_8852BU = "m"
+RTW89_8852CE = "m"
+RTW89_8922AE = "m"
+["category:network".">=6.19.0"."all"]
+RTW89_8852AU = "m"
+RTW89_8852CU = "m"
+
+# NFC controllers
+["category:nfc".">=0.0.0"."all"]
+NFC = "m"
+NFC_HCI = "m"
+NFC_PN544_I2C = "m"
+NFC_SHDLC = "y"
+
+# platform/bus
+["category:platform".">=0.0.0"."all"]
+HOTPLUG_PCI = "y"
+HOTPLUG_PCI_SHPC = "y"
+I2C_CHARDEV = "m"
+I2C_DESIGNWARE_CORE = "y"
+I2C_DESIGNWARE_PCI = "y"
+I2C_DESIGNWARE_PLATFORM = "y"
+LPC_ICH = "m"
+MFD_ARIZONA_I2C = "m"
+MFD_ARIZONA_SPI = "m"
+MFD_CS47L24 = "y"
+MFD_WM5102 = "y"
+MFD_WM5110 = "y"
+MFD_WM8997 = "y"
+MFD_WM8998 = "y"
+MFD_WM8400 = "y"
+MMC = "y"
+PCIE_DPC = "y"
+PCIE_PTM = "y"
+PCIEAER = "y"
+PCIEPORTBUS = "y"
+PINCTRL = "y"
+SERIAL_DEV_BUS = "y"
+SPI_MEM = "y"
+USB_XHCI_HCD = "y"
+USB4 = "m"
+USB4_NET = "m"
+["category:platform".">=0.0.0"."aarch64 loongarch64 riscv64 x86 x86_64"]
+HOTPLUG_PCI_ACPI = "y"
+HOTPLUG_PCI_ACPI_IBM = "m"
+["category:platform".">=0.0.0"."x86_64"]
+HOTPLUG_PCI_CPCI = "y"
+HOTPLUG_PCI_CPCI_GENERIC = "m"
+HOTPLUG_PCI_CPCI_ZT5550 = "m"
+I2C_DESIGNWARE_AMDPSP = "y"
+MFD_INTEL_LPSS_ACPI = "y"
+MFD_INTEL_LPSS_PCI = "y"
+PINCTRL_ALDERLAKE = "m"
+PINCTRL_AMD = "y"
+PINCTRL_BAYTRAIL = "y"
+PINCTRL_BROXTON = "m"
+PINCTRL_CANNONLAKE = "m"
+PINCTRL_CEDARFORK = "m"
+PINCTRL_CHERRYVIEW = "m"
+PINCTRL_CY8C95X0 = "m"
+PINCTRL_ELKHARTLAKE = "m"
+PINCTRL_GEMINILAKE = "m"
+PINCTRL_ICELAKE = "m"
+PINCTRL_INTEL_PLATFORM = "m"
+PINCTRL_JASPERLAKE = "m"
+PINCTRL_METEORLAKE = "m"
+PINCTRL_SUNRISEPOINT = "m"
+PINCTRL_TIGERLAKE = "m"
+SPI_AMD = "m"
+X86_AMD_PLATFORM_DEVICE = "y"
+X86_INTEL_LPSS = "y"
+
+# power supplies, fuel gauges, etc.
+["category:power".">=0.0.0"."all"]
+CHARGER_MAX77705 = "m"
+MFD_MAX77693 = "m"
+MFD_MAX77705 = "m"
+POWERCAP = "y"
+REGULATOR = "y"
+SPMI = "y"
+["category:power".">=0.0.0"."aarch64"]
+BATTERY_LENOVO_YOGA_C630 = "m"
+BATTERY_SURFACE = "m"
+CHARGER_BQ25980 = "m"
+CHARGER_QCOM_SMB2 = "m"
+CHARGER_SURFACE = "m"
+MFD_QCOM_RPM = "m"
+MFD_SL28CPLD = "m"
+QCOM_SPMI_RRADC = "m"
+REGULATOR_QCOM_LABIBB = "m"
+REGULATOR_S2DOS05 = "m"
+["category:power"."<6.19"."aarch64"]
+EC_LENOVO_YOGA_C630 = "m"
+["category:power".">=0.0.0"."x86 x86_64"]
+ACPI_SBS = "m"
+I2C_PIIX4 = "m"
+INTEL_IDLE = "y"
+INTEL_RAPL = "m"
+["category:power".">=0.0.0"."armv7"]
+QCOM_PM8XXX_XOADC = "m"
+
+# remoteproc support
+["category:remoteproc".">=0.0.0"."all"]
+REMOTEPROC = "y"
+REMOTEPROC_CDEV = "y"
+
+# sensor hardware
+["category:sensors".">=0.0.0"."x86 x86_64"]
+GIGABYTE_WMI = "m"
+SENSORS_K10TEMP = "m"
+["category:sensors".">=0.0.0"."x86_64"]
+INTEL_ISH_HID = "m"
+
+# storage devices
+["category:storage".">=0.0.0"."all"]
+BLK_DEV_NVME = "m"
+MMC_SDHCI = "m"
+MMC_SDHCI_PCI = "m"
+NVME_CORE = "m"
+["category:storage".">=0.0.0"."aarch64 loongarch64 riscv64 x86 x86_64"]
+MMC_SDHCI_ACPI = "m"
+["category:storage".">=0.0.0"."x86_64"]
+VMD = "y"
+
+# Trusted Platform Modules
+["category:tpm".">=0.0.0"."all"]
+TCG_TIS = "m"
+TCG_TPM = "y"
+["category:tpm".">=0.0.0"."aarch64 armv7"]
+TCG_TIS_I2C = "m"
+
+# EFI framebuffer support is explicitly disabled in some close-to-mainline
+# kernels, so it cannot go in kconfigcheck
+["category:uefi".">=0.0.0"."aarch64 armv7 loongarch64 riscv64 x86 x86_64"]
+FB_EFI = "y"
+
+# usb drivers, type-c role switching, etc.
+["category:usb".">=0.0.0"."aarch64"]
+UCSI_LENOVO_YOGA_C630 = "m"
+["category:usb".">=0.0.0"."aarch64 armv7"]
+CHARGER_CROS_USBPD = "m"
+["category:usb".">=0.0.0"."all"]
+USB_ACM = "m"
+USB_SERIAL_CH341 = "m"
+USB_SERIAL_PL2303 = "m"
+["category:usb".">=0.0.0"."riscv64"]
+USB_DWC3 = "y"
+["category:usb".">=7.0_rc1"."riscv64"]
+PHY_SPACEMIT_K1_USB2 = "y"
+
+# vhost acceleration
+["category:vhost".">=0.0.0"."all"]
+TARGET_CORE = "m" # required for SCSI and VSOCK
+VHOST_NET = "m"
+VHOST_SCSI = "m"
+VHOST_VSOCK = "m"
+
+# cameras
+["category:video".">=0.0.0"."all"]
+MEDIA_SUPPORT = "m"
+MEDIA_SUPPORT_FILTER = "n"
+MEDIA_USB_SUPPORT = "y"
+USB_VIDEO_CLASS = "m"
+VIDEO_CAMERA_SENSOR = "y"
+VIDEO_DEV = "m"
+VIDEO_HI846 = "m"
+VIDEO_OV13B10 = "m"
+VIDEO_OV5675 = "m"
+VIDEO_OV8856 = "m"
+
+# virtio devices
+["category:virtio".">=0.0.0"."all"]
+CRYPTO_DEV_VIRTIO = "m"
+DRM_VIRTIO_GPU = "m"
+HW_RANDOM_VIRTIO = "m"
+I2C_VIRTIO = "m"
+NET_9P = "m"
+NET_9P_VIRTIO = "m"
+RPMSG_VIRTIO = "m"
+SCSI_VIRTIO = "y"
+SND_VIRTIO = "m"
+VIRTIO_BALLOON = "m"
+VIRTIO_BLK = "y"
+VIRTIO_CONSOLE = "y"
+VIRTIO_FS = "m"
+VIRTIO_INPUT = "y"
+VIRTIO_MMIO = "y"
+VIRTIO_MMIO_CMDLINE_DEVICES = "y"
+VIRTIO_NET = "y"
+VIRTIO_PCI = "y"
+VSOCKETS = "m"
+["category:virtio".">=0.0.0"."aarch64 x86 x86_64"]
+VIRTIO_IOMMU = "m"
+
+["category:watchdog".">=0.0.0"."x86 x86_64"]
+SP5100_TCO = "m"

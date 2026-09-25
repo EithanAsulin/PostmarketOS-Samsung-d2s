@@ -1,0 +1,106 @@
+From 57d46058ad83cc0f7dd5a2930c7b3f6052ff1cd0 Mon Sep 17 00:00:00 2001
+From: Ondrej Jirman <megi@xff.cz>
+Date: Wed, 22 Jul 2026 14:03:03 +0200
+Subject: [PATCH 86/90] usb: typec: displayport: Update the mux before
+ signalling hotplug
+
+On HPD changes the DP alt mode driver signalled the DRM side first and
+only updated the mux afterwards. The DRM driver handling the event may
+depend on what the mux publishes for the new status: on RK3399 the
+Type-C PHY reports through phy_get_bus_width() how many lanes the
+alternate mode left for DP, and cdn-dp treats zero as 'nothing to
+drive'.
+
+That ordering breaks both directions of hotplug:
+
+On plug-in, when the dock raised HPD via Attention, cdn-dp's event work
+ran off the hotplug event, read the lane count before tcphy_mux_set()
+had stored it, concluded 'Not connected; disabling cdn' and never
+looked again, so the external display stayed dark.
+
+On unplug, dp_altmode_remove() raised the hotplug event with the mux
+still publishing the old lane count. The event blocks on DRM locks held
+by a commit that is still driving the vanished sink, and as long as the
+lanes look present cdn-dp keeps re-enabling the output against a dead
+AUX channel, each attempt a 5 second DPCD timeout under those same
+locks. The disconnect handshake sat blocked behind that for over ten
+seconds before the pipeline finally tore down.
+
+Notify the mux first everywhere hotplug is signalled: the status update
+path, the deferred HPD signalling after configuration, and the alt mode
+removal. With the lane count cleared first, an in-flight enable aborts
+at the next lane check instead of timing out, and the teardown is
+immediate. The extra notification dp_altmode_attention() does
+afterwards is left in place; repeating the same state to the mux is
+harmless.
+
+Signed-off-by: Ondrej Jirman <megi@xff.cz>
+---
+ drivers/usb/typec/altmodes/displayport.c | 28 +++++++++++++++++++++++-
+ 1 file changed, 27 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/usb/typec/altmodes/displayport.c b/drivers/usb/typec/altmodes/displayport.c
+index 722030137015..380bd4215404 100644
+--- a/drivers/usb/typec/altmodes/displayport.c
++++ b/drivers/usb/typec/altmodes/displayport.c
+@@ -205,6 +205,14 @@ static int dp_altmode_status_update(struct dp_altmode *dp)
+ 				dp->pending_irq_hpd = true;
+ 		}
+ 	} else {
++		/*
++		 * Update the mux before signalling the hotplug event: the DRM
++		 * driver handling the event may look at what the mux published
++		 * for the new status (e.g. how many lanes the alternate mode
++		 * left for DP), and with the event sent first it would race
++		 * with the mux update and read stale state.
++		 */
++		ret = dp_altmode_notify(dp);
+ 		drm_connector_oob_hotplug_event(dp->connector_fwnode,
+ 						hpd ? connector_status_connected :
+ 						      connector_status_disconnected);
+@@ -221,8 +229,14 @@ static int dp_altmode_status_update(struct dp_altmode *dp)
+ 
+ static int dp_altmode_configured(struct dp_altmode *dp)
+ {
++	int ret;
++
+ 	sysfs_notify(&dp->alt->dev.kobj, "displayport", "configuration");
+ 	sysfs_notify(&dp->alt->dev.kobj, "displayport", "pin_assignment");
++
++	/* Update the mux before signalling the hotplug event, see above. */
++	ret = dp_altmode_notify(dp);
++
+ 	/*
+ 	 * If the DFP_D/UFP_D sends a change in HPD when first notifying the
+ 	 * DisplayPort driver that it is connected, then we wait until
+@@ -240,7 +254,7 @@ static int dp_altmode_configured(struct dp_altmode *dp)
+ 		}
+ 	}
+ 
+-	return dp_altmode_notify(dp);
++	return ret;
+ }
+ 
+ static int dp_altmode_configure_vdm(struct dp_altmode *dp, u32 conf)
+@@ -869,6 +883,18 @@ void dp_altmode_remove(struct typec_altmode *alt)
+ 	cancel_work_sync(&dp->work);
+ 	typec_altmode_put_plug(dp->plug_prime);
+ 
++	/*
++	 * Same ordering as on status updates: tell the mux the lanes are gone
++	 * before signalling the disconnect. The hotplug event can block on DRM
++	 * locks held by a commit that is still driving the vanished sink, and
++	 * until the mux is updated the DRM driver keeps finding lanes to
++	 * drive and re-enables the output against a dead AUX channel instead
++	 * of tearing it down.
++	 */
++	dp->data.status = 0;
++	dp->data.conf = 0;
++	dp_altmode_notify(dp);
++
+ 	if (dp->connector_fwnode) {
+ 		drm_connector_oob_hotplug_event(dp->connector_fwnode,
+ 						connector_status_disconnected);
+-- 
+2.55.0
+

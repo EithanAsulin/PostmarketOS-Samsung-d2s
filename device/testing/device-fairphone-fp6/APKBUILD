@@ -1,0 +1,75 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Luca Weiss <luca@lucaweiss.eu>"
+pkgname=device-fairphone-fp6
+pkgdesc="The Fairphone (Gen. 6)"
+pkgver=8
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	firmware-fairphone-fp6-adreno
+	firmware-fairphone-fp6-adsp
+	firmware-fairphone-fp6-bluetooth
+	firmware-fairphone-fp6-cdsp
+	firmware-fairphone-fp6-ipa
+	firmware-fairphone-fp6-modem
+	firmware-fairphone-fp6-vpu
+	firmware-fairphone-fp6-wpss
+	linux-firmware-ath11k
+	linux-postmarketos-qcom-milos
+	make-dynpart-mappings
+	mkbootimg
+	postmarketos-base
+	soc-qcom
+	soc-qcom-modem
+	soc-qcom-qbootctl
+	systemd-boot
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	drm-backend.conf
+	initfs-unl0kr.files
+	kernel-cmdline.conf
+	modules-initfs
+	sim-wait-time.conf
+	"
+subpackages="$pkgname-f0rmz $pkgname-systemd $pkgname-unl0kr"
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -Dm644 "$srcdir"/sim-wait-time.conf \
+		"$pkgdir"/usr/lib/systemd/system/msm-modem-uim-selection.service.d/sim-wait-time.conf
+	install -Dm644 "$srcdir"/drm-backend.conf \
+		-t "$pkgdir"/usr/share/f0rmz/f0rmz.conf.d
+	install -Dm644 "$srcdir"/drm-backend.conf \
+		-t "$pkgdir"/usr/share/unl0kr/unl0kr.conf.d
+	install -Dm644 "$srcdir"/initfs-unl0kr.files \
+		"$pkgdir"/usr/share/mkinitfs/files-extra/"$pkgname"-unl0kr.files
+}
+
+f0rmz() {
+	install_if="$pkgname=$pkgver-r$pkgrel f0rmz"
+	amove usr/share/f0rmz/f0rmz.conf.d/drm-backend.conf
+}
+
+unl0kr() {
+	install_if="$pkgname=$pkgver-r$pkgrel unl0kr"
+	amove usr/share/mkinitfs/files-extra/"$pkgname"-unl0kr.files
+	amove usr/share/unl0kr/unl0kr.conf.d/drm-backend.conf
+}
+
+sha512sums="
+1a5d94e9c1ec0df4f674566c887b15e1cd62db299f34e4ccf2d949f58e4a10694c80c430254c2c8af74ba659d046aafff3a5999c3d95681518f3770fb6f48a96  deviceinfo
+1363806ae1d3a32a257c337fc8fcadae17eb82439db59154248051bc900c66242c22f1db0a7895b16830c6b4b0ff1def6ba2d3d780d36e81531244c81639c545  drm-backend.conf
+5ae36207ba1f927fbbe8734c922f64e252bcbab66e3c8ab0aec66f831aa69a5a90561be5b37255a56c45554cd8999cc685a235b3c57f53dc257497807461d215  initfs-unl0kr.files
+a230e30a05453491d41ba4a6a4c504e3dbe7b630402ac2b837aa5d977c2d38c73c93fb198e8aff892a12005de8d2355593fe2fae8e3e9412418efb1d32250022  kernel-cmdline.conf
+178bb66a35b50aee147e3ce995b0aaf052715057025261e28a3d48e7a6449b981ceff1280799a8806529abb5c1882cea867991320594f9a291cc405d15b3e204  modules-initfs
+5b94d596fb02a71f78f888996df102055c8ef50e719d39d7f61151407759c8f7345924918dd227af79a8220bcf44dd1b3bdfbc2d4c206322d0dd57ebb4520207  sim-wait-time.conf
+"

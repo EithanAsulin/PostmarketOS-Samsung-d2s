@@ -1,0 +1,26 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Federico Amedeo Izzo <federico@izzo.pro>"
+pkgname=device-bq-gohan
+pkgdesc="BQ Aquaris X5 Plus"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="postmarketos-base linux-bq-gohan mkbootimg msm-fb-refresher"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+4c797612d554936ac75ec42c70277c70b7c6128cbc2b9dda69634e21c2f08991ee51b46f6c11429d0c0820c46e318a4e9cb236d1ec99ef2088403d01e58706ce  deviceinfo
+223c8d009a2a627b90f69be78ffc343b800291951fa8e1533f189432654e601c394bf788f3840266f1b6fcb89f5dfbfed3e19812a1745f60a82c98f7823f447b  kernel-cmdline.conf
+"

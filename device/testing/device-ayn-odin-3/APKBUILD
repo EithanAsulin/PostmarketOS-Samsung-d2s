@@ -1,0 +1,58 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Anton Bambura <jenneron@protonmail.com>"
+pkgname=device-ayn-odin-3
+pkgdesc="AYN Odin 3"
+pkgver=1
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf-ayn
+	firmware-ayn-audioreach-topology
+	firmware-ayn-odin-3
+	hexagonrpcd
+	linux-ayn-odin-3
+	linux-firmware-ath12k
+	linux-firmware-qca
+	linux-firmware-qcom
+	make-dynpart-mappings
+	msm-firmware-loader
+	postmarketos-base
+	soc-qcom
+	soc-qcom-qbootctl
+	systemd-boot
+	unl0kr-fbforcerefresh
+"
+makedepends="devicepkg-dev"
+source="
+	81-libssc-ayn-odin-3.rules
+	deviceinfo
+	kernel-cmdline.conf
+	hexagonrpcd-adsp-sensorspd.service
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	# replace /dev/fastrpc-adsp with /dev/fastrpc-adsp-secure and firmware path
+	install -Dm644 "$srcdir"/hexagonrpcd-adsp-sensorspd.service \
+		"$pkgdir"/usr/lib/systemd/system/hexagonrpcd-adsp-sensorspd.service.d/10-ayn-odin-3.conf
+
+	install -Dm644 "$srcdir"/81-libssc-ayn-odin-3.rules \
+		"$pkgdir"/usr/lib/udev/rules.d/81-libssc-ayn-odin-3.rules
+}
+
+sha512sums="
+2ed6b63c93007be7a095b708a7f771819dc6bdd39d1c4b2e206973eb1816da20d6d5472d781b860764dbb992380f0d15cd2215f9923cc75cd81c9dadd844376c  81-libssc-ayn-odin-3.rules
+a59acd172d7f303bcb635e976011ff7d265511d741be340103f6dfb8b9d49fcb35955e6a9170bfb60a14e6587b3665a48fe5670c031d26fff651634a0ab97e39  deviceinfo
+cd73a80bea056ae6e8ff13c2509217afab1bb0a3d3724fe0e7764efb3d48791114aba2327cc71191ee3566d431be28a2b74bf5d2aea2a5104f3733fc37e970da  kernel-cmdline.conf
+e043ac428fa540f5c9095aaa575224da41c97099eadf8bc5d2d0c4e87149f5d869adb896aecd67cb81f869a21ee6b108219a1c86e3d0d9d10d5ac4028a4cd9f5  hexagonrpcd-adsp-sensorspd.service
+80590744f7806403c1604f46662a1aa7a756fcb4d94148570cd89d5fd6682c62977c05be0df1a6e219dac7ebef9bd0b4bea82117d7f2ed27028321d604a7addb  modules-initfs
+"

@@ -1,0 +1,41 @@
+From 1385d1131866384e43531074a781978f04b6ac4e Mon Sep 17 00:00:00 2001
+From: Hugo Osvaldo Barrera <hugo@whynothugo.nl>
+Date: Tue, 19 May 2026 08:31:20 +0000
+Subject: [PATCH 7/8] pinebook-pro: Fix vcc_sdio regulator max voltage
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Commit 0b75109b6aa (v2026.01) made dw_mmc return an error when voltage
+setting is outside of the supported range, and fall back back to the
+minimal value (1.8V in this case).
+
+Prior to this, the error was silently ignored, no fallback was applied,
+and the voltage remained the default (3.0V).
+
+The device tree specifies that the regulator supports 1.8V–3.0V, but the
+RK808 LDO4 datasheet specifies that it supports 1.8V–3.4V.
+
+Change regulator-max-microvolt to 3400000 µV as per the RK808 datasheet.
+
+Patch submitted upstream: https://lists.infradead.org/pipermail/linux-rockchip/2026-May/071171.html
+---
+ dts/upstream/src/arm64/rockchip/rk3399-pinebook-pro.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/dts/upstream/src/arm64/rockchip/rk3399-pinebook-pro.dts b/dts/upstream/src/arm64/rockchip/rk3399-pinebook-pro.dts
+index eaaca08a760..ac3926bb7ff 100644
+--- a/dts/upstream/src/arm64/rockchip/rk3399-pinebook-pro.dts
++++ b/dts/upstream/src/arm64/rockchip/rk3399-pinebook-pro.dts
+@@ -532,7 +532,7 @@
+ 				regulator-always-on;
+ 				regulator-boot-on;
+ 				regulator-min-microvolt = <1800000>;
+-				regulator-max-microvolt = <3000000>;
++				regulator-max-microvolt = <3400000>; /* RK808 LDO4 supports 1.8V-3.4V */
+ 
+ 				regulator-state-mem {
+ 					regulator-on-in-suspend;
+-- 
+2.54.0
+

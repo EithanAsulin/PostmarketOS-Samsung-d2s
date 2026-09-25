@@ -1,0 +1,9 @@
+[Xiaomi Pad 6 Keyboard Cover]
+MatchBus=i2c
+MatchName=Nanosic 803 keyboard
+AttrKeyboardIntegration=internal
+
+[Xiaomi Pad 6 Keyboard Cover Touchpad]
+MatchBus=i2c
+MatchName=Nanosic 803 touchpad
+AttrInputProp=+INPUT_PROP_BUTTONPAD

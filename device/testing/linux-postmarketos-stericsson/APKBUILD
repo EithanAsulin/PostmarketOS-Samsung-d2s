@@ -1,0 +1,75 @@
+# Kernel config based on: arch/arm/configs/u8500_defconfig
+maintainer="Stefan Hansson <newbyte@postmarketos.org>"
+_flavor="postmarketos-stericsson"
+_config="config-$_flavor.armv7"
+pkgname=linux-$_flavor
+pkgver=7.2.0
+pkgrel=0
+pkgdesc="Mainline kernel for ST-Ericsson NovaThor devices"
+arch="armv7"
+_carch="arm"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-waydroid
+	pmb:kconfigcheck-containers
+	pmb:kconfigcheck-zram
+	pmb:kconfigcheck-nftables
+	"
+makedepends="
+	bison
+	clang
+	elfutils-dev
+	findutils
+	flex
+	linux-headers
+	lld
+	llvm
+	openssl-dev
+	pahole
+	perl
+	postmarketos-installkernel
+	python3
+	zstd
+	"
+case $pkgver in
+	*.*.*)	_kernver=${pkgver%.0};;
+	*.*)	_kernver=$pkgver;;
+esac
+source="
+	https://cdn.kernel.org/pub/linux/kernel/v${_kernver%%.*}.x/linux-$_kernver.tar.xz
+	config-$_flavor.armv7
+	"
+builddir="$srcdir/linux-${_kernver//_/-}"
+_defconfig="u8500_defconfig"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$CARCH" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 HOSTLDFLAGS="-fuse-ld=lld" \
+		KBUILD_BUILD_VERSION=$((pkgrel + 1 ))
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+	make zinstall modules_install dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_MOD_PATH="$pkgdir"/usr \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+	rm -f "$pkgdir"/usr/lib/modules/*/build "$pkgdir"/usr/lib/modules/*/source
+
+	install -Dm644 "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+47e63679363261a864d271277340a6f2d45f544e1a056be4159df081f4f6537d0efa865c4af26611ab33a3079ee65db88ec2f6bc0e5fff43e0c043cde0cd91e1  linux-7.2.tar.xz
+58de2313be4f3de35a59fc12895322e908e0359c270b2b0cc1bac2be8575631d36220baec486c97fa856fd26dbd082a6a9837f24abb41c95c1e6925952888ba3  config-postmarketos-stericsson.armv7
+"

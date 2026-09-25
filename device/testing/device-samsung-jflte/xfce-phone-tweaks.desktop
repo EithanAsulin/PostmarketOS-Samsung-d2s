@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=XFCE Phone Tweaks
+Exec=/usr/bin/xfce-phone-tweaks.sh
+OnlyShowIn=XFCE;
+X-GNOME-Autostart-enabled=true

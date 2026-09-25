@@ -1,0 +1,8 @@
+#!/bin/sh
+
+# Enable ofono
+rc-update add ofono default
+# Disable swclock because rtc is working
+rc-update -q del swclock boot
+
+exit 0

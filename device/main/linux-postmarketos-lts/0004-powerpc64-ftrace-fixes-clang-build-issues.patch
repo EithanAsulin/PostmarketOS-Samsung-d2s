@@ -1,0 +1,126 @@
+From git@z Thu Jan  1 00:00:00 1970
+Subject: [PATCH v2 1/3] powerpc64: make clang cross-build friendly
+From: Hari Bathini <hbathini@linux.ibm.com>
+Date: Tue, 27 Jan 2026 14:19:24 +0530
+Message-Id: <20260127084926.34497-2-hbathini@linux.ibm.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+ARCH_USING_PATCHABLE_FUNCTION_ENTRY depends on toolchain support for
+-fpatchable-function-entry option. The current script that checks
+for this support only handles GCC. Rename the script and extend it
+to detect support for -fpatchable-function-entry with Clang as well,
+allowing clean cross-compilation with Clang toolchains.
+
+Signed-off-by: Hari Bathini <hbathini@linux.ibm.com>
+Tested-by: Venkat Rao Bagalkote <venkat88@linux.ibm.com>
+---
+* Changes in v2:
+  - Use $(CLANG_FLAGS) instead of manually checking CC_IS_CLANG
+
+
+ arch/powerpc/Kconfig                                          | 4 ++--
+ ...e-function-entry.sh => check-fpatchable-function-entry.sh} | 0
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+ rename arch/powerpc/tools/{gcc-check-fpatchable-function-entry.sh => check-fpatchable-function-entry.sh} (100%)
+
+diff --git a/arch/powerpc/Kconfig b/arch/powerpc/Kconfig
+index b8d36a261009..dcb9894e2004 100644
+--- a/arch/powerpc/Kconfig
++++ b/arch/powerpc/Kconfig
+@@ -571,8 +571,8 @@ config ARCH_USING_PATCHABLE_FUNCTION_ENTRY
+ 	depends on FUNCTION_TRACER && (PPC32 || PPC64_ELF_ABI_V2)
+ 	depends on $(cc-option,-fpatchable-function-entry=2)
+ 	def_bool y if PPC32
+-	def_bool $(success,$(srctree)/arch/powerpc/tools/gcc-check-fpatchable-function-entry.sh $(CC) -mlittle-endian) if PPC64 && CPU_LITTLE_ENDIAN
+-	def_bool $(success,$(srctree)/arch/powerpc/tools/gcc-check-fpatchable-function-entry.sh $(CC) -mbig-endian) if PPC64 && CPU_BIG_ENDIAN
++	def_bool $(success,$(srctree)/arch/powerpc/tools/check-fpatchable-function-entry.sh $(CC) $(CLANG_FLAGS) -mlittle-endian) if PPC64 && CPU_LITTLE_ENDIAN
++	def_bool $(success,$(srctree)/arch/powerpc/tools/check-fpatchable-function-entry.sh $(CC) -mbig-endian) if PPC64 && CPU_BIG_ENDIAN
+ 
+ config PPC_FTRACE_OUT_OF_LINE
+ 	def_bool PPC64 && ARCH_USING_PATCHABLE_FUNCTION_ENTRY
+diff --git a/arch/powerpc/tools/gcc-check-fpatchable-function-entry.sh b/arch/powerpc/tools/check-fpatchable-function-entry.sh
+similarity index 100%
+rename from arch/powerpc/tools/gcc-check-fpatchable-function-entry.sh
+rename to arch/powerpc/tools/check-fpatchable-function-entry.sh
+-- 
+2.52.0
+
+From git@z Thu Jan  1 00:00:00 1970
+Subject: [PATCH v2 3/3] powerpc64/ftrace: workaround clang recording GEP in
+ __patchable_function_entries
+From: Hari Bathini <hbathini@linux.ibm.com>
+Date: Tue, 27 Jan 2026 14:19:26 +0530
+Message-Id: <20260127084926.34497-4-hbathini@linux.ibm.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+Support for -fpatchable-function-entry on ppc64le was added in Clang
+with [1]. However, when no prefix NOPs are specified - as is the case
+with CONFIG_PPC_FTRACE_OUT_OF_LINE - the first NOP is emitted at LEP,
+but Clang records the Global Entry Point (GEP) unlike GCC which does
+record the Local Entry Point (LEP). Issue [2] has been raised to align
+Clang's behavior with GCC. As a temporary workaround to ensure ftrace
+initialization works as expected with Clang, derive the LEP using
+ppc_function_entry() for kernel symbols and by looking for the below
+module GEP sequence for module addresses, until [2] is resolved:
+
+	ld	r2, -8(r12)
+	add	r2, r2, r12
+
+[1] https://github.com/llvm/llvm-project/pull/151569
+[2] https://github.com/llvm/llvm-project/issues/163706
+
+Cc: Maryam Moghadas <maryammo@ca.ibm.com>
+Signed-off-by: Hari Bathini <hbathini@linux.ibm.com>
+Tested-by: Venkat Rao Bagalkote <venkat88@linux.ibm.com>
+---
+* No changes since v1.
+
+
+ arch/powerpc/kernel/trace/ftrace.c | 26 ++++++++++++++++++++++----
+ 1 file changed, 22 insertions(+), 4 deletions(-)
+
+diff --git a/arch/powerpc/kernel/trace/ftrace.c b/arch/powerpc/kernel/trace/ftrace.c
+index 841d077e2825..1b2f293e7dcb 100644
+--- a/arch/powerpc/kernel/trace/ftrace.c
++++ b/arch/powerpc/kernel/trace/ftrace.c
+@@ -37,11 +37,29 @@ unsigned long ftrace_call_adjust(unsigned long addr)
+ 	if (addr >= (unsigned long)__exittext_begin && addr < (unsigned long)__exittext_end)
+ 		return 0;
+ 
+-	if (IS_ENABLED(CONFIG_ARCH_USING_PATCHABLE_FUNCTION_ENTRY) &&
+-	    !IS_ENABLED(CONFIG_PPC_FTRACE_OUT_OF_LINE)) {
+-		addr += MCOUNT_INSN_SIZE;
+-		if (IS_ENABLED(CONFIG_DYNAMIC_FTRACE_WITH_CALL_OPS))
++	if (IS_ENABLED(CONFIG_ARCH_USING_PATCHABLE_FUNCTION_ENTRY)) {
++		if (!IS_ENABLED(CONFIG_PPC_FTRACE_OUT_OF_LINE)) {
+ 			addr += MCOUNT_INSN_SIZE;
++			if (IS_ENABLED(CONFIG_DYNAMIC_FTRACE_WITH_CALL_OPS))
++				addr += MCOUNT_INSN_SIZE;
++		} else if (IS_ENABLED(CONFIG_CC_IS_CLANG) && IS_ENABLED(CONFIG_PPC64)) {
++			/*
++			 * addr points to global entry point though the NOP was emitted at local
++			 * entry point due to https://github.com/llvm/llvm-project/issues/163706
++			 * Handle that here with ppc_function_entry() for kernel symbols while
++			 * adjusting module addresses in the else case, by looking for the below
++			 * module global entry point sequence:
++			 *	ld    r2, -8(r12)
++			 *	add   r2, r2, r12
++			 */
++			if (is_kernel_text(addr) || is_kernel_inittext(addr))
++				addr = ppc_function_entry((void *)addr);
++			else if ((ppc_inst_val(ppc_inst_read((u32 *)addr)) ==
++				  PPC_RAW_LD(_R2, _R12, -8)) &&
++				 (ppc_inst_val(ppc_inst_read((u32 *)(addr+4))) ==
++				  PPC_RAW_ADD(_R2, _R2, _R12)))
++				addr += 8;
++		}
+ 	}
+ 
+ 	return addr;
+-- 
+2.52.0
+

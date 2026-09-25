@@ -1,0 +1,75 @@
+# Kernel config based on: downstream arch/arm64/configs/exynos9820-beyond1lte_defconfig
+maintainer="chiffa <chiffathefoxx@gmail.com>"
+pkgname=linux-postmarketos-exynos9820
+pkgver=7.2.0
+pkgrel=0
+_commit="0aeca03f7acddd3aacdf25b01fede0ee3c724d48"
+pkgdesc="Close-to-mainline kernel for Samsung Exynos 9820 devices"
+url="https://github.com/chiffathefox/exynos-9820-mainline-linux"
+arch="aarch64"
+_carch="arm64"
+_flavor="${pkgname#linux-}"
+license="GPL-2.0-only"
+makedepends="
+	bc
+	bison
+	clang
+	elfutils-dev
+	findutils
+	flex
+	linux-headers
+	lld
+	llvm
+	openssl-dev
+	pahole
+	perl
+	postmarketos-installkernel
+	python3
+	zstd
+"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::$url/archive/$_commit.tar.gz
+	$_config
+"
+options="
+	!check
+	!strip
+	!tracedeps
+	pmb:cross-native
+"
+builddir="$srcdir/$pkgname-$_commit"
+builddir="$srcdir/exynos-9820-mainline-linux-$_commit"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/$_config" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+	# No point in compressing the image because it's stored on UFS
+	make install modules_install dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_MOD_PATH="$pkgdir"/usr \
+		INSTALL_DTBS_PATH="$pkgdir/boot/dtbs"
+
+	rm -f "$pkgdir"/usr/lib/modules/*/build "$pkgdir"/usr/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir/usr/share/kernel/$_flavor/kernel.release"
+}
+
+sha512sums="
+c63f7a3ff89ee6485918f40129398f20443c0fed83daeac5d4a6a099fd5420fa9439563546240520f8b740af32f02ed928db0d5148657209fd01e89dc9b2f268  linux-postmarketos-exynos9820-0aeca03f7acddd3aacdf25b01fede0ee3c724d48.tar.gz
+0500ea232afb949646769f1d1c45146250e15f3fa338e981ba842a9392682821fb44aaa035dd5b82a358bafec7235440695bfca1fffebece97952b8648f469cd  config-postmarketos-exynos9820.aarch64
+"

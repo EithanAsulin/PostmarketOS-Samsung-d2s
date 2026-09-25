@@ -1,0 +1,42 @@
+maintainer="cristian_ci <cristian_ci@protonmail.com>"
+pkgname=zimage64
+pkgver=0.1
+pkgrel=0
+_commit=a2358d76828809813497cc7db248264e4e8afea0
+_commit_udt=5c65af2fc6aad2c9789609aa696f6d5178e9c2e8
+_commit_uzlib=6d60d651a4499a64f2e5b21b4cc08d98cb84b5c1
+pkgdesc="A kernel shim for unpacking aarch64 kernel when not supported by bootloader"
+url="https://gitlab.com/sleirsgoevy/zimage64"
+arch="aarch64"
+license="GPL-2.0-only"
+depends=""
+makedepends="zlib-dev"
+source="
+	$url/-/archive/$_commit.tar.gz
+	udt-$_commit_udt.tar.gz::https://gitlab.com/sleirsgoevy/udt/-/archive/$_commit_udt.tar.gz
+	uzlib-$_commit_uzlib.tar.gz::https://github.com/pfalcon/uzlib/archive/$_commit_uzlib.tar.gz
+	"
+options="!check" # No tests
+builddir="$srcdir/$pkgname-$_commit"
+
+prepare() {
+	default_prepare
+	mkdir -p "$builddir/udt"
+	mkdir -p "$builddir/uzlib"
+	mv "$srcdir/udt-$_commit_udt"/* "$builddir/udt"
+	mv "$srcdir/uzlib-$_commit_uzlib"/* "$builddir/uzlib"
+}
+
+build() {
+	make
+}
+
+package() {
+	DESTDIR=$pkgdir PREFIX=/usr make install
+}
+
+sha512sums="
+f081b35d4121ed5c75c8b97806765298a7c82fd50d7c1b8146387edaf8697bbee9ef275758db1319b095abcc5185d12ce0d43922fde05e24e1a61e2aca9b3216  a2358d76828809813497cc7db248264e4e8afea0.tar.gz
+e899151bf24636c7687a80f3d2a6440056cbfe0cc8e6ca3fab2571ed9fd3ecd7a49ec6558ce40ea1e5d7c9c65737737aeb4f61a4e644b3750618a7129a026254  udt-5c65af2fc6aad2c9789609aa696f6d5178e9c2e8.tar.gz
+5a5472990a085570c2f1cd75ade20105676a1b9f90ca44a383e26e147ce692c507281e4c880e730b985d3c57b3bec54e3c4cdd33c6af4e52270ba0a965b3a48d  uzlib-6d60d651a4499a64f2e5b21b4cc08d98cb84b5c1.tar.gz
+"

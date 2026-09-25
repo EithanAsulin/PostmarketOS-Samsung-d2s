@@ -1,0 +1,94 @@
+# Kernel config based on: arch/arm64/configs/sdm660_defconfig
+maintainer="Alexey Minnekhanov <alexeymin@postmarketos.org>"
+_flavor="postmarketos-qcom-sdm660"
+pkgname=linux-$_flavor
+pkgver=7.0.14
+pkgrel=0
+pkgdesc="Close to mainline linux kernel for Qualcomm Snapdragon 660 SoC"
+arch="aarch64"
+url="https://kernel.org/"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-community
+	"
+makedepends="
+	bison
+	clang
+	diffutils
+	elfutils-dev
+	findutils
+	flex
+	linux-headers
+	lld
+	llvm
+	openssl-dev
+	pahole
+	perl
+	postmarketos-installkernel
+	python3
+	zstd
+	"
+
+_tag="v$pkgver-sdm660"
+
+source="
+	linux-$_tag.tar.gz::https://github.com/sdm660-mainline/linux/archive/refs/tags/$_tag.tar.gz
+	config-$_flavor.aarch64
+"
+
+_carch="arm64"
+
+# for some reason, the directory inside .tar.gz does not match tag name: leading
+#     "v" is missing, so we can't use $_tag here
+builddir="$srcdir/linux-$pkgver-sdm660"
+
+prepare() {
+	default_prepare
+	cp -v "$srcdir/config-$_flavor.$CARCH" "$builddir"/.config
+}
+
+build() {
+	unset LDFLAGS
+
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor" all Image.gz
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+
+	make modules_install dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_MOD_PATH="$pkgdir"/usr \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir/boot/dtbs-tmp"
+
+	install -D "$builddir/arch/arm64/boot/vmlinuz.efi" \
+		"$pkgdir/boot/vmlinuz.efi"
+
+	install -D "$builddir/arch/arm64/boot/Image.gz" \
+		"$pkgdir/boot/vmlinuz"
+
+	# Reduce package size, install only qcom SDM630/636/660 dtbs.
+	# This reduces .apk size from ~46 Mb to ~30 Mb.
+	mkdir -p "$pkgdir"/boot/dtbs/qcom
+	cp -r "$pkgdir"/boot/dtbs-tmp/qcom/sda660* "$pkgdir"/boot/dtbs/qcom
+	cp -r "$pkgdir"/boot/dtbs-tmp/qcom/sdm630* "$pkgdir"/boot/dtbs/qcom
+	cp -r "$pkgdir"/boot/dtbs-tmp/qcom/sdm636* "$pkgdir"/boot/dtbs/qcom
+	cp -r "$pkgdir"/boot/dtbs-tmp/qcom/sdm660* "$pkgdir"/boot/dtbs/qcom
+	rm -r "$pkgdir"/boot/dtbs-tmp
+
+	# "build" is symlink that will be invalid in rootfs (points to /home/pmos...)
+	rm -f "$pkgdir"/usr/lib/modules/*/build "$pkgdir"/usr/lib/modules/*/source
+
+	install -D "$builddir/include/config/kernel.release" \
+		"$pkgdir/usr/share/kernel/$_flavor/kernel.release"
+}
+
+sha512sums="
+83f7e717b8adc9049e828a27629e7347be2fa0aef6c8404608059410cebaafa0c2659317b615634fbd5d83f9a245bcf1a64e5d2cd0d8e3ec8aeaa3dcf0e51298  linux-v7.0.14-sdm660.tar.gz
+f9ab2eaafe23d350b92c511909b86ec3cbfcd07c5947a723231754148b4b1ce16587fe6fddea2d3e6746c522cb1a004d1571f02b50d803081e08bcaf84d2f615  config-postmarketos-qcom-sdm660.aarch64
+"

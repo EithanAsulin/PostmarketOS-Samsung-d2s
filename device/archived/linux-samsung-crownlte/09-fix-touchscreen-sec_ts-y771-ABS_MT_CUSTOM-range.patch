@@ -1,0 +1,26 @@
+the driver returns a bogus range for one axis (integer overflow to -1),
+this was surfaced by libinput commit 04a35384e6b which adds validation
+of those values.
+https://gitlab.freedesktop.org/libinput/libinput/-/merge_requests/1486#note_3655002
+--- a/drivers/input/touchscreen/sec_ts/sec_ts.c
++++ b/drivers/input/touchscreen/sec_ts/sec_ts.c
+@@ -2095,7 +2095,7 @@
+ 	input_set_abs_params(dev, ABS_MT_POSITION_Y, 0, ts->plat_data->max_y, 0, 0);
+ 	input_set_abs_params(dev, ABS_MT_TOUCH_MAJOR, 0, 255, 0, 0);
+ 	input_set_abs_params(dev, ABS_MT_TOUCH_MINOR, 0, 255, 0, 0);
+-	input_set_abs_params(dev, ABS_MT_CUSTOM, 0, 0xFFFFFFFF, 0, 0);
++	input_set_abs_params(dev, ABS_MT_CUSTOM, 0, 0x3FFFFFFF, 0, 0);
+ 	if (ts->plat_data->support_mt_pressure)
+ 		input_set_abs_params(dev, ABS_MT_PRESSURE, 0, 255, 0, 0);
+ 
+--- a/drivers/input/touchscreen/sec_ts/y771/sec_ts.c
++++ b/drivers/input/touchscreen/sec_ts/y771/sec_ts.c
+@@ -2184,7 +2184,7 @@
+ 	input_set_abs_params(dev, ABS_MT_POSITION_Y, 0, ts->plat_data->max_y, 0, 0);
+ 	input_set_abs_params(dev, ABS_MT_TOUCH_MAJOR, 0, 255, 0, 0);
+ 	input_set_abs_params(dev, ABS_MT_TOUCH_MINOR, 0, 255, 0, 0);
+-	input_set_abs_params(dev, ABS_MT_CUSTOM, 0, 0xFFFFFFFF, 0, 0);
++	input_set_abs_params(dev, ABS_MT_CUSTOM, 0, 0x3FFFFFFF, 0, 0);
+ 	if (ts->plat_data->support_mt_pressure)
+ 		input_set_abs_params(dev, ABS_MT_PRESSURE, 0, 255, 0, 0);
+ 

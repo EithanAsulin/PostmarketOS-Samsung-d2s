@@ -1,0 +1,13 @@
+diff --git a/src/main.rs b/src/main.rs
+index df41a25..fd2857b 100644
+--- a/src/main.rs
++++ b/src/main.rs
+@@ -630,7 +630,7 @@ fn load_kernel_and_prepare_jump(
+         }
+     };
+ 
+-    if kernel_buf.is_empty() || kernel_buf.len() > 64 * 1024 * 1024 {
++    if kernel_buf.is_empty() || kernel_buf.len() > 512 * 1024 * 1024 {
+         prom.write_line("invalid kernel size");
+         prom.power_off();
+     }

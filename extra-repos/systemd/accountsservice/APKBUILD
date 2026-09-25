@@ -1,0 +1,55 @@
+# Forked from Alpine to build with systemd support
+# this provides the ability to activate user sessions
+# from dbus by invoking logind
+maintainer=""
+pkgname=accountsservice
+_pkgver=26.27.3
+pkgver=9999$_pkgver
+pkgrel=0
+pkgdesc="D-Bus interface for user account query and manipulation"
+url="https://www.freedesktop.org/software/accountsservice/"
+# armhf: pmb#2618
+arch="all !armhf"
+license="GPL-3.0-or-later"
+depends_dev="gobject-introspection-dev"
+makedepends="
+	$depends_dev
+	dbus-dev
+	systemd-dev
+	glib-dev
+	json-c-dev
+	meson
+	polkit-dev
+	vala
+	"
+subpackages="$pkgname-dev $pkgname-lang lib$pkgname:libs"
+source="https://gitlab.freedesktop.org/accountsservice/accountsservice/-/archive/$_pkgver/accountsservice-$_pkgver.tar.gz"
+# mocklibc fails to build with implicits
+options="!check"
+builddir="$srcdir/accountsservice-$_pkgver"
+
+build() {
+	abuild-meson \
+		-Db_lto=true \
+		-Dsystemdsystemunitdir=/usr/lib/systemd/system \
+		-Dintrospection=true \
+		-Ddocbook=false \
+		-Dgtk_doc=false \
+		-Dadmin_group=wheel \
+		-Dtests="$(want_check && echo true || echo false)" \
+		-Dwtmpfile=/var/log/wtmp \
+		. output
+	meson compile -C output
+}
+
+check() {
+	meson test --print-errorlogs --no-rebuild -C output
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install --no-rebuild -C output
+}
+
+sha512sums="
+7d498bd50f249eaefd811a9c8c528aa66fdfa14722a73b845873bf8325f9109ccad11c24d96ad721c3544508db34d56dfc29e36c173797c19ad5571dd202a522  accountsservice-26.27.3.tar.gz
+"

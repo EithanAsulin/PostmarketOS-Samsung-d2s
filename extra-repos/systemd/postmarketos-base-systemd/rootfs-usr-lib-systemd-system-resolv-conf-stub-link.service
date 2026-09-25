@@ -1,0 +1,15 @@
+[Unit]
+Description=Migrate /etc/resolv.conf to the systemd-resolved stub
+Documentation=man:systemd-resolved.service(8)
+ConditionPathIsSymbolicLink=!/etc/resolv.conf
+Wants=network-pre.target
+Before=network-pre.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/resolv-conf-stub-link
+
+[Install]
+WantedBy=multi-user.target
+

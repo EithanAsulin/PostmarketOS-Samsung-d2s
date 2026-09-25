@@ -1,0 +1,51 @@
+maintainer="Ingo Reitz <9l@9lo.re>"
+pkgname=run0-sudo-shim
+pkgver=1.4.2
+pkgrel=0
+pkgdesc="An imitation of sudo, using (systemd) run0 internally"
+url="https://github.com/LordGrimmauld/run0-sudo-shim/"
+arch="all"
+license="BSD-3-Clause"
+depends="cmd:run0"
+makedepends="cargo cargo-auditable"
+provides="sudo-virt"
+provider_priority=0
+# net: cargo fetch
+options="net"
+source="$pkgname-$pkgver.tar.gz::https://github.com/LordGrimmauld/run0-sudo-shim/archive/refs/tags/$pkgver.tar.gz"
+subpackages="$pkgname-doc $pkgname-bash-completion $pkgname-fish-completion $pkgname-zsh-completion"
+
+prepare() {
+	default_prepare
+	cargo fetch --target="$CHOST" --locked
+}
+
+build() {
+	cargo auditable build --frozen --release
+}
+
+check() {
+	cargo test --frozen
+}
+
+package() {
+	install -Dm755 target/release/run0-sudo-shim \
+		-t "$pkgdir"/usr/bin/
+	ln -sf run0-sudo-shim "$pkgdir"/usr/bin/sudo
+
+	# doc
+	install -Dm644 "$builddir"/target/tmp/run0-sudo-shim/manpage/sudo.8 \
+		-t "$pkgdir"/usr/share/man/man8/
+
+	# completions
+	install -Dm644 "$builddir"/target/tmp/run0-sudo-shim/completion/sudo.bash \
+		-t "$pkgdir"/usr/share/bash-completion/completions/
+	install -Dm644 "$builddir"/target/tmp/run0-sudo-shim/completion/sudo.fish \
+		-t "$pkgdir"/usr/share/fish/vendor_completions.d/
+	install -Dm644 "$builddir"/target/tmp/run0-sudo-shim/completion/_sudo \
+		-t "$pkgdir"/usr/share/zsh/site-functions/
+}
+
+sha512sums="
+2b07195f95e3322d116239091531eeea6d6e6c66e14f4b26abe045685fdb053de607f5fdec01b17c643d32250285f4a4cbf06b147ab2c87d0b369384e94dd4a0  run0-sudo-shim-1.4.2.tar.gz
+"

@@ -1,0 +1,13 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-3.0-only
+battery="/sys/class/power_supply/bq27200-0"
+capacity=$(cat "$battery"/capacity)
+status=$(cat "$battery"/status)
+echo "$capacity%"
+echo "$capacity%"
+
+if [ "$status" = "Charging" ] || [ "$status" = "Full" ]; then
+        echo "#0099FF"
+else
+        echo "#FFFFFF"
+fi

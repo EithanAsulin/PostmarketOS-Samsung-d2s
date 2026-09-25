@@ -1,0 +1,12 @@
+diff --git a/pinenote-config/sway/config.orig b/pinenote-config/sway/config
+index 57593c6..d4eed73 100644
+--- a/pinenote-config/sway/config.orig
++++ b/pinenote-config/sway/config
+@@ -271,7 +271,7 @@ for_window [app_id="mpv"] exec "$ebcmark" set "Y1|D" silent
+ for_window [app_id="foot"] exec "$ebcmark" set "Y2|R" silent
+ for_window [app_id="com.github.xournalpp.xournalpp"] exec "$ebcmark" set "Y4|R" silent
+ 
+-include /etc/sway/config.d/*
++#include /etc/sway/config.d/*
+ 
+ # Start pinenote.service if you setup doesn't have that set up

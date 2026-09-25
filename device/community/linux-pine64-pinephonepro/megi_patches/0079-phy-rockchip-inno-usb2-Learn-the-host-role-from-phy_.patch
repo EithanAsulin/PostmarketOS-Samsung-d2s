@@ -1,0 +1,140 @@
+From c9215a902f9ebf54e465e72243dec21d712a1276 Mon Sep 17 00:00:00 2001
+From: Ondrej Jirman <megi@xff.cz>
+Date: Tue, 21 Jul 2026 00:20:41 +0200
+Subject: [PATCH 79/90] phy: rockchip-inno-usb2: Learn the host role from
+ phy_set_mode()
+
+The OTG state machine finds out whether the port is acting as a host by
+reading EXTCON_USB_HOST. That only works when something else supplies
+the extcon device and writes to it; when this driver registers its own,
+the only writer is its own ID pin handling, which nothing outside can
+see, so a board with no ID pin has no way to reach OTG_STATE_A_HOST.
+
+Take the role from phy_set_mode() in that case. The controller already
+calls it on every role change, so the information is there for the
+asking, and on a Type-C board it comes from the port manager rather than
+having to be routed back in through an extcon device.
+
+Boards with an extcon phandle keep reading EXTCON_USB_HOST and are not
+affected. Boards without one cannot regress either: nothing consumed the
+EXTCON_USB_HOST this driver published to its own extcon device, so the
+ID pin never reached the controller there to begin with.
+
+Signed-off-by: Ondrej Jirman <megi@xff.cz>
+---
+ drivers/phy/rockchip/phy-rockchip-inno-usb2.c | 59 ++++++++++++++++++-
+ 1 file changed, 57 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/phy/rockchip/phy-rockchip-inno-usb2.c b/drivers/phy/rockchip/phy-rockchip-inno-usb2.c
+index 5b62cc4cb607..bbb119f34a88 100644
+--- a/drivers/phy/rockchip/phy-rockchip-inno-usb2.c
++++ b/drivers/phy/rockchip/phy-rockchip-inno-usb2.c
+@@ -231,6 +231,7 @@ struct rockchip_usb2phy_port {
+ 	struct notifier_block	event_nb;
+ 	enum usb_otg_state	state;
+ 	enum usb_dr_mode	mode;
++	bool		host_mode;
+ };
+ 
+ /**
+@@ -268,6 +269,8 @@ struct rockchip_usb2phy {
+ 	u8			dcd_retries;
+ 	unsigned int		chg_mode_cfg;
+ 	struct extcon_dev	*edev;
++	/* the extcon device came from a phandle rather than being ours */
++	bool			edev_external;
+ 	int			irq;
+ 	const struct rockchip_usb2phy_cfg	*phy_cfg;
+ 	struct rockchip_usb2phy_port	ports[USB2PHY_NUM_PORTS];
+@@ -471,6 +474,7 @@ static int rockchip_usb2phy_extcon_register(struct rockchip_usb2phy *rphy)
+ 		if (IS_ERR(edev))
+ 			return dev_err_probe(rphy->dev, PTR_ERR(edev),
+ 					     "invalid or missing extcon\n");
++		rphy->edev_external = true;
+ 	} else {
+ 		/* Initialize extcon device */
+ 		edev = devm_extcon_dev_allocate(rphy->dev,
+@@ -672,11 +676,62 @@ static int rockchip_usb2phy_exit(struct phy *phy)
+ 	return 0;
+ }
+ 
++/*
++ * Whether the OTG port is acting as a host.
++ *
++ * With an extcon device supplied by someone else, EXTCON_USB_HOST is what
++ * says so, either driven by a Type-C port manager or looped back from this
++ * driver's own ID pin handling. Otherwise nothing external writes to our
++ * extcon device and the controller tells us instead, through phy_set_mode().
++ */
++static bool rockchip_usb2phy_host_mode(struct rockchip_usb2phy *rphy,
++				       struct rockchip_usb2phy_port *rport)
++{
++	if (!rphy->edev_external)
++		return rport->host_mode;
++
++	return extcon_get_state(rphy->edev, EXTCON_USB_HOST) > 0;
++}
++
++static int rockchip_usb2phy_set_mode(struct phy *phy, enum phy_mode mode,
++				     int submode)
++{
++	struct rockchip_usb2phy_port *rport = phy_get_drvdata(phy);
++	struct rockchip_usb2phy *rphy = dev_get_drvdata(phy->dev.parent);
++	bool host_mode;
++
++	if (rport->port_id != USB2PHY_PORT_OTG || rphy->edev_external)
++		return 0;
++
++	switch (mode) {
++	case PHY_MODE_USB_HOST:
++		host_mode = true;
++		break;
++	case PHY_MODE_USB_DEVICE:
++		host_mode = false;
++		break;
++	default:
++		return 0;
++	}
++
++	if (rport->host_mode == host_mode)
++		return 0;
++
++	dev_err(&rport->phy->dev, "U2PHY set_mode: host=%d\n", host_mode);
++	rport->host_mode = host_mode;
++
++	/* let the state machine act on the new role */
++	mod_delayed_work(system_wq, &rport->otg_sm_work, 0);
++
++	return 0;
++}
++
+ static const struct phy_ops rockchip_usb2phy_ops = {
+ 	.init		= rockchip_usb2phy_init,
+ 	.exit		= rockchip_usb2phy_exit,
+ 	.power_on	= rockchip_usb2phy_power_on,
+ 	.power_off	= rockchip_usb2phy_power_off,
++	.set_mode	= rockchip_usb2phy_set_mode,
+ 	.owner		= THIS_MODULE,
+ };
+ 
+@@ -712,7 +767,7 @@ static void rockchip_usb2phy_otg_sm_work(struct work_struct *work)
+ 			rockchip_usb2phy_power_off(rport->phy);
+ 		fallthrough;
+ 	case OTG_STATE_B_IDLE:
+-		if (extcon_get_state(rphy->edev, EXTCON_USB_HOST) > 0) {
++		if (rockchip_usb2phy_host_mode(rphy, rport)) {
+ 			dev_dbg(&rport->phy->dev, "usb otg host connect\n");
+ 			rport->state = OTG_STATE_A_HOST;
+ 			rockchip_usb2phy_power_on(rport->phy);
+@@ -787,7 +842,7 @@ static void rockchip_usb2phy_otg_sm_work(struct work_struct *work)
+ 		sch_work = true;
+ 		break;
+ 	case OTG_STATE_A_HOST:
+-		if (extcon_get_state(rphy->edev, EXTCON_USB_HOST) == 0) {
++		if (!rockchip_usb2phy_host_mode(rphy, rport)) {
+ 			dev_dbg(&rport->phy->dev, "usb otg host disconnect\n");
+ 			rport->state = OTG_STATE_B_IDLE;
+ 			rockchip_usb2phy_power_off(rport->phy);
+-- 
+2.55.0
+

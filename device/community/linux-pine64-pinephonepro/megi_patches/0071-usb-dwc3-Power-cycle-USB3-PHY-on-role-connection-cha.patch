@@ -1,0 +1,310 @@
+From 411f3f6342130a9ad82b25c02f914d2661b33fec Mon Sep 17 00:00:00 2001
+From: Ondrej Jirman <megi@xff.cz>
+Date: Mon, 20 Jul 2026 17:52:42 +0200
+Subject: [PATCH 71/90] usb: dwc3: Power cycle USB3 PHY on role/connection
+ change
+
+The RK3399 Type-C PHY latches the plug orientation while it is being
+powered on, and per the TRM this may only happen while the USB3 OTG
+controller is held in reset, to keep the pipe power state at P2. The PHY
+driver is passive: it has no extcon notifier and only reprograms the
+orientation on power_on after a preceding power_off. So it can not
+reconfigure itself and needs the controller driver to power cycle it.
+
+Do the power cycle in __dwc3_set_mode(), between asserting and
+deasserting GCTL.CoreSoftReset, which is exactly the window the PHY
+needs. Leave the PHY powered off while no cable is connected, both to
+save power and so that the orientation is picked up at plug-in.
+
+The connection state is what makes this work for the plugout/plugin
+cycle into the same kind of port, where the role never changes.
+
+For extcon, EXTCON_USB has to be watched besides EXTCON_USB_HOST to tell
+a disconnect apart from device mode. The notifier for all cable types is
+not told which cable changed, so subscribe to all of them, re-read the
+state, and drop the updates that change neither the role nor the
+connection state. Boards that do not enable the quirk never look at
+EXTCON_USB and so keep behaving exactly as before.
+
+For usb_role_switch, USB_ROLE_NONE keeps falling back to
+role_switch_default_mode as before, but is now remembered as
+disconnected, and is reported back as USB_ROLE_NONE.
+
+While no cable is connected the USB3 PHY is powered off, so there is
+nothing to run on top of it. Skip the role init in that case, and skip
+the matching teardown for a role that was entered while disconnected.
+Otherwise the gadget is brought up against a powered off PHY, which
+fails to enable ep0out and then takes seconds to tear down again, all
+of it under dwc->mutex.
+
+Signed-off-by: Ondrej Jirman <megi@xff.cz>
+---
+ drivers/usb/dwc3/core.c | 51 ++++++++++++++++++++++++--
+ drivers/usb/dwc3/core.h |  7 ++++
+ drivers/usb/dwc3/drd.c  | 79 +++++++++++++++++++++++++++++++----------
+ 3 files changed, 116 insertions(+), 21 deletions(-)
+
+diff --git a/drivers/usb/dwc3/core.c b/drivers/usb/dwc3/core.c
+index 3d2ea52d9648..383c741eee96 100644
+--- a/drivers/usb/dwc3/core.c
++++ b/drivers/usb/dwc3/core.c
+@@ -193,7 +193,11 @@ static void __dwc3_set_mode(struct work_struct *work)
+ 	if (desired_dr_role == DWC3_GCTL_PRTCAP_OTG && dwc->edev)
+ 		goto out;
+ 
+-	switch (dwc->current_dr_role) {
++	/*
++	 * Nothing was brought up for a role entered while no cable was
++	 * connected, so there is nothing to tear down either.
++	 */
++	switch (dwc->current_dr_connected ? dwc->current_dr_role : 0) {
+ 	case DWC3_GCTL_PRTCAP_HOST:
+ 		dwc3_host_exit(dwc);
+ 		break;
+@@ -217,12 +221,45 @@ static void __dwc3_set_mode(struct work_struct *work)
+ 	 * Only perform GCTL.CoreSoftReset when there's DRD role switching.
+ 	 */
+ 	if (dwc->current_dr_role && ((DWC3_IP_IS(DWC3) ||
+-			DWC3_VER_IS_PRIOR(DWC31, 190A)) &&
++			DWC3_VER_IS_PRIOR(DWC31, 190A) ||
++			dwc->usb3_phy_power_cycle) &&
+ 			desired_dr_role != DWC3_GCTL_PRTCAP_OTG)) {
+ 		reg = dwc3_readl(dwc, DWC3_GCTL);
+ 		reg |= DWC3_GCTL_CORESOFTRESET;
+ 		dwc3_writel(dwc, DWC3_GCTL, reg);
+ 
++		/*
++		 * The USB3 PHY may only be reconfigured while the controller is
++		 * held in reset, so do it here, between asserting and
++		 * deasserting GCTL.CoreSoftReset.
++		 *
++		 * The PHY is left powered off while no cable is connected, both
++		 * to save power and so that it picks up the current Type-C plug
++		 * orientation when it is powered on again at plug-in.
++		 */
++		if (dwc->usb3_phy_power_cycle) {
++			if (dwc->usb3_phy_powered) {
++				for (i = 0; i < dwc->num_usb3_ports; i++)
++					phy_power_off(dwc->usb3_generic_phy[i]);
++
++				dwc->usb3_phy_powered = false;
++			}
++
++			if (desired_dr_connected) {
++				for (i = 0; i < dwc->num_usb3_ports; i++) {
++					ret = phy_power_on(dwc->usb3_generic_phy[i]);
++					if (ret < 0) {
++						dev_err(dwc->dev, "failed to power on usb3 phy %d\n", i);
++						while (--i >= 0)
++							phy_power_off(dwc->usb3_generic_phy[i]);
++						break;
++					}
++				}
++
++				dwc->usb3_phy_powered = i == dwc->num_usb3_ports;
++			}
++		}
++
+ 		/*
+ 		 * Wait for internal clocks to synchronized. DWC_usb31 and
+ 		 * DWC_usb32 may need at least 50ms (less for DWC_usb3). To
+@@ -251,7 +288,12 @@ static void __dwc3_set_mode(struct work_struct *work)
+ 
+ 	spin_unlock_irqrestore(&dwc->lock, flags);
+ 
+-	switch (desired_dr_role) {
++	/*
++	 * With no cable connected the USB3 PHY is powered off, so there is
++	 * nothing to bring up on top of it. Leave the controller idle until a
++	 * cable shows up.
++	 */
++	switch (desired_dr_connected ? desired_dr_role : 0) {
+ 	case DWC3_GCTL_PRTCAP_HOST:
+ 		ret = dwc3_host_init(dwc);
+ 		if (ret) {
+@@ -1904,6 +1946,9 @@ static void dwc3_get_properties(struct dwc3 *dwc)
+ 	dwc->dis_split_quirk = device_property_read_bool(dev,
+ 				"snps,dis-split-quirk");
+ 
++	dwc->usb3_phy_power_cycle = device_property_read_bool(dev,
++				"usb3-phy-power-cycle-on-role-change");
++
+ 	dwc->lpm_nyet_threshold = lpm_nyet_threshold;
+ 	dwc->tx_de_emphasis = tx_de_emphasis;
+ 
+diff --git a/drivers/usb/dwc3/core.h b/drivers/usb/dwc3/core.h
+index 03fd08d0dca1..b0cae898d7fe 100644
+--- a/drivers/usb/dwc3/core.h
++++ b/drivers/usb/dwc3/core.h
+@@ -1174,6 +1174,12 @@ struct dwc3_glue_ops {
+  *	3	- Reserved
+  * @dis_metastability_quirk: set to disable metastability quirk.
+  * @dis_split_quirk: set to disable split boundary.
++ * @usb3_phy_power_cycle: set if the USB3 PHY has to be power cycled whenever
++ *			  the role or the cable connection state changes, and
++ *			  left powered off while no cable is connected. Needed
++ *			  on platforms whose Type-C PHY can only pick up the
++ *			  plug orientation while it is being powered on, and
++ *			  only while the controller is held in reset.
+  * @enable_usb2_transceiver_delay: Set to insert a delay before the
+  *			assertion of the TxValid signal during a HS Chirp.
+  * @sys_wakeup: set if the device may do system wakeup.
+@@ -1423,6 +1429,7 @@ struct dwc3 {
+ 	unsigned		dis_metastability_quirk:1;
+ 
+ 	unsigned		dis_split_quirk:1;
++	unsigned		usb3_phy_power_cycle:1;
+ 	unsigned		enable_usb2_transceiver_delay:1;
+ 	unsigned		async_callbacks:1;
+ 	unsigned		sys_wakeup:1;
+diff --git a/drivers/usb/dwc3/drd.c b/drivers/usb/dwc3/drd.c
+index f3e37d383627..fa622d9abfcd 100644
+--- a/drivers/usb/dwc3/drd.c
++++ b/drivers/usb/dwc3/drd.c
+@@ -419,28 +419,56 @@ void dwc3_otg_update(struct dwc3 *dwc, bool ignore_idstatus)
+ 
+ static void dwc3_drd_update(struct dwc3 *dwc)
+ {
++	unsigned long flags;
++	bool connected = true;
++	bool changed;
++	u32 mode;
+ 	int id;
+ 
+-	if (dwc->edev) {
+-		id = extcon_get_state(dwc->edev, EXTCON_USB_HOST);
+-		if (id < 0)
+-			id = 0;
+-		dwc3_set_mode(dwc, id ?
+-			      DWC3_GCTL_PRTCAP_HOST :
+-			      DWC3_GCTL_PRTCAP_DEVICE);
+-	}
++	if (!dwc->edev)
++		return;
++
++	id = extcon_get_state(dwc->edev, EXTCON_USB_HOST);
++	if (id < 0)
++		id = 0;
++
++	mode = id ? DWC3_GCTL_PRTCAP_HOST : DWC3_GCTL_PRTCAP_DEVICE;
++
++	/*
++	 * EXTCON_USB is what tells a device mode cable apart from no cable at
++	 * all. Boards that do not need the distinction ignore it and keep
++	 * assuming a cable is always connected, as before.
++	 */
++	if (dwc->usb3_phy_power_cycle)
++		connected = id || extcon_get_state(dwc->edev, EXTCON_USB) > 0;
++
++	/*
++	 * All cable types are subscribed to, but only the ones read above make
++	 * any difference here. Drop the rest rather than queueing work that
++	 * would only find that there is nothing to do.
++	 */
++	spin_lock_irqsave(&dwc->lock, flags);
++	changed = mode != dwc->desired_dr_role ||
++		  connected != dwc->desired_dr_connected;
++	spin_unlock_irqrestore(&dwc->lock, flags);
++
++	if (!changed)
++		return;
++
++	dwc3_pre_set_role(dwc, id ? USB_ROLE_HOST : USB_ROLE_DEVICE);
++	dwc3_set_mode_connected(dwc, mode, connected);
+ }
+ 
+ static int dwc3_drd_notifier(struct notifier_block *nb,
+ 			     unsigned long event, void *ptr)
+ {
+ 	struct dwc3 *dwc = container_of(nb, struct dwc3, edev_nb);
+-	u32 mode = event ? DWC3_GCTL_PRTCAP_HOST : DWC3_GCTL_PRTCAP_DEVICE;
+-	enum usb_role role = mode == DWC3_GCTL_PRTCAP_HOST ?
+-				     USB_ROLE_HOST : USB_ROLE_DEVICE;
+ 
+-	dwc3_pre_set_role(dwc, role);
+-	dwc3_set_mode(dwc, mode);
++	/*
++	 * The notifier for all cable types is not told which one changed, so
++	 * the state has to be re-read rather than derived from @event.
++	 */
++	dwc3_drd_update(dwc);
+ 
+ 	return NOTIFY_DONE;
+ }
+@@ -451,6 +479,7 @@ static int dwc3_usb_role_switch_set(struct usb_role_switch *sw,
+ 				    enum usb_role role)
+ {
+ 	struct dwc3 *dwc = usb_role_switch_get_drvdata(sw);
++	bool connected = true;
+ 	u32 mode;
+ 
+ 	switch (role) {
+@@ -461,6 +490,11 @@ static int dwc3_usb_role_switch_set(struct usb_role_switch *sw,
+ 		mode = DWC3_GCTL_PRTCAP_DEVICE;
+ 		break;
+ 	default:
++		/*
++		 * Keep falling back to role_switch_default_mode, but remember
++		 * that nothing is actually connected.
++		 */
++		connected = !dwc->usb3_phy_power_cycle;
+ 		if (dwc->role_switch_default_mode == USB_DR_MODE_HOST)
+ 			mode = DWC3_GCTL_PRTCAP_HOST;
+ 		else
+@@ -469,7 +503,7 @@ static int dwc3_usb_role_switch_set(struct usb_role_switch *sw,
+ 	}
+ 
+ 	dwc3_pre_set_role(dwc, role);
+-	dwc3_set_mode(dwc, mode);
++	dwc3_set_mode_connected(dwc, mode, connected);
+ 	return 0;
+ }
+ 
+@@ -480,6 +514,11 @@ static enum usb_role dwc3_usb_role_switch_get(struct usb_role_switch *sw)
+ 	enum usb_role role;
+ 
+ 	spin_lock_irqsave(&dwc->lock, flags);
++	if (!dwc->current_dr_connected) {
++		role = USB_ROLE_NONE;
++		goto unlock;
++	}
++
+ 	switch (dwc->current_dr_role) {
+ 	case DWC3_GCTL_PRTCAP_HOST:
+ 		role = USB_ROLE_HOST;
+@@ -497,6 +536,7 @@ static enum usb_role dwc3_usb_role_switch_get(struct usb_role_switch *sw)
+ 			role = USB_ROLE_DEVICE;
+ 		break;
+ 	}
++unlock:
+ 	spin_unlock_irqrestore(&dwc->lock, flags);
+ 	return role;
+ }
+@@ -553,8 +593,12 @@ int dwc3_drd_init(struct dwc3 *dwc)
+ 
+ 	if (dwc->edev) {
+ 		dwc->edev_nb.notifier_call = dwc3_drd_notifier;
+-		ret = extcon_register_notifier(dwc->edev, EXTCON_USB_HOST,
+-					       &dwc->edev_nb);
++		/*
++		 * EXTCON_USB has to be watched besides EXTCON_USB_HOST to tell
++		 * a disconnect apart from device mode, so subscribe to all
++		 * cable types and let dwc3_drd_update() ignore the rest.
++		 */
++		ret = extcon_register_notifier_all(dwc->edev, &dwc->edev_nb);
+ 		if (ret < 0) {
+ 			dev_err(dwc->dev, "couldn't register cable notifier\n");
+ 			return ret;
+@@ -601,8 +645,7 @@ void dwc3_drd_exit(struct dwc3 *dwc)
+ 		usb_role_switch_unregister(dwc->role_sw);
+ 
+ 	if (dwc->edev)
+-		extcon_unregister_notifier(dwc->edev, EXTCON_USB_HOST,
+-					   &dwc->edev_nb);
++		extcon_unregister_notifier_all(dwc->edev, &dwc->edev_nb);
+ 
+ 	cancel_work_sync(&dwc->drd_work);
+ 
+-- 
+2.55.0
+

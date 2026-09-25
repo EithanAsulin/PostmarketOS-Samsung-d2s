@@ -1,0 +1,54 @@
+From 9ff4d93a4b27eb57278e6721e8b485726b87f25d Mon Sep 17 00:00:00 2001
+From: Hendra Manudinata <manoedinata@daunscape.tech>
+Date: Tue, 10 Mar 2026 21:45:59 +0700
+Subject: [PATCH] fbdev: decon_7570: Initialize framebuffer more late
+
+register_framebuffer() broadcasts the display as ready to be used by
+other subsystem such as fbcon. However, since the frame is registered
+way early, some things haven't done preparing yet, including mutex
+locks. Thus, by enabling e.g. framebuffer console, the kernel panics
+about non-existent memory pointer.
+
+Move register_framebuffer() to the bottom of the decon_probe() to ensure
+that DECON has been initialized before handing over the control of the
+display.
+
+Signed-off-by: Hendra Manudinata <manoedinata@daunscape.tech>
+---
+ .../video/fbdev/exynos/decon_7570/decon_core.c   | 16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/drivers/video/fbdev/exynos/decon_7570/decon_core.c b/drivers/video/fbdev/exynos/decon_7570/decon_core.c
+index 16f4ebcb3..e7903dcde 100644
+--- a/drivers/video/fbdev/exynos/decon_7570/decon_core.c
++++ b/drivers/video/fbdev/exynos/decon_7570/decon_core.c
+@@ -3520,14 +3520,6 @@ static int decon_probe(struct platform_device *pdev)
+ 		goto fail_iovmm;
+ 
+ 
+-	/* register framebuffer */
+-	fbinfo = decon->windows[decon->pdata->default_win]->fbinfo;
+-	ret = register_framebuffer(fbinfo);
+-	if (ret < 0) {
+-		decon_err("failed to register framebuffer\n");
+-		goto fail_iovmm;
+-	}
+-
+ 	/* mutex mechanism */
+ 	mutex_init(&decon->output_lock);
+ 	mutex_init(&decon->mutex);
+@@ -3679,6 +3671,14 @@ static int decon_probe(struct platform_device *pdev)
+ #endif
+ 	decon->state = DECON_STATE_INIT;
+ 
++	/* register framebuffer */
++	fbinfo = decon->windows[decon->pdata->default_win]->fbinfo;
++	ret = register_framebuffer(fbinfo);
++	if (ret < 0) {
++		decon_err("failed to register framebuffer\n");
++		goto fail_iovmm;
++	}
++
+ 	/* [W/A] prevent sleep enter during LCD on */
+ 	ret = device_init_wakeup(decon->dev, true);
+ 	if (ret) {

@@ -1,0 +1,87 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="hexaheximal <hexaheximal@proton.me>"
+pkgname=device-google-x64cros
+pkgdesc="Google Chromebooks with x64 CPU"
+pkgver=21
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="x86_64"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf-cros
+	depthcharge-tools
+	postmarketos-base
+	postmarketos-cros-common
+	systemd-boot
+	"
+makedepends="devicepkg-dev"
+install="$pkgname.post-install $pkgname.post-upgrade"
+subpackages="
+	$pkgname-kernel-lts:kernel_lts
+	$pkgname-kernel-stable:kernel_stable
+	$pkgname-firmware-intel:firmware_intel
+	$pkgname-firmware-amd:firmware_amd
+	"
+source="
+	00-amdgpu-firmware.files
+	00-i915-firmware.files
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+	"
+# TODO: package iwlwifi-7265D-29.ucode separetely, so we don't depend
+# on linux-firmware-other
+_pmb_recommends="
+	amd-ucode
+	intel-ucode
+	linux-firmware-amdgpu
+	linux-firmware-i915
+	linux-firmware-intel
+	linux-firmware-other
+	linux-firmware-rtl_nic
+	linux-firmware-rtw88
+	"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+kernel_stable() {
+	pkgdesc="Alpine Stable kernel"
+	depends="linux-stable"
+	provides="$pkgname-kernel-edge=$pkgver-r$pkgrel"
+	replaces="$pkgname-kernel-edge"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_lts() {
+	pkgdesc="Alpine LTS kernel"
+	depends="linux-lts"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+firmware_amd() {
+	install_if="$pkgname=$pkgver-r$pkgrel linux-firmware-amdgpu"
+
+	install -Dm644 "$srcdir"/00-amdgpu-firmware.files \
+		-t "$subpkgdir"/usr/share/mkinitfs/files-extra
+}
+firmware_intel() {
+	install_if="$pkgname=$pkgver-r$pkgrel linux-firmware-i915"
+
+	install -Dm644 "$srcdir"/00-i915-firmware.files \
+		-t "$subpkgdir"/usr/share/mkinitfs/files-extra
+}
+
+sha512sums="
+1a609a9e3f693cbb8107a3f028247edabb550cbce9d263da299a5445d80282e4f317a0cae446b3b46070b2ddefce3fe4edde74b9147b4dbc1c5385622e861189  00-amdgpu-firmware.files
+de194dc3f71529f5e75d6c253cecb36166d143de0e0e74ccd130bb5a356b9a88025ae5c3fbd957498c876539e5399f5f69f9c4e5a3a4d9d39c0bba912afb32c5  00-i915-firmware.files
+6b7fa89b97047f346976a874f76fc926b2490a720708197e9e176a20cb3b4d4e727c7c54c82630a10fc3fdb5291ef420f273040fc201ab5c694e2f8f3f75e7ad  deviceinfo
+7697e35721191d34aa3139e2fd1f8aab93751b5f3cc0497f2a18087eb4dc3ab4a45f9cac86230a469b6180bba3bc992bd71389fd59b099a46879e9868b3ebd0d  kernel-cmdline.conf
+12d701be4f29b0d68b58156655c66b4cc969b6a449d8ab325c00fb5f8094901fe0105446e0e8c4c0dd7d1e1abf3157f336319c5dd638e4a5723493ad5d22fb60  modules-initfs
+"

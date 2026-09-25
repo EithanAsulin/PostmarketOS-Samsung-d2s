@@ -1,0 +1,58 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Andreas Kemnade <andreas@kemnade.info>"
+pkgname=device-epson-embt2ws
+pkgdesc="Epson Moverio BT-200"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-epson-embt2ws
+	postmarketos-base
+	u-boot-epson-embt2ws
+	u-boot-tools
+"
+_pmb_recommends="linux-firmware-ti-connectivity"
+makedepends="
+	devicepkg-dev
+	u-boot-tools
+"
+
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+	sdboot.cmd
+	x11-clone.conf
+"
+
+subpackages="
+	$pkgname-x11
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	mkimage -A arm -O linux -T script -n postmarketOS \
+		-d "$srcdir"/sdboot.cmd "$srcdir/sdboot.scr"
+	install -Dm644 "$srcdir/sdboot.scr" "$pkgdir/boot/sdboot.scr"
+}
+
+x11() {
+	install_if="$pkgname=$pkgver-r$pkgrel xorg-server"
+	install -D -m644 "$srcdir"/x11-clone.conf \
+		"$subpkgdir"/usr/share/X11/xorg.conf.d/x11-clone.conf
+}
+
+sha512sums="
+2afeb8e1a52d68265f1dee541983f47b0ec5a07c4a9a3f545464142a1346653760a1b6c13db1fa8011252bf392c8978e2db0169d946fc5e757166094a9878983  deviceinfo
+5bc0bb6df7eb59ef88939e2ad6e7111f86d0ef0466989bf6c6baa9fdde416dc6ea41b59932d55e8b6a802311bd748849e40824945eeb57c269ee2156c34ab48e  kernel-cmdline.conf
+e6d26536578432bd1d9123d3b3eb621e39d5475e5ce9086c42fae213be6fa05d56bd6b42d08f6f5afccffe5b01ca940239c11b8046e0be1a5962ac95a0b0dfa4  modules-initfs
+2c3a39107dd6c061d001d11211b816fc0e1fb060e0bcbf0fcf057d7910a7dcc4d1d06c6b0572ee0d616f1d06679ca48872395f62c1f44f5460cceefbbd2b5050  sdboot.cmd
+a189bc388a7a3b176444acb2e14c3894686e7d49b29dc6f0737673130202778ed7426ae27daef568a387b6e68619a2bb07de9e895c19d782324a7f896fdadf7e  x11-clone.conf
+"

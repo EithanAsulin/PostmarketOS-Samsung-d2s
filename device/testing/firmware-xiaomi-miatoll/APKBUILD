@@ -1,0 +1,61 @@
+maintainer="Barnabas Czeman <barnabas.czeman@postmarketos.org>"
+pkgname=firmware-xiaomi-miatoll
+pkgver=5
+pkgrel=0
+pkgdesc="Firmware for miatoll"
+url="https://github.com/sm7125-mainline/firmware-xiaomi-miatoll"
+arch="aarch64"
+license="proprietary"
+options="!strip !check !archcheck !tracedeps textrels pmb:cross-native"
+
+_commit="a7073ad14a91a103d14effbc87a94e632e29011a"
+
+source="
+	$pkgname.tar.gz::$url/archive/$_commit/$pkgname-$_commit.tar.gz
+	30-initramfs-firmware.files
+	sensor.files
+"
+
+subpackages="$pkgname-sensors:firmware_sensors"
+builddir="$srcdir/$pkgname-$_commit"
+
+package() {
+	echo $builddir
+	_fw_path=$pkgdir/usr/lib/firmware
+
+	install -Dm644 lib/firmware/focaltech_ts_fw_huaxing.bin -t $_fw_path
+	install -Dm644 lib/firmware/novatek_ts_tianma_fw.bin -t $_fw_path
+	install -Dm644 lib/firmware/qcom/sm7125/miatoll/a615_zap.mbn -t "$_fw_path"/qcom/sm7125/miatoll/
+	install -Dm644 lib/firmware/qcom/sm7125/miatoll/adsp.mbn -t "$_fw_path"/qcom/sm7125/miatoll/
+	install -Dm644 lib/firmware/qcom/sm7125/miatoll/cdsp.mbn -t "$_fw_path"/qcom/sm7125/miatoll/
+	install -Dm644 lib/firmware/qcom/sm7125/miatoll/ipa_fws.mbn -t "$_fw_path"/qcom/sm7125/miatoll/
+	install -Dm644 lib/firmware/qcom/sm7125/miatoll/modem.mbn -t "$_fw_path"/qcom/sm7125/miatoll/
+	install -Dm644 lib/firmware/qcom/sm7125/miatoll/venus.mbn -t "$_fw_path"/qcom/sm7125/miatoll/
+	install -Dm644 lib/firmware/qcom/sm7125/miatoll/wlanmdsp.mbn -t "$_fw_path"/qcom/sm7125/miatoll/
+	install -Dm644 lib/firmware/qcom/sm7125/miatoll/adspr.jsn -t "$_fw_path"/qcom/sm7125/miatoll/
+	install -Dm644 lib/firmware/qcom/sm7125/miatoll/adsps.jsn -t "$_fw_path"/qcom/sm7125/miatoll/
+	install -Dm644 lib/firmware/qcom/sm7125/miatoll/adspua.jsn -t "$_fw_path"/qcom/sm7125/miatoll/
+	install -Dm644 lib/firmware/qcom/sm7125/miatoll/cdspr.jsn -t "$_fw_path"/qcom/sm7125/miatoll/
+	install -Dm644 lib/firmware/qcom/sm7125/miatoll/modemr.jsn -t "$_fw_path"/qcom/sm7125/miatoll/
+	install -Dm644 lib/firmware/qcom/sm7125/miatoll/modemuw.jsn -t "$_fw_path"/qcom/sm7125/miatoll/
+
+	install -Dm644 "$srcdir/30-initramfs-firmware.files" -t "$pkgdir"/usr/share/mkinitfs/files
+
+}
+
+firmware_sensors() {
+	pkgdesc="Files to be included to add sensor support"
+	depends="$pkgname=$pkgver-r$pkgrel"
+	mkdir "$subpkgdir"
+
+	while IFS="" read -r _i || [ -n "$_i" ]; do
+		[ ! -d $(dirname $_i) ] && mkdir -p $(dirname $_i)
+		install -Dm644 "$builddir/$_i" "$pkgdir/$_i"
+	done < "$srcdir/sensor.files"
+}
+
+sha512sums="
+5535bbb86d41dabca255e76f0edd3032e58df1a8bee444dc26238119b224bdd8b3db97101439a81b9c24a16eeba106e8d0adf22904f0f810ee91008b69102a10  firmware-xiaomi-miatoll.tar.gz
+6f795e267032e6f4f9df5461df72af76a538f085de07c29135fdf1e422b1363ea590b9740aafc7385f1d84d7d50698db04c3641743582333a9872ef71f9dc913  30-initramfs-firmware.files
+179837d48e4d91c5b37a7c478b61ac29ec02e92334aa0003619cc9aa8ab1d0ce789f06cea565e59f823dc42f8e1460294a9ec4e42eee907a3d127614313a8a29  sensor.files
+"

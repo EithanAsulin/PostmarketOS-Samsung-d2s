@@ -1,0 +1,13 @@
+diff --git a/arch/arm64/mm/proc.S b/arch/arm64/mm/proc.S
+index b6245c71bd07..28b7050241d1 100644
+--- a/arch/arm64/mm/proc.S
++++ b/arch/arm64/mm/proc.S
+@@ -140,7 +140,7 @@ ENTRY(cpu_do_switch_mm)
+ 	b	post_ttbr_update_workaround	// Back to C code...
+ ENDPROC(cpu_do_switch_mm)
+ 
+-	.section ".text.init", #alloc, #execinstr
++	.section .text.init, "ax"
+ 
+ /*
+  *	__cpu_setup

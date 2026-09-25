@@ -1,0 +1,13 @@
+diff --git a/src/fs.rs b/src/fs.rs
+index 605327d..e5290ea 100644
+--- a/src/fs.rs
++++ b/src/fs.rs
+@@ -34,7 +34,7 @@ impl BootFilesystem for FatPartition {
+                 continue;
+             }
+             let key = String::from(&name[..name.len() - 5]);
+-            let mut reader = match entries_dir.open_file(name) {
++            let mut reader = match entries_dir.open_file(&name) {
+                 Ok(r) => r,
+                 Err(_) => continue,
+             };

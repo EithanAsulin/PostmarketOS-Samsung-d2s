@@ -1,0 +1,3 @@
+#!/bin/sh
+rc-update add lomiri-power-key default
+rc-update del repowerd default

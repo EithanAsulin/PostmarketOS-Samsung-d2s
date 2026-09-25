@@ -1,0 +1,34 @@
+maintainer="Clayton Craft <clayton@craftyguy.net>"
+pkgname=boot-deploy
+pkgver=0.24.0
+pkgrel=0
+pkgdesc="tool for finalizing and deploying boot related files"
+url="https://gitlab.postmarketos.org/postmarketOS/boot-deploy"
+arch="noarch"
+license="GPL-2.0-or-later"
+source="
+	https://gitlab.postmarketos.org/postmarketOS/boot-deploy/-/archive/$pkgver/boot-deploy-$pkgver.tar.gz
+
+	os-customization
+	"
+depends="generate-kernel-cmdline"
+
+check() {
+	./test_boot_deploy_functions.sh
+}
+
+package() {
+	install -Dm755 boot-deploy "$pkgdir"/usr/bin/boot-deploy
+	install -Dm755 boot-deploy-functions.sh \
+		"$pkgdir"/usr/share/boot-deploy/boot-deploy-functions.sh
+	install -Dm644 "$srcdir"/os-customization \
+		"$pkgdir"/usr/share/boot-deploy/os-customization
+
+	touch boot-deploy-trigger
+	install -Dm644 boot-deploy-trigger \
+		"$pkgdir"/usr/share/mkinitfs-triggers/boot-deploy
+}
+sha512sums="
+a1cb647508a3ce63b5579ad085b5f4d92b2992a3060ce02896cc77c65866fddb321c96fcc21e8ef9a5c1131c56c8a8163c732400d85d4d506f38310d52f845f5  boot-deploy-0.24.0.tar.gz
+a243975b9850d9933e0f917f7eb38fc4a76ea658c3dcc56f035f60ee6c62d6740c1107143b8210bdc0231d4c9b6b2003e458120985604eb09649322d359ae89f  os-customization
+"

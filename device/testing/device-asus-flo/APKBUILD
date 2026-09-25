@@ -1,0 +1,98 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Eric Anderson <ejona86@gmail.com>"
+pkgname=device-asus-flo
+pkgver=12
+pkgrel=1
+pkgdesc="Google Nexus 7 2013 (flo)"
+url="https://postmarketos.org"
+arch="armv7"
+license="MIT"
+depends="
+	firmware-asus-flo
+	firmware-qcom-adreno-a300
+	lk2nd-msm8960
+	mkbootimg
+	postmarketos-base
+	"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-kernel-apq8064:kernel_apq8064
+	$pkgname-kernel-next:kernel_next
+	$pkgname-kernel-stable:kernel_stable
+	$pkgname-kernel-lts:kernel_lts
+	$pkgname-udev
+"
+#	$pkgname-kernel-mainline-old:kernel_mainline_old
+source="
+	30-gpu-a300-firmware.files
+	90-android-touch-dev.rules
+	deviceinfo
+	kernel-cmdline-workaround.conf
+	kernel-cmdline.conf
+	pointercal
+	wpa_supplicant.conf
+	"
+
+options="!check !archcheck"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -D -m644 "$srcdir"/wpa_supplicant.conf \
+		"$pkgdir"/etc/wpa_supplicant/wpa_supplicant.conf
+	# Feed the whacky bootloader that eats 26 characters.
+	# Must sort before 00-base.conf
+	install -D -m644 "$srcdir/kernel-cmdline-workaround.conf" \
+		"$pkgdir/usr/lib/kernel-cmdline.d/00-aaa-$pkgname-workaround.conf"
+	install -Dm644 "$srcdir"/30-gpu-a300-firmware.files \
+		-t "$pkgdir"/usr/share/mkinitfs/files/
+	install -D -m644 "$srcdir"/90-android-touch-dev.rules \
+		"$pkgdir"/usr/lib/udev/rules.d/90-android-touch-dev.rules
+	install -D -m644 "$srcdir"/pointercal \
+		"$pkgdir"/etc/pointercal
+}
+
+# Uncomment to use archived/linux-asus-flo, and add an entry to subpackages=
+# kernel_mainline_old() {
+# 	pkgdesc="Old 4.11 mainline kernel, GPU works somehow"
+# 	depends="linux-asus-flo"
+# 	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+# }
+
+kernel_apq8064() {
+	pkgdesc="Mainline Kernel fork for APQ8064 devices (linux-postmarketos-qcom-apq8064)"
+	depends="linux-postmarketos-qcom-apq8064"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_next() {
+	pkgdesc="Unstable next kernel (linux-next)"
+	depends="linux-next"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_stable() {
+	pkgdesc="Stable kernel from Alpine Linux (linux-stable)"
+	depends="linux-stable"
+	provides="$pkgname-kernel-edge=$pkgver-r$pkgrel"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_lts() {
+	pkgdesc="Long term support (LTS) kernel from Alpine Linux (linux-lts)"
+	depends="linux-lts"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+sha512sums="
+abdf455858f019143c7babcbb80a9898b1640512277afcddac73ce6b22a967f368d109eb5b9ddebb4540f312983ca48143ae70f802acc9580382127b025f9d2a  30-gpu-a300-firmware.files
+5ac89b627f52d2f1103c3329bd905cdbb906cae5bb332d52e6805d7971fbcc0faabe1fd9d2beb7c6de4e4487c05047eaa17852dbf9e114ee3c5d4b0d57d73859  90-android-touch-dev.rules
+70d0fb5192772c597968e1609ccf86b0d5290fb27b40a5f6dbaa6481b26b3846fb682c4302748dc821f12c9e55d98d3a0dc170db703265dc0faae53f34179d35  deviceinfo
+ebc11da9dbafca1b7052ff58d1782e9e48508e3f338656e817f42e6da40cbed198ee9ec3093909012733b82ca26b0f9b07e3f1aea63500a90855823aa31ee465  kernel-cmdline-workaround.conf
+18f40d7308eb327de4b8ea5552fef3874e6f3f2e2da7dba4244e954ce866ed8658a6809177488aca6387149c0014782d5a10634881f72301fbefbe3743702faa  kernel-cmdline.conf
+cf913217b41a3dde8bc2a16a5bc82013c85679de0e81db1cfc36f2409ea034fec430082ddcb207c16746453601cf8381300b049cd2fb131f1916dc7dbcc247e3  pointercal
+3278921cc1617d10fdd13dfbeaf213cda0078d069e727acd8cfac10bd8ade6f373be1e22fd1e4b50ae71cd2eae09f7d6aad5de42338d9ea9f8c1a34f0b60cb69  wpa_supplicant.conf
+"

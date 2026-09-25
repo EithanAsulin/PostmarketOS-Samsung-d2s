@@ -1,0 +1,27 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell
+# scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Xiaomi Pad 6"
+deviceinfo_manufacturer="Xiaomi"
+deviceinfo_codename="xiaomi-pipa"
+deviceinfo_year="2023"
+deviceinfo_arch="aarch64"
+
+# Device related
+deviceinfo_chassis="tablet"
+deviceinfo_drm="true"
+
+# Kernel options
+deviceinfo_dtb_csot="qcom/sm8250-xiaomi-pipa-csot"
+deviceinfo_dtb_tianma="qcom/sm8250-xiaomi-pipa-tianma"
+
+# Bootloader related
+deviceinfo_boot_filesystem="fat32"
+deviceinfo_flash_method="fastboot"
+deviceinfo_flash_pagesize="4096"
+deviceinfo_flash_sparse="true"
+
+# Required for devices using UFS as storage (instead of e.g. eMMC)
+deviceinfo_rootfs_image_sector_size="4096"

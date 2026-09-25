@@ -1,0 +1,10 @@
+[Unit]
+Description=Watch for apk lock file
+
+[Path]
+# This won't fail if the file doesn't exist, instead it'll wait until it does
+PathExists=/usr/lib/apk/db/lock
+Unit=apk-inhibit.service
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,224 @@
+From b4a8b4cde3e868ffa4a988a6e1a8c56d2903a7d8 Mon Sep 17 00:00:00 2001
+From: Ondrej Jirman <megi@xff.cz>
+Date: Mon, 20 Jul 2026 23:50:24 +0200
+Subject: [PATCH 76/90] phy: rockchip-typec: Support a Type-C mode mux
+
+Register a typec_mux when the DT node is marked as one, and take what the
+lanes carry from it. Map TYPEC_STATE_USB, TYPEC_DP_STATE_C/E and
+TYPEC_DP_STATE_D onto the existing MODE_DFP_USB, MODE_DFP_DP and the
+combination of both.
+
+This was read from the extcon cables at power_on() time, too late for a
+port manager that has already negotiated an alternate mode, and a mux is
+in any case what alternate mode switching goes through. Boards with no mux
+keep reading the extcon cables.
+
+The mux does not carry the USB data role, and this driver does not need
+it: MODE_UFP_USB and MODE_DFP_USB are only ever tested together, so
+report USB as MODE_DFP_USB throughout.
+
+Signed-off-by: Ondrej Jirman <megi@xff.cz>
+---
+ drivers/phy/rockchip/phy-rockchip-typec.c | 145 +++++++++++++++++-----
+ 1 file changed, 117 insertions(+), 28 deletions(-)
+
+diff --git a/drivers/phy/rockchip/phy-rockchip-typec.c b/drivers/phy/rockchip/phy-rockchip-typec.c
+index 717015f33364..25e89ce7856e 100644
+--- a/drivers/phy/rockchip/phy-rockchip-typec.c
++++ b/drivers/phy/rockchip/phy-rockchip-typec.c
+@@ -55,6 +55,7 @@
+ 
+ #include <linux/mfd/syscon.h>
+ #include <linux/phy/phy.h>
++#include <linux/usb/typec_dp.h>
+ #include <linux/usb/typec_mux.h>
+ 
+ #define CMN_SSM_BANDGAP			(0x21 << 2)
+@@ -394,6 +395,15 @@ struct rockchip_typec_phy {
+ 	 */
+ 	struct typec_switch_dev *sw;
+ 	bool sw_flip;
++
++	/*
++	 * Optional Type-C mode mux. When one is registered it says what the
++	 * lanes carry, so the extcon cables no longer have to be read for it.
++	 * Starts out as MODE_DFP_USB, which is what the extcon path falls back
++	 * to when it has been told nothing yet.
++	 */
++	struct typec_mux_dev *mux;
++	u8 mux_mode;
+ };
+ 
+ struct phy_reg {
+@@ -817,40 +827,44 @@ static int tcphy_get_mode(struct rockchip_typec_phy *tcphy)
+ {
+ 	struct extcon_dev *edev = tcphy->extcon;
+ 	union extcon_property_value property;
+-	unsigned int id;
+-	u8 mode;
+-	int ret, ufp, dp;
+-
+-	if (!edev)
+-		return MODE_DFP_USB;
+-
+-	ufp = extcon_get_state(edev, EXTCON_USB);
+-	dp = extcon_get_state(edev, EXTCON_DISP_DP);
++	unsigned int id = EXTCON_USB_HOST;
++	u8 mode = MODE_DFP_USB;
++	int ret;
+ 
+-	mode = MODE_DFP_USB;
+-	id = EXTCON_USB_HOST;
+-
+-	if (ufp > 0) {
+-		mode = MODE_UFP_USB;
+-		id = EXTCON_USB;
+-	} else if (dp > 0) {
+-		mode = MODE_DFP_DP;
+-		id = EXTCON_DISP_DP;
+-
+-		ret = extcon_get_property(edev, id, EXTCON_PROP_USB_SS,
+-					  &property);
+-		if (ret) {
+-			dev_err(tcphy->dev, "get superspeed property failed\n");
+-			return ret;
++	/*
++	 * A Type-C mode mux and orientation switch each replace one half of
++	 * what would otherwise be read from extcon, so a board can be wired
++	 * either way, or both ways during a conversion.
++	 */
++	if (tcphy->mux) {
++		mode = tcphy->mux_mode;
++		id = mode & MODE_DFP_DP ? EXTCON_DISP_DP : EXTCON_USB_HOST;
++	} else if (edev) {
++		int ufp = extcon_get_state(edev, EXTCON_USB);
++		int dp = extcon_get_state(edev, EXTCON_DISP_DP);
++
++		if (ufp > 0) {
++			mode = MODE_UFP_USB;
++			id = EXTCON_USB;
++		} else if (dp > 0) {
++			mode = MODE_DFP_DP;
++			id = EXTCON_DISP_DP;
++
++			ret = extcon_get_property(edev, id, EXTCON_PROP_USB_SS,
++						  &property);
++			if (ret) {
++				dev_err(tcphy->dev, "get superspeed property failed\n");
++				return ret;
++			}
++
++			if (property.intval)
++				mode |= MODE_DFP_USB;
+ 		}
+-
+-		if (property.intval)
+-			mode |= MODE_DFP_USB;
+ 	}
+ 
+ 	if (tcphy->sw) {
+ 		tcphy->flip = tcphy->sw_flip;
+-	} else {
++	} else if (edev) {
+ 		ret = extcon_get_property(edev, id,
+ 					  EXTCON_PROP_USB_TYPEC_POLARITY,
+ 					  &property);
+@@ -910,6 +924,74 @@ static int tcphy_setup_orien_switch(struct rockchip_typec_phy *tcphy)
+ 					tcphy_orien_switch_unregister, tcphy);
+ }
+ 
++static int tcphy_mux_set(struct typec_mux_dev *mux,
++			 struct typec_mux_state *state)
++{
++	struct rockchip_typec_phy *tcphy = typec_mux_get_drvdata(mux);
++	bool is_dp = state->alt && state->alt->svid == USB_TYPEC_DP_SID;
++	u8 mode;
++
++	/*
++	 * The mux does not carry the data role, and this driver does not care
++	 * about it: MODE_UFP_USB and MODE_DFP_USB are only ever tested
++	 * together. Report USB as MODE_DFP_USB throughout.
++	 */
++	switch (state->mode) {
++	case TYPEC_STATE_SAFE:
++		mode = MODE_DISCONNECT;
++		break;
++	case TYPEC_STATE_USB:
++		mode = MODE_DFP_USB;
++		break;
++	case TYPEC_DP_STATE_C:
++	case TYPEC_DP_STATE_E:
++		if (!is_dp)
++			return 0;
++		/* four lanes of DP, no USB SuperSpeed */
++		mode = MODE_DFP_DP;
++		break;
++	case TYPEC_DP_STATE_D:
++		if (!is_dp)
++			return 0;
++		/* two lanes of DP alongside USB SuperSpeed */
++		mode = MODE_DFP_DP | MODE_DFP_USB;
++		break;
++	default:
++		dev_warn(tcphy->dev, "unhandled mux mode %lu\n", state->mode);
++		return 0;
++	}
++
++	mutex_lock(&tcphy->lock);
++	tcphy->mux_mode = mode;
++	mutex_unlock(&tcphy->lock);
++
++	return 0;
++}
++
++static void tcphy_mux_unregister(void *data)
++{
++	struct rockchip_typec_phy *tcphy = data;
++
++	typec_mux_unregister(tcphy->mux);
++}
++
++static int tcphy_setup_mux(struct rockchip_typec_phy *tcphy)
++{
++	struct typec_mux_desc mux_desc = { };
++
++	mux_desc.drvdata = tcphy;
++	mux_desc.fwnode = dev_fwnode(tcphy->dev);
++	mux_desc.set = tcphy_mux_set;
++
++	tcphy->mux = typec_mux_register(tcphy->dev, &mux_desc);
++	if (IS_ERR(tcphy->mux))
++		return dev_err_probe(tcphy->dev, PTR_ERR(tcphy->mux),
++				     "failed to register mode mux\n");
++
++	return devm_add_action_or_reset(tcphy->dev, tcphy_mux_unregister,
++					tcphy);
++}
++
+ static int tcphy_cfg_usb3_to_usb2_only(struct rockchip_typec_phy *tcphy,
+ 				       bool value)
+ {
+@@ -1153,6 +1235,7 @@ static void typec_phy_pre_init(struct rockchip_typec_phy *tcphy)
+ 	property_enable(tcphy, &cfg->usb3tousb2_en, 0);
+ 
+ 	tcphy->mode = MODE_DISCONNECT;
++	tcphy->mux_mode = MODE_DFP_USB;
+ }
+ 
+ static int rockchip_typec_phy_probe(struct platform_device *pdev)
+@@ -1224,6 +1307,12 @@ static int rockchip_typec_phy_probe(struct platform_device *pdev)
+ 			return ret;
+ 	}
+ 
++	if (device_property_present(dev, "mode-switch")) {
++		ret = tcphy_setup_mux(tcphy);
++		if (ret)
++			return ret;
++	}
++
+ 	pm_runtime_enable(dev);
+ 
+ 	for_each_available_child_of_node(np, child_np) {
+-- 
+2.55.0
+

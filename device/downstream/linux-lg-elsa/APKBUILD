@@ -1,0 +1,73 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/lineageos_h990_defconfig
+
+maintainer="Nardo45 <Nardo45@proton.me>"
+pkgname=linux-lg-elsa
+pkgver=3.18.113
+pkgrel=0
+pkgdesc="LG V20 (elsa) kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="lg-elsa"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	devicepkg-dev
+	elfutils-dev
+	flex
+	gcc6
+	gmp-dev
+	installkernel
+	linux-headers
+	perl
+	sed
+"
+
+# Source
+_repository="android_kernel_lge_msm8996"
+_commit="c0cf2a6e4ccceb664492ca47b8b1c9f9d4a680c2"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc10-extern_YYLOC_global_declaration.patch
+	asm_immediate_parentheses.patch
+	asm_section_flags.patch
+	vdsomunge_upstream.patch
+	fix_include_paths.patch
+"
+
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+# Compiler: GCC 6 (doesn't boot when compiled with newer versions)
+build() {
+	unset LDFLAGS
+	# We pass the compiler overrides directly to make here.
+	# This avoids using global variables which upsets apkbuild-lint.
+	make ARCH="$_carch" \
+		CC="gcc6-${CC:-gcc}" \
+		HOSTCC="gcc6-gcc" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="
+bc15ff2fc2f452fc3e30704c36800e029a1911d5852b113b47f48264fcf43266ad1185cc69a5e8978bb9c091b94ef36f40a607545199546e0a554269de3ae71a  linux-lg-elsa-c0cf2a6e4ccceb664492ca47b8b1c9f9d4a680c2.tar.gz
+e256a4420c482da35aa92a1d0ea3346e96d59ecf2ae07c82d9610b7b711beb5130c8c818b8babbb0de4d1d65daa1bf001b9543d50fc6e3a0a79017babc839122  config-lg-elsa.aarch64
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+ef1f25e7bca6624893432caa93a9795e07e8ba4aa4603a969c02ce92001d92566a1f9c87def610849522578decc7b12cf9a03d80d34d3b2e4c743ced185f1e7f  asm_immediate_parentheses.patch
+b2a06d84b2caf44944cadd355c0a425d017b7edd91fe3f7003a74fe177da0d86dd3c0b30b6879b92b0b405d378c1dd31d43f2c619f36873aa1430a00d458b3ea  asm_section_flags.patch
+6d31f4c70b2a96dcddfb0ef4aa87312eda79efdecf08306e027812f87774ede054f229b9769473ced4f05f3a25fbc3e785a7b8a1d65ba13a89b39d8d19085ff3  vdsomunge_upstream.patch
+dfecd8ba5d57b55c8988fe7c33a2f14670a3d64485ed73847cae2cab7ce95e18173dd7f01a2981bae738ad6a613ecee300412771b211b53667f906848893f130  fix_include_paths.patch
+"

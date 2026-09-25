@@ -1,0 +1,24 @@
+# Co-Maintainer: Eugene Lepshy <fekz115@gmail.com>
+# Co-Maintainer: Vasiliy Doylov <neko@altlinux.org>
+maintainer="Danila Tikhonov <danila@mainlining.org>"
+pkgname=firmware-nothing-spacewar
+pkgver=3
+pkgrel=1
+pkgdesc="Firmware for Nothing Phone (1)"
+url="https://github.com/mainlining/firmware-nothing-spacewar"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+_commit="cc01a8900344afb8a8e254f7bb607d1b4affeb3c"
+source="$pkgname-$_commit.tar.gz::https://github.com/mainlining/firmware-nothing-spacewar/archive/$_commit/firmware-nothing-spacewar-$_commit.tar.gz"
+builddir="$srcdir/$pkgname-$_commit"
+
+package() {
+	mkdir -p "$pkgdir"
+
+	find . -type f -exec install -Dm644 {} "$pkgdir"/{} \;
+}
+
+sha512sums="
+b924e1e02b4718412ed7bb5712af4628b8818f31fbfbf7e10647de36b9913e100a830df1dbe49bff9912ef434c0b00012c7235207ff4b5374d3a24615d8dccb8  firmware-nothing-spacewar-cc01a8900344afb8a8e254f7bb607d1b4affeb3c.tar.gz
+"

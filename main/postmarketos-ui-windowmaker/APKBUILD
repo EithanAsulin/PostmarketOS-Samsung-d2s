@@ -1,0 +1,57 @@
+# Reference: https://postmarketos.org/uipkg
+maintainer="Ferass El Hafidi <funderscore@postmarketos.org>"
+pkgname=postmarketos-ui-windowmaker
+pkgver=2
+pkgrel=0
+pkgdesc="(X11) Window manager inspired by the NeXTSTEP user interface (stylus recommended)"
+url="https://www.windowmaker.org/"
+arch="noarch"
+license="GPL-3.0-or-later"
+depends="
+	mesa-egl
+	postmarketos-artwork-wallpapers
+	postmarketos-base-ui
+	postmarketos-base-ui-audio
+	postmarketos-base-ui-networkmanager
+	st
+	tinydm
+	unclutter-xfixes
+	windowmaker
+	xorg-server
+	"
+_pmb_recommends="
+	arandr
+	netsurf
+	svkbd
+	"
+install="$pkgname.post-install $pkgname-openrc.post-install"
+source="autostart.sh postmarketOS.style WindowMaker"
+replaces="windowmaker"
+subpackages="$pkgname-openrc"
+options="!check pmb:default-openrc pmb:support-openrc pmb:support-systemd"
+
+package() {
+	install -Dm644 "$srcdir"/autostart.sh \
+		-t "$pkgdir"/usr/share/WindowMaker
+	install -Dm644 "$srcdir"/postmarketOS.style \
+		-t "$pkgdir"/usr/share/WindowMaker/Themes
+
+	install -Dm644 "$srcdir"/WindowMaker \
+		-t "$pkgdir"/etc/WindowMaker
+}
+
+openrc() {
+	default_openrc
+	depends="
+		networkmanager-openrc
+		openrc
+		tinydm-openrc
+		"
+
+	mkdir -p "$subpkgdir"
+}
+sha512sums="
+82d2ecebf66741d20fbbdb5003ca8bcebd6511b389ce83c9e1a04b061ad368490489db98c1b0af17774551c26de3d922990fc6abbfeff5a17e2475880d051f5a  autostart.sh
+1d43e25bf81e0a87342a1ae292959d5c2536cd4b1bb4ccc7f3acf9245b9cce7a310803124a0b8698efc13dad4f73ba36419af8af8b06a81d67309e674c8e8536  postmarketOS.style
+b9abcf5f5a426e0b23a025478a7601f632a4e23f8332f93933b32cc42b30036e5927c71c7a0d79df14515a266d599a5040dff851f9ca516fae46beb104850a67  WindowMaker
+"

@@ -1,0 +1,59 @@
+maintainer="Stefan Hansson <newbyte@postmarketos.org>"
+pkgname=postmarketos-tweaks-setting-definitions
+pkgver=1.1.0
+pkgrel=0
+pkgdesc="Setting definitions for programs that implement the conf-tweaks format"
+url="https://gitlab.postmarketos.org/postmarketOS/postmarketos-tweaks-setting-definitions"
+# armhf: phosh-mobile-settings
+arch="noarch !armhf"
+license="GPL-3.0-or-later"
+subpackages="
+	$pkgname-lang
+	$pkgname-phosh:phosh
+	$pkgname-pinephone:pinephone
+	$pkgname-sxmo-x11:sxmo
+	"
+depends="phosh-mobile-settings"
+makedepends="glib-dev meson"
+source="$pkgname-$pkgver.tar.gz::https://gitlab.postmarketos.org/postmarketOS/postmarketos-tweaks-setting-definitions/-/archive/$pkgver/postmarketos-tweaks-setting-definitions-$pkgver.tar.gz
+	50-phosh-mobile-settings-conf-tweaks-enable.gschema.override
+"
+options="!check" # There's no testsuite
+replaces="postmarketos-tweaks"
+provides="postmarketos-tweaks=$pkgver-r$pkgrel"
+
+build() {
+	abuild-meson . output
+	meson compile ${JOBS:+-j ${JOBS}} -C output
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install --no-rebuild -C output
+
+	install -Dm644 "$srcdir"/50-phosh-mobile-settings-conf-tweaks-enable.gschema.override \
+		-t "$pkgdir"/usr/share/glib-2.0/schemas
+}
+
+phosh() {
+	install_if="$pkgname=$pkgver-r$pkgrel phosh"
+
+	amove usr/share/postmarketos-tweaks/phosh.yml
+}
+
+pinephone() {
+	install_if="$pkgname=$pkgver-r$pkgrel device-pine64-pinephone"
+	depends="update-sysfs"
+
+	amove usr/share/postmarketos-tweaks/pinephone.yml
+}
+
+sxmo() {
+	install_if="$pkgname=$pkgver-r$pkgrel postmarketos-ui-sxmo-de-dwm"
+
+	amove usr/share/postmarketos-tweaks/sxmo-x11.yml
+}
+
+sha512sums="
+5fa51dc38205b8f923a4b98c4b3e200654636f10e61041d63ba4330712b074ebfeacd2305b79f40298670e395bef5219d8aa962ba93ca5ab9ed4ae9cec48c10a  postmarketos-tweaks-setting-definitions-1.1.0.tar.gz
+72a4339fe2480a57fcfd17bc37ff794ff84a7e12bda90b989203119a60c21adb1ffe1163b372c66111ce23ab8ee30f8f4b0ddbfadbf4bea2a361420e40e318a8  50-phosh-mobile-settings-conf-tweaks-enable.gschema.override
+"

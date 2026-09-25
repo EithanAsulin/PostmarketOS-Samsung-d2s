@@ -1,0 +1,23 @@
+diff --git a/./pinenote-config/sway/scripts/start_waybar.sh.orig b/./pinenote-config/sway/scripts/start_waybar.sh
+index 53d61b1..e2a481e 100755
+--- a/./pinenote-config/sway/scripts/start_waybar.sh.orig
++++ b/./pinenote-config/sway/scripts/start_waybar.sh
+@@ -5,7 +5,7 @@ if [ -z "$XDG_RUNTIME_DIR" ]; then
+ fi
+ 
+ path=$(realpath $(dirname $0))
+-envfile=$($path/env_util.sh get_env)
++envfile=$($path/env_util.sh get_env | sed '/Terminated/d') # Sometimes shell outputs that swaymsg got Terminated
+ 
+ . "$envfile"
+ 
+diff --git a/pinenote-config/sway/config.orig b/pinenote-config/sway/config
+index c8a6612..57593c6 100644
+--- a/pinenote-config/sway/config.orig
++++ b/pinenote-config/sway/config
+@@ -274,4 +274,4 @@ for_window [app_id="com.github.xournalpp.xournalpp"] exec "$ebcmark" set "Y4|R"
+ include /etc/sway/config.d/*
+ 
+ # Start pinenote.service if you setup doesn't have that set up
+-exec_always systemctl --user start sway-session.target
++exec_always pinenote-service

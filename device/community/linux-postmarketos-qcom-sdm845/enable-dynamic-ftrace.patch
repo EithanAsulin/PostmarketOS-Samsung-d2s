@@ -1,0 +1,124 @@
+From d81e256317f22d08afbdd8da83cda875d058b97f Mon Sep 17 00:00:00 2001
+From: "Jose Fernandez (Anthropic)" <jose.fernandez@linux.dev>
+Date: Tue, 9 Jun 2026 05:19:26 +0000
+Subject: [PATCH 1/2] arm64: ftrace: prepare ftrace_modify_call() for use
+ without CALL_OPS
+
+ftrace_modify_call() is guarded by CONFIG_DYNAMIC_FTRACE_WITH_CALL_OPS
+and calls ftrace_rec_set_ops(rec, arm64_rec_get_ops(rec)) directly,
+which only exists when CALL_OPS is enabled.
+
+Generic ftrace also needs ftrace_modify_call() when
+CONFIG_DYNAMIC_FTRACE_WITH_DIRECT_CALLS is enabled, to retarget a
+callsite between two non-FTRACE_ADDR destinations, as happens when a
+direct trampoline is modified. The next patch allows DIRECT_CALLS without
+CALL_OPS, so widen the guard to cover both configurations and switch
+the body to the ftrace_rec_update_ops() wrapper, which already has a
+stub for the !CALL_OPS case. ftrace_make_call() already uses the same
+wrapper today.
+
+No functional change: with CALL_OPS enabled, ftrace_rec_update_ops()
+expands to the exact call this replaces.
+
+Assisted-by: Claude:unspecified
+Signed-off-by: Jose Fernandez (Anthropic) <jose.fernandez@linux.dev>
+Reviewed-by: Puranjay Mohan <puranjay@kernel.org>
+---
+ arch/arm64/kernel/ftrace.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm64/kernel/ftrace.c b/arch/arm64/kernel/ftrace.c
+index 5a1554a441628..e1a3c0b3a0514 100644
+--- a/arch/arm64/kernel/ftrace.c
++++ b/arch/arm64/kernel/ftrace.c
+@@ -409,7 +409,8 @@ int ftrace_make_call(struct dyn_ftrace *rec, unsigned long addr)
+ 	return ftrace_modify_code(pc, old, new, true);
+ }
+ 
+-#ifdef CONFIG_DYNAMIC_FTRACE_WITH_CALL_OPS
++#if defined(CONFIG_DYNAMIC_FTRACE_WITH_CALL_OPS) || \
++	defined(CONFIG_DYNAMIC_FTRACE_WITH_DIRECT_CALLS)
+ int ftrace_modify_call(struct dyn_ftrace *rec, unsigned long old_addr,
+ 		       unsigned long addr)
+ {
+@@ -417,7 +418,7 @@ int ftrace_modify_call(struct dyn_ftrace *rec, unsigned long old_addr,
+ 	u32 old, new;
+ 	int ret;
+ 
+-	ret = ftrace_rec_set_ops(rec, arm64_rec_get_ops(rec));
++	ret = ftrace_rec_update_ops(rec);
+ 	if (ret)
+ 		return ret;
+ 
+-- 
+2.54.0
+
+From c7d8dc4cd612aec63b954e13a2a940308d6c769e Mon Sep 17 00:00:00 2001
+From: "Jose Fernandez (Anthropic)" <jose.fernandez@linux.dev>
+Date: Tue, 9 Jun 2026 05:19:27 +0000
+Subject: [PATCH 2/2] arm64: ftrace: allow DIRECT_CALLS without CALL_OPS
+
+arm64 gained ftrace direct calls in commit 2aa6ac03516d ("arm64:
+ftrace: Add direct call support") on top of
+DYNAMIC_FTRACE_WITH_CALL_OPS, using the per-callsite ops pointer as a
+fast path to reach the direct trampoline. Since commit baaf553d3bc3
+("arm64: Implement HAVE_DYNAMIC_FTRACE_WITH_CALL_OPS"), CALL_OPS is
+mutually exclusive with CFI: the pre-function NOPs would change the
+offset of the pre-function kCFI type hash, and the compiler support
+needed to keep that offset consistent does not exist yet.
+
+The result is that a CONFIG_CFI=y kernel loses CALL_OPS, and with it
+DIRECT_CALLS, and with it every BPF trampoline attachment to kernel
+functions: register_fentry() returns -ENOTSUPP, so fentry/fexit,
+fmod_ret and BPF LSM programs cannot attach at all. This is a real
+problem for hardened arm64 deployments that rely on BPF LSM for
+security monitoring while keeping kCFI enabled.
+
+CALL_OPS is an optimization for direct calls, not a dependency. When
+the direct trampoline is within BL range, the callsite branches
+straight to it and ftrace_caller is not involved. When it is out of
+range, ftrace_find_callable_addr() already falls back to
+ftrace_caller, and the DIRECT_CALLS machinery there
+(FREGS_DIRECT_TRAMP, ftrace_caller_direct_late) is gated on
+DIRECT_CALLS alone, not CALL_OPS: the ops dispatch invokes
+call_direct_funcs(), which stores the trampoline address in
+ftrace_regs, and ftrace_caller tail-calls it. s390 and loongarch use
+this same mechanism for HAVE_DYNAMIC_FTRACE_WITH_DIRECT_CALLS without
+having CALL_OPS at all, and DYNAMIC_FTRACE_WITH_ARGS without CALL_OPS
+is already a supported arm64 configuration (GCC builds with
+CC_OPTIMIZE_FOR_SIZE do not satisfy the CALL_OPS select condition).
+
+Drop the CALL_OPS requirement from the
+HAVE_DYNAMIC_FTRACE_WITH_DIRECT_CALLS select. Configurations that
+keep CALL_OPS (!CFI clang builds, and GCC builds without
+CC_OPTIMIZE_FOR_SIZE) are unchanged. CALL_OPS-less configurations
+take the ftrace_caller ops-dispatch path for out-of-range direct
+calls, trading the per-callsite fast path for working BPF
+trampolines; in-range attachments still branch directly with no
+overhead. GCC -Os builds also gain DIRECT_CALLS as a side effect.
+That is intended: s390 and loongarch already ship DIRECT_CALLS
+without any per-callsite fast path.
+
+Assisted-by: Claude:unspecified
+Signed-off-by: Jose Fernandez (Anthropic) <jose.fernandez@linux.dev>
+Reviewed-by: Puranjay Mohan <puranjay@kernel.org>
+---
+ arch/arm64/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm64/Kconfig b/arch/arm64/Kconfig
+index edbaec4b6eead..532ce0d77069a 100644
+--- a/arch/arm64/Kconfig
++++ b/arch/arm64/Kconfig
+@@ -214,7 +214,7 @@ config ARM64
+ 		if (GCC_SUPPORTS_DYNAMIC_FTRACE_WITH_ARGS || \
+ 		    CLANG_SUPPORTS_DYNAMIC_FTRACE_WITH_ARGS)
+ 	select HAVE_DYNAMIC_FTRACE_WITH_DIRECT_CALLS \
+-		if DYNAMIC_FTRACE_WITH_ARGS && DYNAMIC_FTRACE_WITH_CALL_OPS
++		if DYNAMIC_FTRACE_WITH_ARGS
+ 	select HAVE_DYNAMIC_FTRACE_WITH_CALL_OPS \
+ 		if (DYNAMIC_FTRACE_WITH_ARGS && !CFI && \
+ 		    (CC_IS_CLANG || !CC_OPTIMIZE_FOR_SIZE))
+-- 
+2.54.0
+

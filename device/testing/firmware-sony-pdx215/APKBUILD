@@ -1,0 +1,28 @@
+maintainer="Jan Paszkowski <janmpaszkowski@proton.me>"
+pkgname=firmware-sony-pdx215
+pkgver=2
+pkgrel=1
+pkgdesc="Firmware for Sony Xperia 1 III"
+url="https://gitlab.com/janmpaszkowski/sony-pdx215-firmware"
+_repository="sony-pdx215-firmware"
+_commit="2a9eabd337b60ef1209cbb238f20784f676a4c7f"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+
+source="$pkgname-$_commit.tar.gz::https://gitlab.com/janmpaszkowski/$_repository/-/archive/$_commit/$_repository-$_commit.tar.gz
+firmware.files"
+
+package() {
+	cd "$srcdir/$_repository-$_commit"
+	while IFS="" read -r _i || [ -n "$_i" ]; do
+		[ ! -d $(dirname $_i) ] && mkdir -p $(dirname $_i)
+		echo $_i
+		install -Dm644 "${_i/usr\//}" "$pkgdir/$_i"
+	done < "$srcdir/firmware.files"
+}
+
+sha512sums="
+4028c7e0468df6d6072a6b88e00e0b24f5975b0c42fc37996d137780e24684278597d142f7a50167d8a8835569f3ec3745e81cf2b6cf8abff706efdf2202d189  firmware-sony-pdx215-2a9eabd337b60ef1209cbb238f20784f676a4c7f.tar.gz
+af0634584d3deebabb8ac982f2cdf5a09cd8c9ab930157ccf6acecadf9b9f1cdf6eb7581a1714edd620b91678f7f8606dbfa074485dd32594bbd4f4f9c51c1fd  firmware.files
+"

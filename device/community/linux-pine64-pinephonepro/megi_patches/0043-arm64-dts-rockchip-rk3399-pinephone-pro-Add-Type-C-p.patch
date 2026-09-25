@@ -1,0 +1,301 @@
+From fc8b5b148fd41ba3e30ef4a0b7b36ee4de9f973f Mon Sep 17 00:00:00 2001
+From: Ondrej Jirman <megi@xff.cz>
+Date: Tue, 21 Jul 2026 19:20:33 +0200
+Subject: [PATCH 43/90] arm64: dts: rockchip: rk3399-pinephone-pro: Add Type-C
+ port support
+
+Pinephone Pro has:
+
+- FUSB302 Type-C port controller on i2c4, doing CC detection and PD
+- dual role data on the port, USB 2.0 and SuperSpeed
+- DisplayPort alternate mode out of the same connector
+- a 5V boost for sourcing VBUS when the port is a host
+
+It is also the port the phone charges from.
+
+Let's enable it.
+
+Signed-off-by: Ondrej Jirman <megi@xff.cz>
+---
+ .../dts/rockchip/rk3399-pinephone-pro.dts     | 196 ++++++++++++++++++
+ 1 file changed, 196 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/rockchip/rk3399-pinephone-pro.dts b/arch/arm64/boot/dts/rockchip/rk3399-pinephone-pro.dts
+index 8d26bd9b7500..159ccc47d6fd 100644
+--- a/arch/arm64/boot/dts/rockchip/rk3399-pinephone-pro.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3399-pinephone-pro.dts
+@@ -13,6 +13,7 @@
+ #include <dt-bindings/input/gpio-keys.h>
+ #include <dt-bindings/input/linux-event-codes.h>
+ #include <dt-bindings/leds/common.h>
++#include <dt-bindings/usb/pd.h>
+ #include "rk3399-s.dtsi"
+ 
+ / {
+@@ -114,6 +115,50 @@ avdd2v8_dvp: regulator-avdd2v8-dvp {
+ 		vin-supply = <&vcc3v3_sys>;
+ 	};
+ 
++	vcc5v0_sys: regulator-vcc5v0-host {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc5v0_sys";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-always-on;
++		regulator-boot-on;
++		vin-supply = <&boost_otg>;
++
++		regulator-state-mem {
++			regulator-on-in-suspend;
++		};
++	};
++
++	/*
++	 * GPIO0_A6 is used to force enable the VCC_SYS <-> VBAT+ Q7 switch that
++	 * helps boost the RK818's power path's current carrying capacity when
++	 * operating the phone from the battery in case VBUS_TYPEC has 5V
++	 * provided by the phone itself and not by the external power supply.
++	 * (this happens in USB host mode)
++	 *
++	 * GPIO0_A6 low: Q7 is enabled if there's 0V on VBUS_TYPEC (phone is not
++	 *               powered from external power supply)
++	 * GPIO0_A6 high: Q7 is enabled no matter what
++	 *
++	 * GPIO0_A6 must be high when the phone is providing VBUS_TYPEC power.
++	 * This keeps the power path boost enabled for all cases when the phone
++	 * runs from the battery.
++	 *
++	 * In other words, GPIO0_A6 is used to override the automatic disabling
++	 * of Q7 when VBUS_TYPEC has 5V in USB host mode.
++	 */
++	vcc5v0_typec: regulator-vcc5v0-typec {
++		compatible = "regulator-fixed";
++		enable-active-high;
++		gpio = <&gpio0 RK_PA6 GPIO_ACTIVE_HIGH>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&vcc5v0_typec_en>;
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-name = "vcc5v0_typec";
++		vin-supply = <&boost_otg>;
++	};
++
+ 	vcc3v3_sys: regulator-vcc3v3-sys {
+ 		compatible = "regulator-fixed";
+ 		regulator-name = "vcc3v3_sys";
+@@ -237,6 +282,17 @@ &cpu_b1 {
+ 	cpu-supply = <&vdd_cpu_b>;
+ };
+ 
++&cdn_dp {
++	status = "okay";
++	phys = <&tcphy0_dp>;
++};
++
++&dp_out {
++	cdn_dp_out: endpoint {
++		remote-endpoint = <&tcphy0_dp_in>;
++	};
++};
++
+ &emmc_phy {
+ 	status = "okay";
+ };
+@@ -272,6 +328,7 @@ rk818: pmic@1c {
+ 		vcc7-supply = <&vcc3v3_sys>;
+ 		vcc8-supply = <&vcc_sys>;
+ 		vcc9-supply = <&vcc3v3_sys>;
++		usb-supply = <&vcc5v0_typec>;
+ 
+ 		regulators {
+ 			vdd_cpu_l: DCDC_REG1 {
+@@ -402,6 +459,21 @@ regulator-state-mem {
+ 					regulator-on-in-suspend;
+ 				};
+ 			};
++
++			boost_otg: DCDC_BOOST {
++				regulator-name = "boost_otg";
++				regulator-always-on;
++				regulator-boot-on;
++				regulator-min-microvolt = <5000000>;
++				regulator-max-microvolt = <5000000>;
++				regulator-state-mem {
++					regulator-on-in-suspend;
++				};
++			};
++
++			otg_switch: OTG_SWITCH {
++				regulator-name = "otg_switch";
++			};
+ 		};
+ 	};
+ 
+@@ -570,6 +642,61 @@ af8133j: compass@1c {
+ 	};
+ };
+ 
++&i2c4 {
++	fusb0: typec-portc@22 {
++		compatible = "fcs,fusb302";
++		reg = <0x22>;
++		interrupt-parent = <&gpio1>;
++		interrupts = <RK_PA2 IRQ_TYPE_LEVEL_LOW>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&fusb0_int>;
++		extcon = <&u2phy0>;
++		vbus-supply = <&otg_switch>;
++
++		connector {
++			compatible = "usb-c-connector";
++			data-role = "dual";
++			label = "USB-C";
++			op-sink-microwatt = <2500000>;
++			power-role = "dual";
++			sink-pdos = <PDO_FIXED(5000, 3000, PDO_FIXED_USB_COMM | PDO_FIXED_DUAL_ROLE | PDO_FIXED_DATA_SWAP)>;
++			source-pdos = <PDO_FIXED(5000, 900, PDO_FIXED_USB_COMM | PDO_FIXED_DUAL_ROLE | PDO_FIXED_DATA_SWAP)>;
++			try-power-role = "sink";
++			displayport = <&cdn_dp>;
++
++			altmodes {
++				displayport {
++					svid = /bits/ 16 <0xff01>;
++					vdo = <0x0c46>;
++				};
++			};
++
++			ports {
++				#address-cells = <1>;
++				#size-cells = <0>;
++
++				port@0 {
++					reg = <0>;
++
++					usbc_hs: endpoint {
++						remote-endpoint =
++							<&dwc3_0_role_switch>;
++					};
++				};
++
++				port@1 {
++					reg = <1>;
++
++					usbc_ss: endpoint {
++						remote-endpoint =
++							<&tcphy0_typec>;
++					};
++				};
++			};
++		};
++	};
++};
++
+ &io_domains {
+ 	bt656-supply = <&vcc1v8_dvp>;
+ 	audio-supply = <&vcca1v8_codec>;
+@@ -688,6 +815,12 @@ compass_rst_l: compass-rst-l {
+ 		};
+ 	};
+ 
++	fusb302x {
++		fusb0_int: fusb0-int {
++			rockchip,pins = <1 RK_PA2 RK_FUNC_GPIO &pcfg_pull_up>;
++		};
++	};
++
+ 	leds {
+ 		red_led_pin: red-led-pin {
+ 			rockchip,pins = <4 RK_PD2 RK_FUNC_GPIO &pcfg_pull_none>;
+@@ -740,6 +873,12 @@ wifi_host_wake_l: wifi-host-wake-l {
+ 		};
+ 	};
+ 
++	usb-typec {
++		vcc5v0_typec_en: vcc5v0_typec_en {
++			rockchip,pins = <0 RK_PA6 RK_FUNC_GPIO &pcfg_pull_up>;
++		};
++	};
++
+ 	wireless-bluetooth {
+ 		bt_wake_pin: bt-wake-pin {
+ 			rockchip,pins = <2 RK_PD2 RK_FUNC_GPIO &pcfg_pull_none>;
+@@ -821,12 +960,45 @@ flash@0 {
+ 	};
+ };
+ 
++&tcphy0 {
++	mode-switch;
++	orientation-switch;
++	status = "okay";
++
++	port {
++		tcphy0_typec: endpoint {
++			remote-endpoint = <&usbc_ss>;
++		};
++	};
++};
++
++&tcphy0_dp {
++	port {
++		tcphy0_dp_in: endpoint {
++			remote-endpoint = <&cdn_dp_out>;
++		};
++	};
++};
++
+ &tsadc {
+ 	rockchip,hw-tshut-mode = <1>;
+ 	rockchip,hw-tshut-polarity = <1>;
+ 	status = "okay";
+ };
+ 
++&u2phy0 {
++	status = "okay";
++};
++
++&u2phy0_otg {
++	status = "okay";
++};
++
++&u2phy0_host {
++	status = "okay";
++	phy-supply = <&vcc5v0_sys>;
++};
++
+ &uart0 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&uart0_xfer &uart0_cts &uart0_rts>;
+@@ -852,6 +1024,30 @@ &uart2 {
+ 	status = "okay";
+ };
+ 
++&usb_host0_ehci {
++	status = "okay";
++};
++
++&usb_host0_ohci {
++	status = "okay";
++};
++
++&usbdrd3_0 {
++	status = "okay";
++};
++
++&usbdrd_dwc3_0 {
++	dr_mode = "otg";
++	usb-role-switch;
++	status = "okay";
++
++	port {
++		dwc3_0_role_switch: endpoint {
++			remote-endpoint = <&usbc_hs>;
++		};
++	};
++};
++
+ &vopb {
+ 	status = "okay";
+ 	assigned-clocks = <&cru DCLK_VOP0_DIV>, <&cru DCLK_VOP0>,
+-- 
+2.55.0
+

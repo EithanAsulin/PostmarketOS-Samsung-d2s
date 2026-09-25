@@ -1,0 +1,22 @@
+maintainer=""
+pkgname=msmipc-dev
+pkgver=0.1
+pkgrel=3
+pkgdesc="Headers for Qualcomm MSM IPC (AF_MSM_IPC and AF_QRTR)"
+url="https://github.com/LineageOS/android_kernel_google_msm/blob/e63c5a50c9379ccbee4c7f0e6ba43394e9d89db4/include/linux/msm_ipc.h"
+arch="noarch"
+depends="linux-headers"
+license="GPL-2.0 WITH Linux-syscall-note"
+source="
+	https://raw.githubusercontent.com/LineageOS/android_kernel_google_msm/e63c5a50c9379ccbee4c7f0e6ba43394e9d89db4/include/linux/msm_ipc.h
+"
+builddir="$srcdir"
+options="!check"
+
+package() {
+	install -Dm644 msm_ipc.h "$pkgdir"/usr/src/msmipc-dev/include/linux/msm_ipc.h
+}
+
+sha512sums="
+f98cef8082d980b8615262d14e61f0ff09d6b945db17674b3ad6a27f553b6eba2507a5a0cdcfd995c73b8dc1f9ed6921bdf18d90b5a2649f15e16cfb502bab82  msm_ipc.h
+"

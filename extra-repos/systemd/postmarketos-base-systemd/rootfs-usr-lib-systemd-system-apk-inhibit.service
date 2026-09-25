@@ -1,0 +1,6 @@
+[Unit]
+Description=Hold sleep inhibitor while apk is running
+
+[Service]
+Type=simple
+ExecStart=/usr/libexec/apk-inhibit

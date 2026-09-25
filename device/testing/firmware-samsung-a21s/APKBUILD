@@ -1,0 +1,28 @@
+maintainer="Thomas Turner <tturner@lineageos.org>"
+pkgname=firmware-samsung-a21s
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware for a21s"
+url="https://github.com/samsungexynos850/firmware-samsung-a21s"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps
+	pmb:cross-native
+"
+source="
+	https://raw.githubusercontent.com/samsungexynos850/firmware-samsung-a21s/refs/heads/master/td4150_a21s.bin
+	30-initramfs-firmware-samsung-a21s.files
+"
+
+package() {
+	mkdir -p "$pkgdir"/usr/lib/firmware
+	mv "$srcdir"/td4150_a21s.bin "$pkgdir"/usr/lib/firmware/
+
+	install -Dm644 "$srcdir"/30-initramfs-$pkgname.files -t \
+		"$pkgdir"/usr/share/mkinitfs/files
+}
+
+sha512sums="
+a9624ddaebe4885eedb81984f54f05c65d68114a371a5711878289380476f2ce710cfa96fb6ffc8d7ce2889715669009f48368344ac5095114d452a23549c465  td4150_a21s.bin
+dbc91c5cbe60fd0bb0a9daf582ebf1184fa89664aa934cad4952aa28bd161bb97921e86aa20dcc98df994c84c6a5cd74caee3784b3fcb9533ae6ece35db0602a  30-initramfs-firmware-samsung-a21s.files
+"

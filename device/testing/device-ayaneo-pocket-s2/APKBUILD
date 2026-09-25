@@ -1,0 +1,52 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Neil Armstrong <neil.armstrong@linaro.org>"
+pkgname=device-ayaneo-pocket-s2
+pkgdesc="Ayaneo Pocket S2"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf-ayaneo-pocket-s2
+	firmware-ayaneo-pocket-renesas-usb
+	firmware-ayaneo-pocket-s2-adreno
+	firmware-ayaneo-pocket-s2-adsp
+	firmware-ayaneo-pocket-s2-ath12k
+	firmware-ayaneo-pocket-s2-cdsp
+	firmware-ayaneo-pocket-s2-iris
+	firmware-ayaneo-pocket-s2-tplg
+	linux-ayaneo-pocket-s2
+	linux-firmware-ath12k
+	linux-firmware-qca
+	linux-firmware-qcom
+	postmarketos-base
+	soc-qcom
+	systemd-boot
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	firmware.files
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -Dm644 "$srcdir"/firmware.files \
+		-t "$pkgdir"/usr/share/mkinitfs/files
+}
+
+sha512sums="
+012b1b6a9fcdfb6043b6f6992606a59fb347a5dde47c61f47479dccba24e13a88b0e03a64d79786d1152786c593874988deaa487fa7ec1634c4a7a4bcac20c34  deviceinfo
+6c6a1393fd91dbb565e5b09aacf5f18a0911de19074f25548174a2d1a6db6f52f27ea556bfb5f4731085c345c42047fddbacc2a77ffe288728ff96d4c7a2cbed  kernel-cmdline.conf
+55abca53ab338921f578bb52dde30fb0c3518f0cb772aac8a23eab4900ee05f0f4209aecd9b3d79c79ab4d45270d068c0d2e01881c57bd6cf0c98930956be7f2  firmware.files
+1aa76a0ef8ee0d3a0f0fe819e02fbbba9bc7a990191eaad630700aacc5c44e27d123c016c5b978e5ece08de69f1fea268b5612716feb0b95712f7f8dd015d8be  modules-initfs
+"

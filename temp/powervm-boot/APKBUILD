@@ -1,0 +1,63 @@
+# This package can be upstreamed to Alpine once Rust MCP 988 is implemented:
+# github.com/rust-lang/rust/issues/158199
+maintainer="Aelin <aelin@postmarketos.org>"
+pkgname=powervm-boot
+pkgver=0.5.0_git20260318
+pkgrel=0
+_commit="38487a6357efb4e1dbc029033693a10b9e6c692d"
+pkgdesc="Bootloader for IBM POWER systems that implements BLS on top of Open Firmware"
+url="https://gitlab.com/aruiz/powerpc-bootloader"
+arch="ppc64le"
+license="MPL-2.0"
+makedepends="
+	cargo-auditable
+	rust-src
+	"
+install="$pkgname.post-upgrade"
+source="$pkgname-$pkgver.tar.gz::https://gitlab.com/aruiz/powerpc-bootloader/-/archive/$_commit/powerpc-bootloader/archive/$_commit.tar.gz
+	0001-Fix-compilation.patch
+	0002-Fix-loader-directory-path.patch
+	0003-Raise-kernel-size-limit.patch
+	"
+# !check: Test suite is somewhat specific to Fedora
+# !strip: Foreign architecture
+# net: cargo
+options="!check !strip net pmb:cross-native"
+builddir="$srcdir/powerpc-bootloader-$_commit"
+
+prepare() {
+	default_prepare
+
+	cargo fetch --target powerpc-unknown-linux-gnu
+}
+
+build() {
+	# FIXME: We need to cross compile to 32-bit because that's what Open Firmware
+	# requires. There is no bare metal 32-bit PowerPC target in Rust (yet!), there
+	# is however an accepted MCP to add one. Until that is in the Alpine Rust
+	# toolchain, we will have to cheat and use RUSTC_BOOTSTRAP=1 in combination with
+	# -Zbuild-std to be able to compile for a 32-bit target.
+	# This is also why this package is not in aports yet.
+	#
+	# The RUSTFLAGS mess is ugly because for some reason, abuild completely screws
+	# up the quoting!?
+	RUSTC_BOOTSTRAP=1 \
+	RUSTFLAGS="-Clinker=powerpc64le-alpine-linux-musl-gcc -Clink-arg=-nostdlib -Clink-arg=-ffreestanding -Clink-arg=-fPIC -Clink-arg=-Ttext=100000 -Clink-arg=-mbig-endian -Clink-arg=-Wl,--build-id=none -Ctarget-feature=+crt-static" \
+	cargo auditable build \
+		--release \
+		--target powerpc-unknown-linux-gnu \
+		-Zbuild-std=core,alloc,compiler_builtins \
+		-Zbuild-std-features=compiler-builtins-mem
+}
+
+package() {
+	install -Dm644 target/powerpc-unknown-linux-gnu/release/powervm-boot \
+		-t "$pkgdir"/usr/lib/powervm-boot/
+}
+
+sha512sums="
+1a332b3e79ccca5e2f284ede9717ca562b0adde0b195813b8b0b2f695c3c811ea2e2579fa1de8af2b16effff2827e49e849b1868f140ff18bc38aa2a385c0b91  powervm-boot-0.5.0_git20260318.tar.gz
+09a8ebe2bf932e3f5ca6ea7ee9f587b6e0f2f2f917703d47f14cd2d321fbb5b307fc661f73c2afc90d5ec2aef7d9e2a49de0aa7ef872e46091d0c144870e11ee  0001-Fix-compilation.patch
+a2a6fd1a834c22b310a52812342bc5382b9139f0697a001ffaa11f5fb6b2eceb98eb208f47eeecbcb7325ca174f2b6a6e36bb9205a91a6d67ceba6d4c43eb792  0002-Fix-loader-directory-path.patch
+5a4542f98063c9b046dacd6629f4167b362bb97008b9aecc869ce2bea16948ed465171efc556a4396884a1d4e20091e66b2a69e3bf8b46b54652a33a429b1ee8  0003-Raise-kernel-size-limit.patch
+"

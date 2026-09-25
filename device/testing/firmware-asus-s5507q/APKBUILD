@@ -1,0 +1,55 @@
+maintainer="binarycraft007 <keep.it.sns@gmail.com>"
+pkgname=firmware-asus-s5507q
+pkgver=5
+pkgrel=0
+_commit="2f3f3b5cc679f88a6f672490778e19016e51a70b"
+pkgdesc="Firmware files for ASUS Vivobook S 15"
+url="https://github.com/binarycraft007/firmware-asus-s5507q"
+arch="aarch64"
+license="proprietary"
+# TODO: Replace with a dependency on firmware-qcom-adreno-gen70500 (which is not .zst compressed though)
+depends="
+	linux-firmware-ath12k
+	linux-firmware-qca
+	linux-firmware-qcom
+"
+subpackages="
+	$pkgname-common
+	$pkgname-dpu
+"
+source="$pkgname-$_commit.tar.gz::https://github.com/binarycraft007/firmware-asus-s5507q/archive/$_commit.tar.gz
+	dpu.files
+	common.files
+"
+options="!archcheck !check !spdx !strip !tracedeps pmb:cross-native"
+builddir="$srcdir/$pkgname-$_commit"
+
+package() {
+	install -Dm644 "$srcdir/common.files" \
+		-t "$pkgdir"/usr/share/mkinitfs/files/
+	install -Dm644 "$srcdir/dpu.files" \
+		-t "$pkgdir"/usr/share/mkinitfs/files/
+
+	local _i _u
+	while IFS="" read -r _i || [ -n "$_i" ]; do
+		_u="${_i/usr\/lib/\/lib}"
+		[ ! -d "$(dirname "$_i")" ] && mkdir -p "$(dirname "$pkgdir"/"$_i")"
+		install -Dm644 "$builddir"/"$_u" "$pkgdir"/"$_i"
+	done < "$srcdir"/common.files
+}
+
+common() {
+	depends="$pkgname=$pkgver-r$pkgrel"
+	amove usr/share/mkinitfs/files/common.files
+}
+
+dpu() {
+	depends="$pkgname=$pkgver-r$pkgrel"
+	amove usr/share/mkinitfs/files/dpu.files
+}
+
+sha512sums="
+45f66a759102987a47cb7c30a67a4350c2590958a62b542261324de4ea60ab160e96f16406f65241c91d1e172f6d486e1c8476f03e15ffc246e03a22b8c03ca4  firmware-asus-s5507q-2f3f3b5cc679f88a6f672490778e19016e51a70b.tar.gz
+3999e069d570c61728a1dfbd3ed8a28ac45556a22e9eb75ad851b81d9ca5f4e6162ddbfb18527867abcc13349b16d8a556c996b9de0bf2863545de9243a76afa  dpu.files
+b59a4f8800e1c6f4425272c47855d24093f31b3d5c3b7f5711a44fa1556d8ab1cdebb4db7c3700497297a2e54fcab9a0f22922e2fbceb6cc9e67f741a72cbd33  common.files
+"
